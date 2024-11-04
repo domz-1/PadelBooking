@@ -1,0 +1,21 @@
+{
+  "action": "CREATE",
+  "entityType": "BOOKING",
+  "entityId": "64f5a53d9853f40c5c77c789",
+  "adminId": "64f5a53d9853f40c5c77d012",
+  "changes": {
+    "before": null,
+    "after": {
+      "venue": "64f5a53d9853f40c5c77b456",
+      "startTime": "2024-03-25T14:00:00Z",
+      "status": "pending"
+    }
+  },
+  "metadata": {
+    "ip": "192.168.1.100",
+    "userAgent": "Mozilla/5.0",
+    "browser": "Chrome"
+  },
+  "description": "New booking created for venue Sports Complex Alpha",
+  "timestamp": "2024-03-20T10:30:00Z"
+} 

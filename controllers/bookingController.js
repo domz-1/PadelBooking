@@ -5,7 +5,15 @@ const dayjs = require('dayjs');
 const AppError = require('../utils/errorHandler').ErrorResponse;
 
 exports.createBooking = catchAsync(async (req, res) => {
-  const { venueId, courtId, startTime, endTime, players } = req.body;
+  const { 
+    venueId, 
+    courtId, 
+    startTime, 
+    endTime, 
+    players, 
+    holderPhoneNumber,
+    gameType 
+  } = req.body;
 
   // Check if venue exists
   const venue = await Venue.findById(venueId);
@@ -21,6 +29,8 @@ exports.createBooking = catchAsync(async (req, res) => {
     venueId,
     courtId,
     userId: req.user._id,
+    holderPhoneNumber,
+    gameType,
     startTime,
     endTime,
     duration,
