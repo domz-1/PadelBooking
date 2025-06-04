@@ -9,9 +9,13 @@ router
   .post(protect, authorize('admin', 'manager'), venueController.createVenue);
 
 router
-  .route('/:id')
-  .get(venueController.getVenue)
-  .patch(protect, authorize('admin', 'manager'), venueController.updateVenue)
-  .delete(protect, authorize('admin'), venueController.deleteVenue);
+    .route('/:id')
+    .get(venueController.getVenue)
+    .patch(protect, authorize('admin', 'manager'), venueController.updateVenue)
+    .delete(
+        protect,
+        authorize('admin', 'manager'),
+        venueController.deleteVenue
+    );
 
 module.exports = router; 

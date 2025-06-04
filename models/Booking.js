@@ -6,23 +6,13 @@ const bookingSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    holderPhoneNumber: {
-        type: String,
-        required: [true, 'Please provide a contact phone number'],
-        match: [/^\+?[\d\s-]+$/, 'Please provide a valid phone number']
-    },
-    gameType: {
-        type: String,
-        enum: ['FOOTBALL', 'BASKETBALL', 'TENNIS', 'VOLLEYBALL', 'BADMINTON', 'OTHER'],
-        required: [true, 'Please specify the type of game']
-    },
     venue: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Venue',
         required: true
     },
-    startTime: {
-        type: Date,
+    courtId: {
+        type: String,
         required: true
     },
     endTime: {

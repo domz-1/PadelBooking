@@ -12,6 +12,7 @@ const venueRoutes = require('./routes/venueRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 
 const app = express();
+const API_BASE = process.env.API_BASE || '/api/v1';
 
 // Security Middleware
 app.use(helmet());
@@ -26,21 +27,39 @@ if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
 }
 
+// API Routes Base Path
+
 // Mount Routes
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/bookings', bookingRoutes);
-app.use('/api/v1/venues', venueRoutes);
-app.use('/api/v1/settings', settingsRoutes);
+app.use(`${API_BASE}/auth`, authRoutes);
+app.use(`${API_BASE}/bookings`, bookingRoutes);
+app.use(`${API_BASE}/venues`, venueRoutes);
+app.use(`${API_BASE}/settings`, settingsRoutes);
 
 // Error Handler
 app.use(errorHandler);
 
-// 404 Handler
-app.use((req, res) => {
+// Handle invalid API version
+app.use('/api/:version/*', (req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'API version not supported'
+    });
+});
+
+// Handle invalid API routes
+app.use('/api/*', (req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Invalid API route'
+    });
+});
+
+// Handle all other routes
+app.use('*', (req, res) => {
     res.status(404).json({
         success: false,
         message: 'Route not found'
     });
 });
 
-module.exports = app; 
+module.exports = app;

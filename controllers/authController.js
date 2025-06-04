@@ -4,23 +4,22 @@ const { generateToken } = require('../utils/tokenUtils');
 
 exports.register = async (req, res, next) => {
     try {
-        const { name, email, password, phone } = req.body;
-        const user = await User.create({ 
-            name, 
-            email, 
+        const { fullName, password, phone } = req.body;
+        const user = await User.create({
+            fullName,
             password,
-            phone 
+            phone,
         });
         const token = generateToken(user._id);
-        res.status(201).json({ 
-            success: true, 
+        res.status(201).json({
+            success: true,
             token,
             data: {
-                name: user.name,
-                email: user.email,
+                fullName: user.fullName,
                 phone: user.phone,
-                role: user.role
-            }
+                username: user.username,
+                role: user.role,
+            },
         });
     } catch (error) {
         next(error);
@@ -29,21 +28,21 @@ exports.register = async (req, res, next) => {
 
 exports.login = async (req, res, next) => {
     try {
-        const { email, password } = req.body;
-        const user = await User.findOne({ email }).select('+password');
+        const { username, password } = req.body;
+        const user = await User.findOne({ username }).select('+password');
         if (!user || !(await user.matchPassword(password))) {
             return next(new ErrorResponse('Invalid credentials', 401));
         }
         const token = generateToken(user._id);
-        res.status(200).json({ 
-            success: true, 
+        res.status(200).json({
+            success: true,
             token,
             data: {
-                name: user.name,
-                email: user.email,
+                fullName: user.fullName,
                 phone: user.phone,
-                role: user.role
-            }
+                username: user.username,
+                role: user.role,
+            },
         });
     } catch (error) {
         next(error);
