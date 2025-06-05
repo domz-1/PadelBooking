@@ -14,6 +14,12 @@ const settingsRoutes = require('./routes/settingsRoutes');
 const app = express();
 const API_BASE = process.env.API_BASE || '/api/v1';
 
+// Add request logging middleware
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+});
+
 // Security Middleware
 app.use(helmet());
 app.use(cors());
@@ -27,8 +33,6 @@ if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
 }
 
-// API Routes Base Path
-
 // Mount Routes
 app.use(`${API_BASE}/auth`, authRoutes);
 app.use(`${API_BASE}/bookings`, bookingRoutes);
@@ -38,16 +42,9 @@ app.use(`${API_BASE}/settings`, settingsRoutes);
 // Error Handler
 app.use(errorHandler);
 
-// Handle invalid API version
-app.use('/api/:version/*', (req, res) => {
-    res.status(404).json({
-        success: false,
-        message: 'API version not supported'
-    });
-});
-
 // Handle invalid API routes
 app.use('/api/*', (req, res) => {
+    console.log('Invalid API route accessed:', req.method, req.url);
     res.status(404).json({
         success: false,
         message: 'Invalid API route'
@@ -56,6 +53,7 @@ app.use('/api/*', (req, res) => {
 
 // Handle all other routes
 app.use('*', (req, res) => {
+    console.log('Route not found:', req.method, req.url);
     res.status(404).json({
         success: false,
         message: 'Route not found'

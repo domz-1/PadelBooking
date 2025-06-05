@@ -35,22 +35,5 @@ const userSchema = new mongoose.Schema({
     },
 });
 
-// Set username to phone number before saving
-userSchema.pre('save', async function (next) {
-    this.username = this.phone;
-    next();
-});
-
-userSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) {
-        next();
-    }
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-});
-
-userSchema.methods.matchPassword = async function (enteredPassword) {
-    return await bcrypt.compare(enteredPassword, this.password);
-};
-
+// Add this line to create and export the model
 module.exports = mongoose.model('User', userSchema);

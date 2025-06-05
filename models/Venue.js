@@ -88,8 +88,8 @@ const venueSchema = new mongoose.Schema({
         sunday: {
             open: { type: String, required: true },
             close: { type: String, required: true },
-        },
-        required: true,
+        }
+        // Removed the invalid 'required: true' here
     },
     createdAt: {
         type: Date,
