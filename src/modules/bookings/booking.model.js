@@ -22,7 +22,7 @@ const Booking = sequelize.define('Booking', {
         allowNull: false
     },
     status: {
-        type: DataTypes.ENUM('pending', 'confirmed', 'cancelled', 'pending-coach'),
+        type: DataTypes.ENUM('pending', 'confirmed', 'cancelled', 'pending-coach', 'no-show'),
         defaultValue: 'pending'
     },
     totalPrice: {

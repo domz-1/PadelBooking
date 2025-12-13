@@ -33,6 +33,7 @@ A comprehensive sports venue booking system refactored to a modular architecture
 - **Waitlist**: Join a waitlist for fully booked slots.
 - **My Bookings**: View personal booking history.
 - **Booking Logs**: (New) Admin-only feature to view logs of all booking operations (creation, updates) with pagination and filtering.
+- **Daily Summary**: (New) Admin endpoint to get a financial and operational summary of the "business day" (12 PM - 5 AM).
 - **Import**: Bulk import bookings.
 
 ### 5. Matches (`/matches`)

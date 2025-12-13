@@ -99,3 +99,79 @@ exports.getBookingLogs = async (req, res, next) => {
         next(error);
     }
 };
+
+// @desc    Get daily booking summary
+// @route   GET /api/v1/bookings/daily-summary
+// @access  Private (Admin)
+exports.getDailySummary = async (req, res, next) => {
+    try {
+        const { Op } = require('sequelize');
+        const Booking = require('./booking.model');
+
+        // Start: Today 12:00 PM
+        const start = new Date();
+        start.setHours(12, 0, 0, 0);
+
+        // End: Tomorrow 05:00 AM
+        const end = new Date(start);
+        end.setDate(end.getDate() + 1);
+        end.setHours(5, 0, 0, 0);
+
+        const todayDate = start.toISOString().split('T')[0];
+        const tomorrowDate = end.toISOString().split('T')[0];
+
+        const bookingsInRange = await Booking.findAll({
+            where: {
+                [Op.or]: [
+                    {
+                        date: todayDate,
+                        startTime: { [Op.gte]: '12:00:00' }
+                    },
+                    {
+                        date: tomorrowDate,
+                        startTime: { [Op.lt]: '05:00:00' }
+                    }
+                ]
+            }
+        });
+
+        let totalBookings = bookingsInRange.length;
+        let noShowCount = 0;
+        let expectedRevenue = 0;
+        let actualRevenue = 0;
+
+        bookingsInRange.forEach(booking => {
+            if (booking.status === 'no-show') {
+                noShowCount++;
+            }
+
+            if (booking.status !== 'cancelled') {
+                expectedRevenue += booking.totalPrice;
+            }
+
+            if (booking.status === 'confirmed') {
+                actualRevenue += booking.totalPrice;
+            }
+        });
+
+        res.status(200).json({
+            success: true,
+            data: {
+                date: todayDate,
+                window: {
+                    start: `${todayDate} 12:00 PM`,
+                    end: `${tomorrowDate} 05:00 AM`
+                },
+                metrics: {
+                    totalBookings,
+                    noShowCount,
+                    expectedRevenue,
+                    actualRevenue
+                },
+                bookings: bookingsInRange
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};

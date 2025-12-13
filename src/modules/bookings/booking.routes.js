@@ -1,5 +1,11 @@
 const express = require('express');
-const { createBooking, getBookings, getMyBookings, getBooking, getBookingLogs } = require('./booking.controller');
+const { createBooking,
+    getBookings,
+    getMyBookings,
+    getBooking,
+    getBookingLogs,
+    getDailySummary
+} = require('./booking.controller');
 const { importBookings } = require('./import.controller');
 const { protect, authorize } = require('../../middleware/auth');
 const multer = require('multer');
@@ -239,5 +245,49 @@ router.get('/my-bookings', getMyBookings);
  *         description: Booking not found
  */
 router.get('/:id', getBooking);
+
+/**
+ * @swagger
+ * /bookings/daily-summary:
+ *   get:
+ *     summary: Get daily booking summary (12 PM Today - 5 AM Tomorrow)
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Daily summary data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     date:
+ *                       type: string
+ *                     window:
+ *                       type: object
+ *                       properties:
+ *                         start:
+ *                           type: string
+ *                         end:
+ *                           type: string
+ *                     metrics:
+ *                       type: object
+ *                       properties:
+ *                         totalBookings:
+ *                           type: integer
+ *                         noShowCount:
+ *                           type: integer
+ *                         expectedRevenue:
+ *                           type: number
+ *                         actualRevenue:
+ *                           type: number
+ */
+router.get('/daily-summary', protect, authorize('admin'), getDailySummary);
 
 module.exports = router;
