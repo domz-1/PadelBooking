@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -58,6 +59,17 @@ app.use(`${process.env.API_BASE}/stories`, storyRoutes);
 app.use(`${process.env.API_BASE}/notifications`, notificationRoutes);
 app.use(`${process.env.API_BASE}/store`, storeRoutes);
 app.use(`${process.env.API_BASE}/sponsors`, sponsorRoutes);
+
+// Serve static files
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Handle SPA
+app.get('*', (req, res, next) => {
+    if (req.originalUrl.startsWith(process.env.API_BASE)) {
+        return next();
+    }
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+});
 
 // Error Handler
 app.use(errorHandler);

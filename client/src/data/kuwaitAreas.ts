@@ -1,0 +1,115 @@
+export interface KuwaitArea {
+  id: string
+  nameAr: string
+  nameEn: string
+  governorate: string
+  governorateAr: string
+  governorateEn: string
+}
+
+export const kuwaitAreas: KuwaitArea[] = [
+  // Kuwait City Governorate - محافظة العاصمة
+  { id: 'kuwait-city', nameAr: 'مدينة الكويت', nameEn: 'Kuwait City', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'sharq', nameAr: 'شرق', nameEn: 'Sharq', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'dasman', nameAr: 'دسمان', nameEn: 'Dasman', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'mirqab', nameAr: 'المرقاب', nameEn: 'Mirqab', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'salhiya', nameAr: 'الصالحية', nameEn: 'Salhiya', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'bneid-al-gar', nameAr: 'بنيد القار', nameEn: 'Bneid Al-Gar', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'qibla', nameAr: 'القبلة', nameEn: 'Qibla', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'mansouriya', nameAr: 'المنصورية', nameEn: 'Mansouriya', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'kaifan', nameAr: 'كيفان', nameEn: 'Kaifan', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'shamiya', nameAr: 'الشامية', nameEn: 'Shamiya', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'shuwaikh', nameAr: 'الشويخ', nameEn: 'Shuwaikh', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'khaldiya', nameAr: 'الخالدية', nameEn: 'Khaldiya', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'qadsiya', nameAr: 'القادسية', nameEn: 'Qadsiya', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'nuzha', nameAr: 'النزهة', nameEn: 'Nuzha', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'faiha', nameAr: 'الفيحاء', nameEn: 'Faiha', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'rawda', nameAr: 'الروضة', nameEn: 'Rawda', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'adailiya', nameAr: 'العديلية', nameEn: 'Adailiya', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'surra', nameAr: 'السرة', nameEn: 'Surra', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'yarmouk', nameAr: 'اليرموك', nameEn: 'Yarmouk', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'granata', nameAr: 'غرناطة', nameEn: 'Granata', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+  { id: 'doha', nameAr: 'الدوحة', nameEn: 'Doha', governorate: 'capital', governorateAr: 'العاصمة', governorateEn: 'Capital' },
+
+  // Hawalli Governorate - محافظة حولي
+  { id: 'hawalli', nameAr: 'حولي', nameEn: 'Hawalli', governorate: 'hawalli', governorateAr: 'حولي', governorateEn: 'Hawalli' },
+  { id: 'salmiya', nameAr: 'السالمية', nameEn: 'Salmiya', governorate: 'hawalli', governorateAr: 'حولي', governorateEn: 'Hawalli' },
+  { id: 'jabriya', nameAr: 'الجابرية', nameEn: 'Jabriya', governorate: 'hawalli', governorateAr: 'حولي', governorateEn: 'Hawalli' },
+  { id: 'bayan', nameAr: 'بيان', nameEn: 'Bayan', governorate: 'hawalli', governorateAr: 'حولي', governorateEn: 'Hawalli' },
+  { id: 'mishref', nameAr: 'مشرف', nameEn: 'Mishref', governorate: 'hawalli', governorateAr: 'حولي', governorateEn: 'Hawalli' },
+  { id: 'rumaithiya', nameAr: 'الرميثية', nameEn: 'Rumaithiya', governorate: 'hawalli', governorateAr: 'حولي', governorateEn: 'Hawalli' },
+  { id: 'salwa', nameAr: 'سلوى', nameEn: 'Salwa', governorate: 'hawalli', governorateAr: 'حولي', governorateEn: 'Hawalli' },
+  { id: 'maidan-hawalli', nameAr: 'ميدان حولي', nameEn: 'Maidan Hawalli', governorate: 'hawalli', governorateAr: 'حولي', governorateEn: 'Hawalli' },
+  { id: 'hittin', nameAr: 'حطين', nameEn: 'Hittin', governorate: 'hawalli', governorateAr: 'حولي', governorateEn: 'Hawalli' },
+  { id: 'al-bidea', nameAr: 'البدع', nameEn: 'Al-Bidea', governorate: 'hawalli', governorateAr: 'حولي', governorateEn: 'Hawalli' },
+  { id: 'al-zahra', nameAr: 'الزهراء', nameEn: 'Al-Zahra', governorate: 'hawalli', governorateAr: 'حولي', governorateEn: 'Hawalli' },
+
+  // Farwaniya Governorate - محافظة الفروانية
+  { id: 'farwaniya', nameAr: 'الفروانية', nameEn: 'Farwaniya', governorate: 'farwaniya', governorateAr: 'الفروانية', governorateEn: 'Farwaniya' },
+  { id: 'khaitan', nameAr: 'خيطان', nameEn: 'Khaitan', governorate: 'farwaniya', governorateAr: 'الفروانية', governorateEn: 'Farwaniya' },
+  { id: 'omariya', nameAr: 'العمرية', nameEn: 'Omariya', governorate: 'farwaniya', governorateAr: 'الفروانية', governorateEn: 'Farwaniya' },
+  { id: 'rabiya', nameAr: 'الرحاب', nameEn: 'Rabiya', governorate: 'farwaniya', governorateAr: 'الفروانية', governorateEn: 'Farwaniya' },
+  { id: 'riggae', nameAr: 'الرقعي', nameEn: 'Riggae', governorate: 'farwaniya', governorateAr: 'الفروانية', governorateEn: 'Farwaniya' },
+  { id: 'dajeej', nameAr: 'الضجيج', nameEn: 'Dajeej', governorate: 'farwaniya', governorateAr: 'الفروانية', governorateEn: 'Farwaniya' },
+  { id: 'andalus', nameAr: 'الأندلس', nameEn: 'Andalus', governorate: 'farwaniya', governorateAr: 'الفروانية', governorateEn: 'Farwaniya' },
+  { id: 'ardiya', nameAr: 'العارضية', nameEn: 'Ardiya', governorate: 'farwaniya', governorateAr: 'الفروانية', governorateEn: 'Farwaniya' },
+  { id: 'sabahiya', nameAr: 'صباحية', nameEn: 'Sabahiya', governorate: 'farwaniya', governorateAr: 'الفروانية', governorateEn: 'Farwaniya' },
+  { id: 'rehab', nameAr: 'الرحاب', nameEn: 'Rehab', governorate: 'farwaniya', governorateAr: 'الفروانية', governorateEn: 'Farwaniya' },
+  { id: 'ishbiliya', nameAr: 'إشبيلية', nameEn: 'Ishbiliya', governorate: 'farwaniya', governorateAr: 'الفروانية', governorateEn: 'Farwaniya' },
+
+  // Ahmadi Governorate - محافظة الأحمدي
+  { id: 'ahmadi', nameAr: 'الأحمدي', nameEn: 'Ahmadi', governorate: 'ahmadi', governorateAr: 'الأحمدي', governorateEn: 'Ahmadi' },
+  { id: 'fahaheel', nameAr: 'الفحيحيل', nameEn: 'Fahaheel', governorate: 'ahmadi', governorateAr: 'الأحمدي', governorateEn: 'Ahmadi' },
+  { id: 'mangaf', nameAr: 'المنقف', nameEn: 'Mangaf', governorate: 'ahmadi', governorateAr: 'الأحمدي', governorateEn: 'Ahmadi' },
+  { id: 'abu-halifa', nameAr: 'أبو حليفة', nameEn: 'Abu Halifa', governorate: 'ahmadi', governorateAr: 'الأحمدي', governorateEn: 'Ahmadi' },
+  { id: 'mahboula', nameAr: 'المهبولة', nameEn: 'Mahboula', governorate: 'ahmadi', governorateAr: 'الأحمدي', governorateEn: 'Ahmadi' },
+  { id: 'riqqa', nameAr: 'الرقة', nameEn: 'Riqqa', governorate: 'ahmadi', governorateAr: 'الأحمدي', governorateEn: 'Ahmadi' },
+  { id: 'egaila', nameAr: 'العقيلة', nameEn: 'Egaila', governorate: 'ahmadi', governorateAr: 'الأحمدي', governorateEn: 'Ahmadi' },
+  { id: 'hadiya', nameAr: 'هدية', nameEn: 'Hadiya', governorate: 'ahmadi', governorateAr: 'الأحمدي', governorateEn: 'Ahmadi' },
+  { id: 'jaber-al-ali', nameAr: 'جابر العلي', nameEn: 'Jaber Al-Ali', governorate: 'ahmadi', governorateAr: 'الأحمدي', governorateEn: 'Ahmadi' },
+  { id: 'wafra', nameAr: 'الوفرة', nameEn: 'Wafra', governorate: 'ahmadi', governorateAr: 'الأحمدي', governorateEn: 'Ahmadi' },
+  { id: 'sabah-al-ahmad', nameAr: 'صباح الأحمد', nameEn: 'Sabah Al-Ahmad', governorate: 'ahmadi', governorateAr: 'الأحمدي', governorateEn: 'Ahmadi' },
+
+  // Jahra Governorate - محافظة الجهراء
+  { id: 'jahra', nameAr: 'الجهراء', nameEn: 'Jahra', governorate: 'jahra', governorateAr: 'الجهراء', governorateEn: 'Jahra' },
+  { id: 'saad-al-abdullah', nameAr: 'سعد العبد الله', nameEn: 'Saad Al-Abdullah', governorate: 'jahra', governorateAr: 'الجهراء', governorateEn: 'Jahra' },
+  { id: 'naim', nameAr: 'النعيم', nameEn: 'Naim', governorate: 'jahra', governorateAr: 'الجهراء', governorateEn: 'Jahra' },
+  { id: 'oyoun', nameAr: 'العيون', nameEn: 'Oyoun', governorate: 'jahra', governorateAr: 'الجهراء', governorateEn: 'Jahra' },
+  { id: 'sulaibiya', nameAr: 'الصليبية', nameEn: 'Sulaibiya', governorate: 'jahra', governorateAr: 'الجهراء', governorateEn: 'Jahra' },
+  { id: 'kabd', nameAr: 'كبد', nameEn: 'Kabd', governorate: 'jahra', governorateAr: 'الجهراء', governorateEn: 'Jahra' },
+  { id: 'taima', nameAr: 'تيماء', nameEn: 'Taima', governorate: 'jahra', governorateAr: 'الجهراء', governorateEn: 'Jahra' },
+  { id: 'amghara', nameAr: 'أمغرة', nameEn: 'Amghara', governorate: 'jahra', governorateAr: 'الجهراء', governorateEn: 'Jahra' },
+  { id: 'al-waha', nameAr: 'الواحة', nameEn: 'Al-Waha', governorate: 'jahra', governorateAr: 'الجهراء', governorateEn: 'Jahra' },
+
+  // Mubarak Al-Kabeer Governorate - محافظة مبارك الكبير
+  { id: 'mubarak-al-kabeer', nameAr: 'مبارك الكبير', nameEn: 'Mubarak Al-Kabeer', governorate: 'mubarak', governorateAr: 'مبارك الكبير', governorateEn: 'Mubarak Al-Kabeer' },
+  { id: 'qurain', nameAr: 'القرين', nameEn: 'Qurain', governorate: 'mubarak', governorateAr: 'مبارك الكبير', governorateEn: 'Mubarak Al-Kabeer' },
+  { id: 'qusor', nameAr: 'القصور', nameEn: 'Qusor', governorate: 'mubarak', governorateAr: 'مبارك الكبير', governorateEn: 'Mubarak Al-Kabeer' },
+  { id: 'sabah-al-salem', nameAr: 'صباح السالم', nameEn: 'Sabah Al-Salem', governorate: 'mubarak', governorateAr: 'مبارك الكبير', governorateEn: 'Mubarak Al-Kabeer' },
+  { id: 'adan', nameAr: 'العدان', nameEn: 'Adan', governorate: 'mubarak', governorateAr: 'مبارك الكبير', governorateEn: 'Mubarak Al-Kabeer' },
+  { id: 'masayel', nameAr: 'المسايل', nameEn: 'Masayel', governorate: 'mubarak', governorateAr: 'مبارك الكبير', governorateEn: 'Mubarak Al-Kabeer' },
+  { id: 'fnaitees', nameAr: 'الفنيطيس', nameEn: 'Fnaitees', governorate: 'mubarak', governorateAr: 'مبارك الكبير', governorateEn: 'Mubarak Al-Kabeer' },
+  { id: 'abu-fatira', nameAr: 'أبو فطيرة', nameEn: 'Abu Fatira', governorate: 'mubarak', governorateAr: 'مبارك الكبير', governorateEn: 'Mubarak Al-Kabeer' }
+]
+
+export const getAreasByGovernorate = (governorate: string) => {
+  return kuwaitAreas.filter(area => area.governorate === governorate)
+}
+
+export const getAreaById = (id: string) => {
+  return kuwaitAreas.find(area => area.id === id)
+}
+
+export const getAreaName = (id: string, locale: 'ar' | 'en') => {
+  const area = getAreaById(id)
+  return area ? (locale === 'ar' ? area.nameAr : area.nameEn) : ''
+}
+
+export const governorates = [
+  { id: 'capital', nameAr: 'العاصمة', nameEn: 'Capital' },
+  { id: 'hawalli', nameAr: 'حولي', nameEn: 'Hawalli' },
+  { id: 'farwaniya', nameAr: 'الفروانية', nameEn: 'Farwaniya' },
+  { id: 'ahmadi', nameAr: 'الأحمدي', nameEn: 'Ahmadi' },
+  { id: 'jahra', nameAr: 'الجهراء', nameEn: 'Jahra' },
+  { id: 'mubarak', nameAr: 'مبارك الكبير', nameEn: 'Mubarak Al-Kabeer' }
+]

@@ -1,14 +1,43 @@
-FROM node:18-alpine
+# Stage 1: Build the Vue client
+FROM node:20-alpine as client-build
 
-WORKDIR /usr/src/app
+WORKDIR /app/client
 
-COPY package.json yarn.lock ./
+# Copy client package files
+COPY client/package.json client/yarn.lock ./
 
-RUN corepack enable
-RUN yarn install --frozen-lockfile
+# Install client dependencies
+RUN yarn install
 
-COPY . .
+# Copy client source code
+COPY client/ .
 
-EXPOSE 5000
+# Build the client
+RUN yarn build-only
 
-CMD ["yarn", "dev"]
+# Stage 2: Setup the Node.js server
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy server package files
+COPY server/package.json server/yarn.lock ./
+
+# Install server dependencies
+RUN yarn install --production
+
+# Copy server source code
+COPY server/src ./src
+COPY server/.env.example ./.env
+
+# Create public directory
+RUN mkdir -p public
+
+# Copy built client assets from Stage 1 to server's public directory
+COPY --from=client-build /app/client/dist ./public
+
+# Expose the port the server runs on
+EXPOSE 4000
+
+# Start the server
+CMD ["node", "src/server.js"]
