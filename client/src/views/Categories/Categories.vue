@@ -39,13 +39,13 @@
     </AdminLayout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
-import DataTable from "@/components/DataTable.vue";
+import DataTable, { type Column } from "@/components/DataTable.vue";
 import LazyImage from "@/components/LazyImage.vue";
 import { CategoriesAPI } from "@/api/CategoriesAPI";
 
@@ -53,11 +53,11 @@ const router = useRouter();
 const currentPageTitle = ref("Categories");
 const categories = ref([]);
 
-const columns = [
+const columns: Column[] = [
     { key: 'Image', title: 'Image', type: 'text', widthClass: 'w-20' },
-    { key: 'name', title: 'Name' },
-    { key: 'slug', title: 'Slug' },
-    { key: 'createdAt', title: 'Created At' }
+    { key: 'name', title: 'Name', type: 'text' },
+    { key: 'slug', title: 'Slug', type: 'text' },
+    { key: 'createdAt', title: 'Created At', type: 'text' }
 ];
 
 const fetchCategories = async () => {
@@ -75,18 +75,19 @@ const handleAddCategory = () => {
     router.push('/categories/edit/new');
 };
 
-const handleView = (item) => {
+const handleView = (item: any) => {
     router.push(`/categories/view/${item._id}`);
 };
 
-const handleEdit = (item) => {
+const handleEdit = (item: any) => {
     router.push(`/categories/edit/${item._id}`);
 };
 
-const handleDelete = async (item) => {
+const handleDelete = async (item: any) => {
     if (confirm('Are you sure you want to delete this category?')) {
         try {
-            await CategoriesAPI.deleteCategory(item._id, localStorage.getItem('token'));
+            const token = localStorage.getItem('token') || '';
+            await CategoriesAPI.deleteCategory(item._id, token);
             await fetchCategories();
         } catch (error) {
             console.error('Error deleting category:', error);

@@ -24,6 +24,7 @@
                     :columns="columns"
                     :data="venues"
                     :showActions="true"
+                    :onView="handleView"
                     :onEdit="editVenue"
                     :onDelete="deleteVenue"
                 >
@@ -74,6 +75,10 @@ const fetchVenues = async () => {
 
 const goToAddVenue = () => {
     router.push('/venues/add');
+};
+
+const handleView = (item: any) => {
+    router.push(`/venues/view/${item.id}`);
 };
 
 const editVenue = (item: any) => {

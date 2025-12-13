@@ -25,9 +25,9 @@ const seed = async () => {
         const hashedPassword = await bcrypt.hash('password123', salt);
 
         const admin = await User.create({
-            name: 'Admin User',
-            email: 'admin@example.com',
-            password: hashedPassword,
+            name: 'Super Admin',
+            email: 'admin@padel.com',
+            password: 'password123', // Will be hashed by hook
             role: 'admin',
             isPublic: true
         });
@@ -87,6 +87,11 @@ const seed = async () => {
         console.log('Products created.');
 
         console.log('Seeding complete!');
+        console.log('-----------------------------------');
+        console.log('Admin Credentials:');
+        console.log('Email: admin@padel.com');
+        console.log('Password: password123');
+        console.log('-----------------------------------');
         process.exit();
     } catch (error) {
         console.error('Seeding failed:', error);

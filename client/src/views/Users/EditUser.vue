@@ -271,7 +271,7 @@ const loadUserData = async () => {
 
     try {
         const response = await UsersAPI.getUser(userId.value);
-        userData.value = response.data.data.user;
+        userData.value = response.data.data;
         console.log("Loaded user data:", userData.value);
 
         // Populate form data

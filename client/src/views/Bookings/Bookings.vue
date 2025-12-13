@@ -39,8 +39,8 @@
                     :columns="columns"
                     :data="bookings"
                     :showActions="true"
-                    :onView="viewBooking"
-                    :onEdit="editBooking"
+                    :onView="handleView"
+                    :onEdit="handleEdit"
                     :onDelete="deleteBooking"
                 >
                     <template #column-status="{ item }">
@@ -128,15 +128,19 @@ const fetchBookings = async () => {
         };
         
         const response = await BookingsAPI.getAllBookings(params);
+        const result = response.data;
         
-        if (response.data.data) {
-            bookings.value = response.data.data.bookings || response.data.data; // Adjust based on actual API response structure
+        if (result.success) {
+            bookings.value = result.data;
             
-            if (response.data.pagination) {
-                pagination.value = response.data.pagination;
-            } else if (response.data.data.pagination) {
-                pagination.value = response.data.data.pagination;
-            }
+            pagination.value = {
+                currentPage: result.currentPage,
+                totalPages: result.totalPages,
+                totalDocuments: result.count,
+                limit: params.limit,
+                hasNextPage: result.currentPage < result.totalPages,
+                hasPrevPage: result.currentPage > 1
+            };
         }
     } catch (error) {
         console.error('Error fetching bookings:', error);
@@ -165,12 +169,12 @@ const goToAddBooking = () => {
     router.push('/bookings/add');
 };
 
-const viewBooking = (item: any) => {
-    router.push(`/bookings/view/${item.id}`);
+const handleView = (booking: any) => {
+    router.push(`/bookings/view/${booking.id}`);
 };
 
-const editBooking = (item: any) => {
-    router.push(`/bookings/edit/${item.id}`);
+const handleEdit = (booking: any) => {
+    router.push(`/bookings/edit/${booking.id}`);
 };
 
 const deleteBooking = async (item: any) => {

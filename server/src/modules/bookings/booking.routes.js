@@ -4,7 +4,8 @@ const { createBooking,
     getMyBookings,
     getBooking,
     getBookingLogs,
-    getDailySummary
+    getDailySummary,
+    updateBooking
 } = require('./booking.controller');
 const { importBookings } = require('./import.controller');
 const { protect, authorize } = require('../../middleware/auth');
@@ -244,7 +245,38 @@ router.get('/my-bookings', getMyBookings);
  *       404:
  *         description: Booking not found
  */
-router.get('/:id', getBooking);
+router.route('/:id')
+    .get(getBooking)
+    /**
+     * @swagger
+     * /bookings/{id}:
+     *   put:
+     *     summary: Update booking
+     *     tags: [Bookings]
+     *     security:
+     *       - bearerAuth: []
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: string
+     *         description: Booking ID
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *     responses:
+     *       200:
+     *         description: Booking updated
+     *       403:
+     *         description: Not authorized
+     *       404:
+     *         description: Booking not found
+     */
+    .put(updateBooking);
 
 /**
  * @swagger

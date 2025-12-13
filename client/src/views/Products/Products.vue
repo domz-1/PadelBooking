@@ -163,22 +163,21 @@ const loadProducts = async () => {
     const response = await ProductsAPI.getAllProducts(params);
     console.log('Full API Response:', response);
     
-    // Check the actual response structure
-    if (response.data?.data?.products && Array.isArray(response.data.data.products)) {
-      products.value = response.data.data.products;
+    const result = response.data;
+
+    if (result.success) {
+      products.value = result.data;
       console.log('Products loaded:', products.value.length);
       
       // Update pagination info
-      if (response.data.data.pagination) {
-        pagination.value = {
-          ...response.data.data.pagination
-        };
-      }
-    } else if (response.data?.products && Array.isArray(response.data.products)) {
-      // Alternative structure check
-      products.value = response.data.products;
-      console.log('Products loaded (alt structure):', products.value.length);
-      pagination.value.totalPages = Math.ceil(response.data.products.length / pagination.value.limit);
+      pagination.value = {
+          currentPage: result.currentPage,
+          totalPages: result.totalPages,
+          totalDocuments: result.count,
+          limit: params.limit,
+          hasNextPage: result.currentPage < result.totalPages,
+          hasPrevPage: result.currentPage > 1
+      };
     } else {
       console.error('No products found in response:', response.data);
       products.value = [];

@@ -168,6 +168,9 @@ router.get('/partners', protect, require('./user.controller').findPartners);
  *       404:
  *         description: User not found
  */
-router.get('/:id', protect, require('./user.controller').getProfile);
+router.route('/:id')
+    .get(protect, require('./user.controller').getProfile)
+    .put(protect, updateUser)
+    .delete(protect, deleteUser);
 
 module.exports = router;

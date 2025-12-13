@@ -4,12 +4,27 @@ const OrderItem = require('./orderItem.model');
 
 exports.getProducts = async (req, res, next) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+
         const { type } = req.query;
         const where = {};
         if (type) where.type = type;
 
-        const products = await Product.findAll({ where });
-        res.status(200).json({ success: true, data: products });
+        const { count, rows } = await Product.findAndCountAll({
+            where,
+            limit,
+            offset
+        });
+
+        res.status(200).json({
+            success: true,
+            count,
+            totalPages: Math.ceil(count / limit),
+            currentPage: page,
+            data: rows
+        });
     } catch (error) {
         next(error);
     }

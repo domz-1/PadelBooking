@@ -24,6 +24,7 @@
                     :columns="columns"
                     :data="sponsors"
                     :showActions="true"
+                    :onView="handleView"
                     :onEdit="editSponsor"
                     :onDelete="deleteSponsor"
                 >
@@ -87,6 +88,10 @@ const fetchSponsors = async () => {
 
 const goToAddSponsor = () => {
     router.push('/sponsors/add');
+};
+
+const handleView = (item: any) => {
+    router.push(`/sponsors/view/${item.id}`);
 };
 
 const editSponsor = (item: any) => {

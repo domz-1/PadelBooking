@@ -5,11 +5,13 @@
             <ComponentCard :title="isEditing ? 'Edit Booking Details' : 'New Booking'">
                 <Form
                     v-if="!loading"
+                    ref="formRef"
                     :fields="formFields"
                     :initial-data="initialData"
                     :loading="submitting"
                     :submit-button-text="isEditing ? 'Update Booking' : 'Create Booking'"
                     @submit="handleSubmit"
+                    @change="handleFormChange"
                 />
                 <div v-else class="flex justify-center py-12">
                     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
@@ -40,7 +42,16 @@ const loading = ref(false);
 const submitting = ref(false);
 const initialData = ref({});
 const venues = ref([]);
-const users = ref([]);
+const users = ref<any[]>([]);
+
+const fetchUsers = async () => {
+    try {
+        const response = await UsersAPI.getAllUsers({ limit: 1000 }); // Fetch all users for dropdown
+        users.value = response.data.data.users || [];
+    } catch (error) {
+        console.error('Error fetching users:', error);
+    }
+};
 
 const formFields = computed<FormFieldConfig[]>(() => [
     {
@@ -52,22 +63,40 @@ const formFields = computed<FormFieldConfig[]>(() => [
         placeholder: 'Select Venue'
     },
     {
+        key: 'userId',
+        label: 'User',
+        type: 'select',
+        required: true,
+        options: users.value.map((u: any) => ({ label: u.name, value: u.id })),
+        placeholder: 'Select User',
+        fieldClass: 'col-span-2'
+    },
+    {
         key: 'date',
         label: 'Date',
         type: 'date',
-        required: true
+        required: true,
+        min: new Date().toISOString().split('T')[0]
     },
     {
         key: 'startTime',
         label: 'Start Time',
-        type: 'time',
-        required: true
+        type: 'select',
+        required: true,
+        options: Array.from({ length: 24 }, (_, i) => {
+            const hour = i.toString().padStart(2, '0');
+            return { label: `${hour}:00`, value: `${hour}:00` };
+        })
     },
     {
         key: 'endTime',
         label: 'End Time',
-        type: 'time',
-        required: true
+        type: 'select',
+        required: true,
+        options: Array.from({ length: 24 }, (_, i) => {
+            const hour = i.toString().padStart(2, '0');
+            return { label: `${hour}:00`, value: `${hour}:00` };
+        })
     },
     {
         key: 'totalPrice',
@@ -90,6 +119,31 @@ const formFields = computed<FormFieldConfig[]>(() => [
         required: true
     },
     {
+        key: 'holder.name',
+        label: 'Holder Name',
+        type: 'text',
+        placeholder: 'Enter holder name',
+        required: false,
+        fieldClass: 'col-span-1'
+    },
+    {
+        key: 'holder.phone',
+        label: 'Holder Phone',
+        type: 'tel',
+        placeholder: 'Enter holder phone',
+        required: false,
+        fieldClass: 'col-span-1'
+    },
+    {
+        key: 'notes',
+        label: 'Notes',
+        type: 'textarea',
+        placeholder: 'Enter any notes...',
+        required: false,
+        fieldClass: 'col-span-2',
+        rows: 3
+    },
+    {
         key: 'type',
         label: 'Type',
         type: 'select',
@@ -100,6 +154,32 @@ const formFields = computed<FormFieldConfig[]>(() => [
         required: true
     }
 ]);
+
+// Watch for user selection to auto-fill holder info
+// We need to access the form data, but it's inside the Form component.
+// However, the Form component emits 'change' event which we can listen to, 
+// OR we can pass initialData which is reactive? No, initialData is just initial.
+// The Form component exposes formData via defineExpose, but we can't easily access it from here without a ref.
+// Better approach: The Form component emits 'change'. We can listen to it.
+// But the current usage in template is: <Form ... /> without @change handler.
+// Let's add a ref to the Form component.
+
+const formRef = ref<any>(null);
+
+const handleFormChange = (key: string, value: any) => {
+    if (key === 'userId') {
+        const selectedUser = users.value.find((u: any) => u.id === value);
+        if (selectedUser) {
+            // We need to update the form data. 
+            // The Form component updates its internal state, but we want to trigger updates to other fields.
+            // The Form component exposes updateField method.
+            if (formRef.value) {
+                formRef.value.updateField('holder.name', selectedUser.name);
+                formRef.value.updateField('holder.phone', selectedUser.phone || '');
+            }
+        }
+    }
+};
 
 const fetchVenues = async () => {
     try {
@@ -143,6 +223,7 @@ const handleSubmit = async (formData: any) => {
 
 onMounted(async () => {
     await fetchVenues();
+    await fetchUsers();
     if (isEditing.value) {
         await fetchBooking(route.params.id as string);
     }

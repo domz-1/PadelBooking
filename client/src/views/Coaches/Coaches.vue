@@ -65,14 +65,14 @@ import { CoachesAPI } from "@/api/CoachesAPI";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
-import DataTable from "@/components/DataTable.vue";
+import DataTable, { type Column } from "@/components/DataTable.vue";
 
 const router = useRouter();
 const currentPageTitle = ref("Coaches");
 const coaches = ref([]);
 const loading = ref(false);
 
-const columns = [
+const columns: Column[] = [
     { key: 'id', title: 'ID', type: 'text' },
     { key: 'user', title: 'Coach', type: 'custom' },
     { key: 'bio', title: 'Bio', type: 'text' },

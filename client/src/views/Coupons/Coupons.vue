@@ -77,7 +77,7 @@
     </AdminLayout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/AuthStore";
@@ -85,7 +85,7 @@ import { CouponsAPI } from "@/api/CouponsAPI";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
-import DataTable from "@/components/DataTable.vue";
+import DataTable, { type Column } from "@/components/DataTable.vue";
 import Pagination from "@/components/common/Pagination.vue";
 
 const router = useRouter();
@@ -103,7 +103,7 @@ const pagination = ref({
 });
 
 // Table columns configuration
-const columns = [
+const columns: Column[] = [
     { key: 'code', title: 'Code', type: 'text' },
     { key: 'discount', title: 'Discount', type: 'text' },
     { key: 'expires', title: 'Expires', type: 'text' },
@@ -120,11 +120,12 @@ const fetchCoupons = async () => {
             limit: pagination.value.limit
         };
         
-        const response = await CouponsAPI.getAllCoupons(authStore.token, params);
+        const token = authStore.token || '';
+        const response = await CouponsAPI.getAllCoupons(token, params);
         
         if (response.data?.data) {
             const couponsList = response.data.data.coupons || [];
-            coupons.value = couponsList.map(coupon => ({
+            coupons.value = couponsList.map((coupon: any) => ({
                 ...coupon,
                 createdAt: formatDate(coupon.createdAt),
                 expires: coupon.expires
@@ -146,17 +147,17 @@ const fetchCoupons = async () => {
 };
 
 // Handle page change
-const handlePageChange = (page) => {
+const handlePageChange = (page: number) => {
     pagination.value.currentPage = page;
     fetchCoupons();
 };
 
 // Utility functions
-const formatDate = (dateString) => {
+const formatDate = (dateString: string | Date) => {
     return new Date(dateString).toLocaleDateString();
 };
 
-const getCouponStatus = (coupon) => {
+const getCouponStatus = (coupon: any) => {
     const now = new Date();
     const expires = new Date(coupon.expires);
     
@@ -166,17 +167,17 @@ const getCouponStatus = (coupon) => {
     return 'Active';
 };
 
-const getStatusBadgeClass = (coupon) => {
+const getStatusBadgeClass = (coupon: any) => {
     const status = getCouponStatus(coupon);
     return status === 'Active' 
         ? 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-500 rounded-full px-2 py-0.5 text-theme-xs font-medium'
         : 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-500 rounded-full px-2 py-0.5 text-theme-xs font-medium';
 };
 
-const getExpiryClass = (expiryDate) => {
+const getExpiryClass = (expiryDate: string | Date) => {
     const now = new Date();
     const expires = new Date(expiryDate);
-    const daysUntilExpiry = Math.ceil((expires - now) / (1000 * 60 * 60 * 24));
+    const daysUntilExpiry = Math.ceil((expires.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     
     if (daysUntilExpiry < 0) {
         return 'text-red-600 dark:text-red-400 font-medium';
@@ -191,18 +192,19 @@ const goToAddCoupon = () => {
     router.push('/coupons/edit/new');
 };
 
-const viewCoupon = (coupon) => {
+const viewCoupon = (coupon: any) => {
     router.push(`/coupons/view/${coupon._id}`);
 };
 
-const editCoupon = (coupon) => {
+const editCoupon = (coupon: any) => {
     router.push(`/coupons/edit/${coupon._id}`);
 };
 
-const deleteCoupon = async (coupon) => {
+const deleteCoupon = async (coupon: any) => {
     if (confirm(`Are you sure you want to delete coupon ${coupon.code}?`)) {
         try {
-            await CouponsAPI.deleteCoupon(coupon._id, authStore.token);
+            const token = authStore.token || '';
+            await CouponsAPI.deleteCoupon(coupon._id, token);
             await fetchCoupons(); // Refresh the list
         } catch (error) {
             console.error('Error deleting coupon:', error);

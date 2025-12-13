@@ -21,8 +21,20 @@ const Booking = sequelize.define('Booking', {
         type: DataTypes.TIME,
         allowNull: false
     },
+    matchResult: {
+        type: DataTypes.JSONB, // { winner: [], loser: [], score: '' }
+        allowNull: true
+    },
+    holder: {
+        type: DataTypes.JSONB,
+        allowNull: true
+    },
+    notes: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
     status: {
-        type: DataTypes.ENUM('pending', 'confirmed', 'cancelled', 'pending-coach', 'no-show'),
+        type: DataTypes.ENUM('pending', 'confirmed', 'cancelled', 'completed', 'no-show'),
         defaultValue: 'pending'
     },
     totalPrice: {

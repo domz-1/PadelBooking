@@ -173,7 +173,7 @@ import DataTable, { type Column } from "@/components/DataTable.vue";
 import Pagination from '@/components/common/Pagination.vue';
 
 interface User {
-    _id: string;
+    id: number;
     name: string;
     email: string;
     phone?: string;
@@ -285,19 +285,23 @@ const fetchUsers = async () => {
         }
         
         const response = await UsersAPI.getAllUsers(params);
+        const result = response.data;
         
-        if (response.data.data) {
-            users.value = response.data.data.users.map((user: any) => ({
+        if (result.success) {
+            users.value = result.data.map((user: any) => ({
                 ...user,
                 createdAt: formatDate(user.createdAt)
             }));
             
             // Update pagination info
-            if (response.data.data.pagination) {
-                pagination.value = {
-                    ...response.data.data.pagination
-                };
-            }
+            pagination.value = {
+                currentPage: result.currentPage,
+                totalPages: result.totalPages,
+                totalDocuments: result.count,
+                limit: params.limit,
+                hasNextPage: result.currentPage < result.totalPages,
+                hasPrevPage: result.currentPage > 1
+            };
         }
     } catch (error) {
         console.error('Error fetching users:', error);
@@ -362,18 +366,18 @@ const goToAddUser = () => {
 };
 
 const viewUser = (user: any) => {
-    router.push(`/users/view/${user._id}`);
+    router.push(`/users/view/${user.id}`);
 };
 
 const editUser = (user: any) => {
-    router.push(`/users/edit/${user._id}`);
+    router.push(`/users/edit/${user.id}`);
 };
 
 const deleteUser = async (user: any) => {
     const userName = user.isGuest ? 'this guest user' : user.name;
     if (confirm(`Are you sure you want to delete ${userName}?`)) {
         try {
-            await UsersAPI.deleteUser(user._id);
+            await UsersAPI.deleteUser(user.id);
             await fetchUsers(); // Refresh the list
         } catch (error) {
             console.error('Error deleting user:', error);

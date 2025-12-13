@@ -7,4 +7,6 @@ export const StoriesAPI = {
             'Content-Type': 'multipart/form-data',
         },
     }),
+    getStory: (id: string) => api.get(`/stories/${id}`),
+    deleteStory: (id: string) => api.delete(`/stories/${id}`),
 };

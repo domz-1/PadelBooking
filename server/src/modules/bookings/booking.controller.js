@@ -175,3 +175,23 @@ exports.getDailySummary = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.updateBooking = async (req, res, next) => {
+    try {
+        let booking = await bookingService.getBookingById(req.params.id);
+
+        if (!booking) {
+            return res.status(404).json({ success: false, message: 'Booking not found' });
+        }
+
+        // Make sure user owns booking or is admin
+        if (booking.userId !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Not authorized' });
+        }
+
+        booking = await bookingService.updateBooking(req.params.id, req.body, req.user);
+        res.status(200).json({ success: true, data: booking });
+    } catch (error) {
+        next(error);
+    }
+};

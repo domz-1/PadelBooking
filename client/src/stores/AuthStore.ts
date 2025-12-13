@@ -4,7 +4,7 @@ import { AuthAPI } from '@/api/AuthAPI'
 import type { AxiosResponse } from 'axios'
 
 interface User {
-  id: string
+  id: string | number
   name: string
   email: string
   phone: string
@@ -12,26 +12,22 @@ interface User {
 }
 
 interface AuthResponse {
-  status: string
-  message: string
-  data: {
-    token: string
-    user: {
-      _id: string
-      name: string
-      email: string
-      phone: string
-      role: string
-      isActive: boolean
-      verified: boolean
-      blocked: boolean
-      verificationMethod: string
-      wishlist: any[]
-      addresses: any[]
-      createdAt: string
-      updatedAt: string
-      __v: number
-    }
+  success: boolean
+  token: string
+  user: {
+    id: number
+    name: string
+    email: string
+    role: string
+    phone?: string
+    isActive?: boolean
+    verified?: boolean
+    blocked?: boolean
+    verificationMethod?: string
+    wishlist?: any[]
+    addresses?: any[]
+    createdAt?: string
+    updatedAt?: string
   }
 }
 
@@ -39,12 +35,17 @@ export const useAuthStore = defineStore('auth', () => {
   // State
   const user = ref<User | null>(null)
   const token = ref<string | null>(localStorage.getItem('loxan-admin-token'))
-  
+
   // Load user data from localStorage on initialization
   const storedUserData = localStorage.getItem('loxan-admin-user')
   if (storedUserData) {
     try {
-      user.value = JSON.parse(storedUserData) as User
+      const parsedData = JSON.parse(storedUserData)
+      // Handle legacy data where id might be stored as _id
+      if (!parsedData.id && parsedData._id) {
+        parsedData.id = parsedData._id
+      }
+      user.value = parsedData as User
     } catch (error) {
       console.error('Error parsing stored user data:', error)
       localStorage.removeItem('loxan-admin-user')
@@ -118,23 +119,23 @@ export const useAuthStore = defineStore('auth', () => {
         password,
       })
 
-      if (response.data.status === 'success') {
-        const { token: authToken, user: userData } = response.data.data
-        
+      if (response.data.success) {
+        const { token: authToken, user: userData } = response.data
+
         // Map the user data from the response to our User interface
         const mappedUser: User = {
-          id: userData._id,
+          id: userData.id,
           name: userData.name,
           email: userData.email,
-          phone: userData.phone,
+          phone: userData.phone || '',
           role: userData.role
         }
-        
+
         setToken(authToken)
         setUser(mappedUser)
         return { success: true }
       } else {
-        throw new Error(response.data.message || 'Login failed')
+        throw new Error('Login failed')
       }
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || err.message || 'Login failed'
@@ -163,7 +164,7 @@ export const useAuthStore = defineStore('auth', () => {
   const initializeAuth = () => {
     const storedToken = localStorage.getItem('loxan-admin-token')
     const storedUserData = localStorage.getItem('loxan-admin-user')
-    
+
     if (storedToken && storedUserData) {
       try {
         const parsedUser = JSON.parse(storedUserData) as User
@@ -190,13 +191,13 @@ export const useAuthStore = defineStore('auth', () => {
     token,
     isLoading,
     error,
-    
+
     // Getters
     isAuthenticated,
     userRole,
     userName,
     userEmail,
-    
+
     // Actions
     login,
     logout,

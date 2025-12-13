@@ -24,6 +24,8 @@
                     :columns="columns"
                     :data="offers"
                     :showActions="true"
+                    :onView="handleView"
+                    :onEdit="editOffer"
                     :onDelete="deleteOffer"
                 >
                     <template #column-discountPercentage="{ item }">
@@ -57,14 +59,14 @@ import { OffersAPI } from "@/api/OffersAPI";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
-import DataTable from "@/components/DataTable.vue";
+import DataTable, { type Column } from "@/components/DataTable.vue";
 
 const router = useRouter();
 const currentPageTitle = ref("Offers");
 const offers = ref([]);
 const loading = ref(false);
 
-const columns = [
+const columns: Column[] = [
     { key: 'id', title: 'ID', type: 'text' },
     { key: 'image', title: 'Image', type: 'custom' },
     { key: 'title', title: 'Title', type: 'text' },
@@ -88,6 +90,13 @@ const goToAddOffer = () => {
     router.push('/offers/add');
 };
 
+const handleView = (item: any) => {
+    router.push(`/offers/view/${item.id}`);
+};
+
+const editOffer = (item: any) => {
+    router.push(`/offers/edit/${item.id}`);
+};
 const deleteOffer = async (item: any) => {
     if (confirm('Are you sure you want to delete this offer?')) {
         try {

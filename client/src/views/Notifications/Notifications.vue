@@ -53,14 +53,14 @@ import { NotificationsAPI } from "@/api/NotificationsAPI";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
-import DataTable from "@/components/DataTable.vue";
+import DataTable, { type Column } from "@/components/DataTable.vue";
 
 const router = useRouter();
 const currentPageTitle = ref("Notifications");
 const notifications = ref([]);
 const loading = ref(false);
 
-const columns = [
+const columns: Column[] = [
     { key: 'title', title: 'Title', type: 'text' },
     { key: 'message', title: 'Message', type: 'text' },
     { key: 'type', title: 'Type', type: 'text' },

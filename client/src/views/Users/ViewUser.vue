@@ -116,7 +116,7 @@
                             <div class="space-y-3">
                                 <div class="flex justify-between">
                                     <span class="text-gray-600 dark:text-gray-400">User ID:</span>
-                                    <span class="font-mono text-sm text-gray-800 dark:text-white">{{ user._id }}</span>
+                                    <span class="font-mono text-sm text-gray-800 dark:text-white">{{ user.id }}</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-gray-600 dark:text-gray-400">Wishlist Items:</span>
@@ -297,7 +297,7 @@ const loadUserData = async () => {
     
     try {
         const response = await UsersAPI.getUser(userId.value, authStore.token);
-        user.value = response.data.data.user;
+        user.value = response.data.data;
         pageTitle.value = `${user.value.name} - User Details`;
     } catch (err) {
         error.value = "Failed to load user data. Please try again.";

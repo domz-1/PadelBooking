@@ -43,31 +43,36 @@
     </AdminLayout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
-import DataTable from "@/components/DataTable.vue";
+import DataTable, { type Column } from "@/components/DataTable.vue";
 import { HomeContentAPI } from "@/api/HomeContentAPI";
 
 const router = useRouter();
-const currentPageTitle = "Home Content Management";
+const currentPageTitle = ref("Home Content Management");
 const homeContentList = ref([]);
 
-const columns = [
-    { key: 'isActive', label: 'Status', sortable: true },
-    { key: 'sections', label: 'Sections', sortable: false },
-    { key: 'createdBy', label: 'Created By', sortable: false },
-    { key: 'createdAt', label: 'Created At', sortable: true, type: 'date' },
-    { key: 'updatedAt', label: 'Updated At', sortable: true, type: 'date' }
+const columns: Column[] = [
+    { key: 'isActive', title: 'Status', type: 'custom' },
+    { key: 'sections', title: 'Sections', type: 'custom' },
+    { key: 'createdBy', title: 'Created By', type: 'custom' },
+    { key: 'createdAt', title: 'Created At', type: 'text' },
+    { key: 'updatedAt', title: 'Updated At', type: 'text' }
 ];
 
 const fetchHomeContent = async () => {
     try {
         const response = await HomeContentAPI.getAllHomeContent();
-        homeContentList.value = response.data.data.homeContent;
+        const content = response.data.data.homeContent || [];
+        homeContentList.value = content.map((item: any) => ({
+            ...item,
+            createdAt: new Date(item.createdAt).toLocaleDateString(),
+            updatedAt: new Date(item.updatedAt).toLocaleDateString()
+        }));
     } catch (error) {
         console.error('Error fetching home content:', error);
     }
@@ -77,15 +82,15 @@ const handleAddHomeContent = () => {
     router.push('/admin/home-content/add');
 };
 
-const handleView = (item) => {
+const handleView = (item: any) => {
     router.push(`/admin/home-content/view/${item._id}`);
 };
 
-const handleEdit = (item) => {
+const handleEdit = (item: any) => {
     router.push(`/admin/home-content/edit/${item._id}`);
 };
 
-const handleDelete = async (item) => {
+const handleDelete = async (item: any) => {
     if (confirm('Are you sure you want to delete this home content?')) {
         try {
             await HomeContentAPI.deleteHomeContent(item._id);

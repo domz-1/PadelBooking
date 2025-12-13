@@ -24,6 +24,7 @@
                     :columns="columns"
                     :data="sports"
                     :showActions="true"
+                    :onView="handleView"
                     :onEdit="editSport"
                     :onDelete="deleteSport"
                 >
@@ -74,6 +75,10 @@ const fetchSports = async () => {
 
 const goToAddSport = () => {
     router.push('/sports/add');
+};
+
+const handleView = (item: any) => {
+    router.push(`/sports/view/${item.id}`);
 };
 
 const editSport = (item: any) => {

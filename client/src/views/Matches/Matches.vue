@@ -54,14 +54,14 @@ import { MatchesAPI } from "@/api/MatchesAPI";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
-import DataTable from "@/components/DataTable.vue";
+import DataTable, { type Column } from "@/components/DataTable.vue";
 
 const router = useRouter();
 const currentPageTitle = ref("Matches");
 const matches = ref([]);
 const loading = ref(false);
 
-const columns = [
+const columns: Column[] = [
     { key: 'id', title: 'ID', type: 'text' },
     { key: 'date', title: 'Date', type: 'text' },
     { key: 'startTime', title: 'Start Time', type: 'text' },

@@ -64,7 +64,7 @@ app.use(`${process.env.API_BASE}/sponsors`, sponsorRoutes);
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Handle SPA
-app.get('*', (req, res, next) => {
+app.get(/.*/, (req, res, next) => {
     if (req.originalUrl.startsWith(process.env.API_BASE)) {
         return next();
     }

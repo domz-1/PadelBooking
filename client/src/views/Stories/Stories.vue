@@ -23,7 +23,9 @@
                     v-else
                     :columns="columns"
                     :data="stories"
-                    :showActions="false"
+                    :showActions="true"
+                    :onView="handleView"
+                    :onDelete="deleteStory"
                 >
                     <template #column-mediaUrl="{ item }">
                         <div class="w-16 h-16 overflow-hidden rounded bg-gray-200 dark:bg-gray-700">
@@ -78,6 +80,22 @@ const fetchStories = async () => {
 
 const goToAddStory = () => {
     router.push('/stories/add');
+};
+
+const handleView = (item: any) => {
+    router.push(`/stories/view/${item.id}`);
+};
+
+const deleteStory = async (item: any) => {
+    if (confirm('Are you sure you want to delete this story?')) {
+        try {
+            await StoriesAPI.deleteStory(item.id);
+            fetchStories();
+        } catch (error) {
+            console.error('Error deleting story:', error);
+            alert('Failed to delete story');
+        }
+    }
 };
 
 onMounted(() => {

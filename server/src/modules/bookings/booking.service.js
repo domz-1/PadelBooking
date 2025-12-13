@@ -59,13 +59,13 @@ class BookingService {
                 ? `Your academy booking request is received. Waiting for coach assignment.`
                 : `Your booking at venue ${bookingData.venueId} on ${bookingData.date} is confirmed.`;
 
-            await sendEmail({
+            sendEmail({
                 email: user.email,
                 subject,
                 message
-            });
+            }).catch(err => console.error('Email could not be sent', err));
         } catch (err) {
-            console.error('Email could not be sent', err);
+            console.error('Error preparing email', err);
         }
 
         return booking;
@@ -82,6 +82,7 @@ class BookingService {
             where,
             limit,
             offset,
+            order: [['createdAt', 'DESC']],
             include: [
                 { model: Venue, attributes: ['name', 'location'] },
                 { model: User, attributes: ['name', 'email'] }
@@ -121,6 +122,63 @@ class BookingService {
             ]
         });
     }
+
+    async updateBooking(id, updateData, user) {
+        const booking = await this.getBookingById(id);
+        if (!booking) {
+            throw new Error('Booking not found');
+        }
+
+        // Check availability if time or venue is changing
+        if (
+            (updateData.date && updateData.date !== booking.date) ||
+            (updateData.startTime && updateData.startTime !== booking.startTime) ||
+            (updateData.endTime && updateData.endTime !== booking.endTime) ||
+            (updateData.venueId && updateData.venueId !== booking.venueId)
+        ) {
+            const checkDate = updateData.date || booking.date;
+            const checkStartTime = updateData.startTime || booking.startTime;
+            const checkEndTime = updateData.endTime || booking.endTime;
+            const checkVenueId = updateData.venueId || booking.venueId;
+
+            const existingBooking = await Booking.findOne({
+                where: {
+                    venueId: checkVenueId,
+                    date: checkDate,
+                    id: { [Op.ne]: id }, // Exclude current booking
+                    [Op.or]: [
+                        {
+                            startTime: {
+                                [Op.between]: [checkStartTime, checkEndTime]
+                            }
+                        },
+                        {
+                            endTime: {
+                                [Op.between]: [checkStartTime, checkEndTime]
+                            }
+                        }
+                    ]
+                }
+            });
+
+            if (existingBooking) {
+                throw new Error('Venue is already booked for this time slot');
+            }
+        }
+
+        await booking.update(updateData);
+
+        // Create Log
+        await BookingLog.create({
+            bookingId: booking.id,
+            userId: user.id,
+            action: 'update',
+            details: updateData
+        });
+
+        return booking;
+    }
 }
+
 
 module.exports = new BookingService();
