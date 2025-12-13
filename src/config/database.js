@@ -19,7 +19,8 @@ const connectDB = async () => {
         await sequelize.authenticate();
         console.log('✅ PostgreSQL Connected');
         // Sync models (in development, alter: true is okay, but be careful in production)
-        await sequelize.sync({ alter: true });
+        // await sequelize.sync({ alter: true });
+        await sequelize.sync(); // Just sync, don't alter for now to avoid constraint errors
         console.log('✅ Database Synced');
     } catch (error) {
         console.error('❌ Database Connection Error:', error);

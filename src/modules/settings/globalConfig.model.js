@@ -15,6 +15,18 @@ const GlobalConfig = sequelize.define('GlobalConfig', {
         type: DataTypes.STRING,
         allowNull: true
     },
+    themeColor: {
+        type: DataTypes.STRING,
+        defaultValue: '#4CAF50' // Default Green
+    },
+    region: {
+        type: DataTypes.STRING,
+        defaultValue: 'EG'
+    },
+    city: {
+        type: DataTypes.STRING,
+        defaultValue: 'Cairo'
+    },
     timezone: {
         type: DataTypes.STRING,
         defaultValue: 'UTC'

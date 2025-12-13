@@ -32,6 +32,14 @@ const Booking = sequelize.define('Booking', {
     type: {
         type: DataTypes.ENUM('standard', 'academy'),
         defaultValue: 'standard'
+    },
+    participants: {
+        type: DataTypes.ARRAY(DataTypes.INTEGER), // Array of User IDs
+        defaultValue: []
+    },
+    matchResult: {
+        type: DataTypes.JSONB, // { winner: [], loser: [], score: '' }
+        allowNull: true
     }
 }, {
     timestamps: true

@@ -39,8 +39,94 @@ const router = express.Router();
  */
 router.route('/')
     .get(getVenues)
+    /**
+     * @swagger
+     * /venues:
+     *   post:
+     *     summary: Create a new venue (Admin only)
+     *     tags: [Venues]
+     *     security:
+     *       - bearerAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             required:
+     *               - name
+     *               - location
+     *             properties:
+     *               name:
+     *                 type: string
+     *               location:
+     *                 type: string
+     *     responses:
+     *       201:
+     *         description: Venue created successfully
+     */
     .post(protect, authorize('admin'), createVenue);
 
+/**
+ * @swagger
+ * /venues/{id}:
+ *   get:
+ *     summary: Get venue by ID
+ *     tags: [Venues]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Venue ID
+ *     responses:
+ *       200:
+ *         description: Venue details
+ *       404:
+ *         description: Venue not found
+ *   put:
+ *     summary: Update venue (Admin only)
+ *     tags: [Venues]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Venue ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               location:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Venue updated successfully
+ *   delete:
+ *     summary: Delete venue (Admin only)
+ *     tags: [Venues]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Venue ID
+ *     responses:
+ *       200:
+ *         description: Venue deleted successfully
+ */
 router.route('/:id')
     .get(getVenue)
     .put(protect, authorize('admin'), updateVenue)

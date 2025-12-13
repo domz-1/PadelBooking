@@ -1,6 +1,8 @@
 const Booking = require('./booking.model');
+const BookingLog = require('./bookingLog.model');
 const Venue = require('../venues/venue.model');
 const User = require('../users/user.model');
+const Waitlist = require('./waitlist.model'); // Added for waitlist check
 const sendEmail = require('../../utils/emailService');
 const { Op } = require('sequelize');
 
@@ -36,6 +38,18 @@ class BookingService {
             ...bookingData,
             userId: user.id,
             status
+        });
+
+        // Create Log
+        await BookingLog.create({
+            bookingId: booking.id,
+            userId: user.id,
+            action: 'create',
+            details: {
+                status,
+                type: bookingData.type,
+                totalPrice: bookingData.totalPrice
+            }
         });
 
         // Send confirmation email
@@ -80,6 +94,30 @@ class BookingService {
             include: [
                 { model: Venue, attributes: ['name', 'location'] },
                 { model: User, attributes: ['name', 'email'] }
+            ]
+        });
+    }
+
+    async getBookingLogs(options = {}) {
+        const { limit, offset, bookingId, action, startDate, endDate } = options;
+        const where = {};
+
+        if (bookingId) where.bookingId = bookingId;
+        if (action) where.action = action;
+        if (startDate && endDate) {
+            where.timestamp = {
+                [Op.between]: [startDate, endDate]
+            };
+        }
+
+        return await BookingLog.findAndCountAll({
+            where,
+            limit,
+            offset,
+            order: [['timestamp', 'DESC']],
+            include: [
+                { model: User, attributes: ['name', 'email'] },
+                { model: Booking, attributes: ['id', 'date', 'startTime'] }
             ]
         });
     }

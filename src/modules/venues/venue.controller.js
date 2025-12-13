@@ -31,9 +31,21 @@ exports.getVenue = async (req, res, next) => {
     try {
         const venue = await venueService.getVenueById(req.params.id);
         if (!venue) {
-            return res.status(404).json({ success: false, message: 'Venue not found' });
+            return res.status(404).json({ success: false, message: req.t('notFound') });
         }
-        res.status(200).json({ success: true, data: venue });
+
+        let responseData = venue.toJSON();
+
+        // If outdoor, add weather
+        if (venue.type === 'outdoor') {
+            const weatherService = require('../../utils/weather.service');
+            const GlobalConfig = require('../settings/globalConfig.model');
+            const config = await GlobalConfig.findOne();
+            const city = config ? config.city : 'Cairo';
+            responseData.weather = await weatherService.getForecast(city);
+        }
+
+        res.status(200).json({ success: true, data: responseData });
     } catch (error) {
         next(error);
     }

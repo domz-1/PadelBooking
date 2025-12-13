@@ -64,3 +64,56 @@ exports.deleteUser = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.updateProfile = async (req, res, next) => {
+    try {
+        // Prevent password update via this route
+        delete req.body.password;
+        delete req.body.role;
+
+        const user = await userService.updateUser(req.user.id, req.body);
+        res.status(200).json({ success: true, data: user });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.updatePassword = async (req, res, next) => {
+    try {
+        const { password } = req.body;
+        if (!password) {
+            return res.status(400).json({ success: false, message: 'Please provide a password' });
+        }
+
+        // Hashing is handled by Sequelize hooks in user.model.js
+        await userService.updateUser(req.user.id, { password });
+        res.status(200).json({ success: true, message: 'Password updated successfully' });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.findPartners = async (req, res, next) => {
+    try {
+        const partners = await userService.findPartners(req.query);
+        res.status(200).json({ success: true, data: partners });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getProfile = async (req, res, next) => {
+    try {
+        const user = await userService.getUserById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        // Check privacy
+        if (!user.isPublic && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Profile is private' });
+        }
+        res.status(200).json({ success: true, data: user });
+    } catch (error) {
+        next(error);
+    }
+};

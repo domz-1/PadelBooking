@@ -39,6 +39,14 @@ const User = sequelize.define('User', {
     bio: {
         type: DataTypes.TEXT,
         allowNull: true
+    },
+    isPublic: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
+    },
+    stats: {
+        type: DataTypes.JSONB, // { played: 0, won: 0, lost: 0 }
+        defaultValue: { played: 0, won: 0, lost: 0 }
     }
 }, {
     timestamps: true,

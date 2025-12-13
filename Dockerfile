@@ -4,6 +4,7 @@ WORKDIR /usr/src/app
 
 COPY package.json yarn.lock ./
 
+RUN corepack enable
 RUN yarn install --frozen-lockfile
 
 COPY . .

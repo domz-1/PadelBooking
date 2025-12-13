@@ -50,3 +50,52 @@ exports.createBooking = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.getMyBookings = async (req, res, next) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+
+        const { count, rows } = await bookingService.getBookings({ limit, offset }, req.user.id);
+
+        res.status(200).json({
+            success: true,
+            count,
+            totalPages: Math.ceil(count / limit),
+            currentPage: page,
+            data: rows
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getBookingLogs = async (req, res, next) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+
+        const { bookingId, action, startDate, endDate } = req.query;
+
+        const { count, rows } = await bookingService.getBookingLogs({
+            limit,
+            offset,
+            bookingId,
+            action,
+            startDate,
+            endDate
+        });
+
+        res.status(200).json({
+            success: true,
+            count,
+            totalPages: Math.ceil(count / limit),
+            currentPage: page,
+            data: rows
+        });
+    } catch (error) {
+        next(error);
+    }
+};
