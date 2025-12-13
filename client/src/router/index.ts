@@ -9,6 +9,10 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      redirect: '/bookings',
+    },
+    {
+      path: '/ecommerce', // Changed path from '/' to '/ecommerce' to avoid conflict with redirect
       name: 'Ecommerce',
       component: () => import('../views/Ecommerce.vue'),
       meta: {
@@ -427,7 +431,7 @@ const router = createRouter({
     {
       path: '/bookings/view/:id',
       name: 'ViewBooking',
-      component: () => import('../views/Bookings/BookingForm.vue'),
+      component: () => import('../views/Bookings/ViewBooking.vue'),
       meta: {
         title: 'View Booking',
         requiresAuth: true,
@@ -463,7 +467,7 @@ const router = createRouter({
     {
       path: '/coaches/view/:id',
       name: 'ViewCoach',
-      component: () => import('../views/Coaches/CoachForm.vue'),
+      component: () => import('../views/Coaches/ViewCoach.vue'),
       meta: {
         title: 'View Coach',
         requiresAuth: true,
@@ -499,7 +503,7 @@ const router = createRouter({
     {
       path: '/matches/view/:id',
       name: 'ViewMatch',
-      component: () => import('../views/Matches/MatchForm.vue'),
+      component: () => import('../views/Matches/ViewMatch.vue'),
       meta: {
         title: 'View Match',
         requiresAuth: true,
@@ -596,6 +600,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/sponsors/view/:id',
+      name: 'ViewSponsor',
+      component: () => import('../views/Sponsors/ViewSponsor.vue'),
+      meta: {
+        title: 'View Sponsor',
+        requiresAuth: true,
+      },
+    },
+    {
       path: '/sports',
       name: 'Sports',
       component: () => import('../views/Sports/Sports.vue'),
@@ -619,6 +632,15 @@ const router = createRouter({
       component: () => import('../views/Sports/SportForm.vue'),
       meta: {
         title: 'Edit Sport',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/sports/view/:id',
+      name: 'ViewSport',
+      component: () => import('../views/Sports/ViewSport.vue'),
+      meta: {
+        title: 'View Sport',
         requiresAuth: true,
       },
     },
@@ -664,6 +686,15 @@ const router = createRouter({
       component: () => import('../views/Venues/VenueForm.vue'),
       meta: {
         title: 'Edit Venue',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/venues/view/:id',
+      name: 'ViewVenue',
+      component: () => import('../views/Venues/ViewVenue.vue'),
+      meta: {
+        title: 'View Venue',
         requiresAuth: true,
       },
     },

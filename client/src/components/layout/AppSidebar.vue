@@ -14,11 +14,11 @@
         !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
       ]">
       <router-link to="/">
-        <img v-if="isExpanded || isHovered || isMobileOpen" class="dark:hidden" src="https://luxankw.com/api/v1/logo"
+        <img v-if="isExpanded || isHovered || isMobileOpen" class="dark:hidden" :src="configStore.logoUrl"
           alt="Logo" width="150" height="40" />
         <img v-if="isExpanded || isHovered || isMobileOpen" class="hidden dark:block"
-          src="https://luxankw.com/api/v1/logo" alt="Logo" width="150" height="40" />
-        <img v-else src="https://luxankw.com/api/v1/logo" alt="Logo" width="32" height="32" />
+          :src="configStore.logoUrl" alt="Logo" width="150" height="40" />
+        <img v-else :src="configStore.logoUrl" alt="Logo" width="32" height="32" />
       </router-link>
     </div>
     <div class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
@@ -139,6 +139,9 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
+import { useConfigStore } from "@/stores/ConfigStore";
+
+const configStore = useConfigStore();
 
 import {
   GridIcon,

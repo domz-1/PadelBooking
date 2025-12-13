@@ -11,7 +11,7 @@ class MatchService {
         return await Match.findAll({
             where: { status: 'open' },
             include: [
-                { model: User, as: 'Creator', attributes: ['name', 'image', 'rating'] },
+                { model: User, as: 'Creator', attributes: ['name', 'image'] },
                 { model: Venue, attributes: ['name', 'location'] }
             ]
         });

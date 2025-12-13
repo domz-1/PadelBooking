@@ -13,18 +13,55 @@
                     </button>
                 </div>
 
-                <!-- Search Bar -->
-                <div class="mb-4">
-                    <div class="relative">
-                        <input
-                            v-model="searchQuery"
-                            type="text"
-                            placeholder="Search bookings..."
-                            class="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                        />
-                        <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
+                <!-- Controls: Search, Date, View Toggle -->
+                <div class="mb-6 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                    <!-- Left Side: Search & Date -->
+                    <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                        <div class="relative w-full sm:w-64">
+                            <input
+                                v-model="searchQuery"
+                                type="text"
+                                placeholder="Search bookings..."
+                                class="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                            />
+                            <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        
+                        <div v-if="viewMode === 'grid'" class="w-full sm:w-auto">
+                            <flat-pickr
+                                v-model="selectedDate"
+                                :config="{ altInput: true, altFormat: 'F j, Y', dateFormat: 'Y-m-d' }"
+                                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Right Side: View Toggle -->
+                    <div class="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+                        <button 
+                            @click="viewMode = 'grid'"
+                            :class="[
+                                'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+                                viewMode === 'grid' 
+                                    ? 'bg-white dark:bg-gray-700 text-brand-600 dark:text-brand-400 shadow-sm' 
+                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                            ]"
+                        >
+                            Day View
+                        </button>
+                        <button 
+                            @click="viewMode = 'list'"
+                            :class="[
+                                'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+                                viewMode === 'list' 
+                                    ? 'bg-white dark:bg-gray-700 text-brand-600 dark:text-brand-400 shadow-sm' 
+                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                            ]"
+                        >
+                            List View
+                        </button>
                     </div>
                 </div>
 
@@ -33,9 +70,18 @@
                     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
                 </div>
 
-                <!-- Data Table -->
+                <!-- Data Display -->
+                <BookingGrid 
+                    v-if="viewMode === 'grid' && !loading"
+                    :bookings="bookings"
+                    :venues="venues"
+                    :date="selectedDate"
+                    @view-booking="handleView"
+                    @create-booking="handleCreate"
+                />
+
                 <DataTable 
-                    v-else
+                    v-else-if="viewMode === 'list' && !loading"
                     :columns="columns"
                     :data="bookings"
                     :showActions="true"
@@ -87,24 +133,45 @@
 import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { BookingsAPI } from "@/api/BookingsAPI";
+import { VenuesAPI } from "@/api/VenuesAPI";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
 import DataTable, { type Column } from "@/components/DataTable.vue";
 import Pagination from '@/components/common/Pagination.vue';
+import BookingGrid from './BookingGrid.vue';
+import flatPickr from 'vue-flatpickr-component';
+import 'flatpickr/dist/flatpickr.css';
+
+import { useRoute } from "vue-router";
 
 const router = useRouter();
+const route = useRoute();
 const currentPageTitle = ref("Bookings");
 const bookings = ref([]);
+const venues = ref([]);
 const loading = ref(false);
 const searchQuery = ref('');
+const viewMode = ref('grid'); // Default to grid view
+const selectedDate = ref((route.query.date as string) || new Date().toISOString().split('T')[0]); // Default to query param or today
+
+// Update URL when date changes
+watch(selectedDate, (newDate) => {
+    router.replace({
+        query: {
+            ...route.query,
+            date: newDate
+        }
+    });
+});
+
 const pagination = ref({
     currentPage: 1,
     totalPages: 1,
     totalDocuments: 0,
     hasNextPage: false,
     hasPrevPage: false,
-    limit: 10
+    limit: 100 // Higher limit for grid view
 });
 
 const columns: Column[] = [
@@ -118,15 +185,27 @@ const columns: Column[] = [
     { key: 'totalPrice', title: 'Price', type: 'text' },
 ];
 
+const fetchVenues = async () => {
+    try {
+        const response = await VenuesAPI.getAllVenues({});
+        venues.value = response.data.data || response.data;
+    } catch (error) {
+        console.error('Error fetching venues:', error);
+    }
+};
+
 const fetchBookings = async () => {
     loading.value = true;
     try {
-        const params = {
+        const params: any = {
             page: pagination.value.currentPage,
-            limit: pagination.value.limit,
-            // search: searchQuery.value.trim() || undefined // Add search if supported by API
+            limit: viewMode.value === 'grid' ? 100 : 10, // Fetch more for grid
         };
         
+        if (viewMode.value === 'grid') {
+            params.date = selectedDate.value;
+        }
+
         const response = await BookingsAPI.getAllBookings(params);
         const result = response.data;
         
@@ -169,8 +248,19 @@ const goToAddBooking = () => {
     router.push('/bookings/add');
 };
 
+const handleCreate = (data: any) => {
+    router.push({
+        path: '/bookings/add',
+        query: {
+            venueId: data.venueId,
+            date: data.date,
+            startTime: data.startTime
+        }
+    });
+};
+
 const handleView = (booking: any) => {
-    router.push(`/bookings/view/${booking.id}`);
+    router.push(`/bookings/edit/${booking.id}`);
 };
 
 const handleEdit = (booking: any) => {
@@ -198,7 +288,13 @@ watch(searchQuery, () => {
     }, 500);
 });
 
+watch([viewMode, selectedDate], () => {
+    pagination.value.currentPage = 1;
+    fetchBookings();
+});
+
 onMounted(() => {
+    fetchVenues();
     fetchBookings();
 });
 </script>

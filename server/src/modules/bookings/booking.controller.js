@@ -8,8 +8,9 @@ exports.getBookings = async (req, res, next) => {
 
         // If admin, get all. If user, get own.
         const userId = req.user.role === 'admin' ? null : req.user.id;
+        const { date } = req.query;
 
-        const { count, rows } = await bookingService.getBookings({ limit, offset }, userId);
+        const { count, rows } = await bookingService.getBookings({ limit, offset, date }, userId);
 
         res.status(200).json({
             success: true,

@@ -75,6 +75,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { SettingsAPI } from "@/api/SettingsAPI";
+import { useConfigStore } from "@/stores/ConfigStore";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
@@ -113,12 +114,14 @@ const categoryColumns: Column[] = [
     { key: 'description', title: 'Description', type: 'text' }
 ];
 
+const configStore = useConfigStore();
+
 // Methods
 const fetchConfig = async () => {
     loadingConfig.value = true;
     try {
-        const response = await SettingsAPI.getConfig();
-        configData.value = response.data.data || response.data;
+        await configStore.fetchConfig();
+        configData.value = { ...configStore.config };
     } catch (error) {
         console.error('Error fetching config:', error);
     } finally {
@@ -129,7 +132,7 @@ const fetchConfig = async () => {
 const handleConfigSubmit = async (formData: any) => {
     submittingConfig.value = true;
     try {
-        await SettingsAPI.updateConfig(formData);
+        await configStore.updateConfig(formData);
         alert('Settings updated successfully');
     } catch (error) {
         console.error('Error updating settings:', error);

@@ -25,10 +25,7 @@ const Booking = sequelize.define('Booking', {
         type: DataTypes.JSONB, // { winner: [], loser: [], score: '' }
         allowNull: true
     },
-    holder: {
-        type: DataTypes.JSONB,
-        allowNull: true
-    },
+
     notes: {
         type: DataTypes.TEXT,
         allowNull: true
@@ -52,6 +49,14 @@ const Booking = sequelize.define('Booking', {
     matchResult: {
         type: DataTypes.JSONB, // { winner: [], loser: [], score: '' }
         allowNull: true
+    },
+    categoryId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: 'Categories',
+            key: 'id'
+        }
     }
 }, {
     timestamps: true
@@ -60,6 +65,8 @@ const Booking = sequelize.define('Booking', {
 // Associations
 Booking.belongsTo(User, { foreignKey: 'userId' });
 Booking.belongsTo(Venue, { foreignKey: 'venueId' });
+const Category = require('../settings/category.model');
+Booking.belongsTo(Category, { foreignKey: 'categoryId' });
 const Coach = require('../coaches/coach.model');
 const Package = require('../coaches/package.model');
 Booking.belongsTo(Coach, { foreignKey: 'coachId' });

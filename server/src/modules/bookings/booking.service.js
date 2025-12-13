@@ -34,9 +34,12 @@ class BookingService {
 
         const status = bookingData.type === 'academy' ? 'pending-coach' : 'confirmed';
 
+        // Determine userId: if admin and userId provided in data, use it; otherwise use logged-in user
+        const userId = (user.role === 'admin' && bookingData.userId) ? bookingData.userId : user.id;
+
         const booking = await Booking.create({
             ...bookingData,
-            userId: user.id,
+            userId,
             status
         });
 
@@ -72,10 +75,13 @@ class BookingService {
     }
 
     async getBookings(options = {}, userId = null) {
-        const { limit, offset } = options;
+        const { limit, offset, date } = options;
         const where = {};
         if (userId) {
             where.userId = userId;
+        }
+        if (date) {
+            where.date = date;
         }
 
         return await Booking.findAndCountAll({
@@ -145,7 +151,7 @@ class BookingService {
                 where: {
                     venueId: checkVenueId,
                     date: checkDate,
-                    id: { [Op.ne]: id }, // Exclude current booking
+                    id: { [Op.ne]: parseInt(id) }, // Exclude current booking, ensure int
                     [Op.or]: [
                         {
                             startTime: {
