@@ -31,7 +31,7 @@ const Booking = sequelize.define('Booking', {
         allowNull: true
     },
     status: {
-        type: DataTypes.ENUM('pending', 'confirmed', 'cancelled', 'completed', 'no-show'),
+        type: DataTypes.ENUM('pending', 'confirmed', 'cancelled', 'completed', 'no-show', 'pending-coach'),
         defaultValue: 'pending'
     },
     totalPrice: {
@@ -46,10 +46,7 @@ const Booking = sequelize.define('Booking', {
         type: DataTypes.ARRAY(DataTypes.INTEGER), // Array of User IDs
         defaultValue: []
     },
-    matchResult: {
-        type: DataTypes.JSONB, // { winner: [], loser: [], score: '' }
-        allowNull: true
-    },
+
     categoryId: {
         type: DataTypes.INTEGER,
         allowNull: true,

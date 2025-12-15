@@ -1,8 +1,8 @@
 <template>
-  <div class="fixed inset-0 flex items-center justify-center overflow-y-auto z-99999">
+  <div class="fixed inset-0 flex items-center justify-center overflow-y-auto z-50">
     <div
       v-if="fullScreenBackdrop"
-      class="fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]"
+      class="fixed inset-0 h-full w-full bg-gray-500/50 dark:bg-gray-900/70 backdrop-blur-[4px]"
       aria-hidden="true"
       @click="$emit('close')"
     ></div>
@@ -15,6 +15,9 @@ interface ModalProps {
   fullScreenBackdrop?: boolean
 }
 
-defineProps<ModalProps>()
+withDefaults(defineProps<ModalProps>(), {
+  fullScreenBackdrop: true
+})
+
 defineEmits(['close'])
 </script>

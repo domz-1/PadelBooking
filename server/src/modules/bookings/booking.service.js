@@ -2,12 +2,63 @@ const Booking = require('./booking.model');
 const BookingLog = require('./bookingLog.model');
 const Venue = require('../venues/venue.model');
 const User = require('../users/user.model');
-const Waitlist = require('./waitlist.model'); // Added for waitlist check
+const Order = require('../store/order.model');
+const Waitlist = require('./waitlist.model');
 const sendEmail = require('../../utils/emailService');
 const { Op } = require('sequelize');
 
 class BookingService {
+    // ... existing methods ...
+
+    async deleteBooking(id, user) {
+        const booking = await this.getBookingById(id);
+        if (!booking) {
+            throw new Error('Booking not found');
+        }
+
+        // Authorization check
+        if (booking.userId !== user.id && user.role !== 'admin') {
+            throw new Error('Not authorized to delete this booking');
+        }
+
+        // Store details for waitlist check before deletion
+        const { venueId, date, startTime, endTime } = booking;
+
+        try {
+            await BookingLog.create({
+                bookingId: booking.id,
+                userId: user.id,
+                action: 'delete',
+                details: {
+                    venueId, date, startTime, endTime
+                }
+            });
+        } catch (logError) {
+            console.error('Failed to create delete log:', logError);
+        }
+
+        // 1. Nullify bookingId in Orders
+        await Order.update({ bookingId: null }, {
+            where: { bookingId: booking.id }
+        });
+
+        // 2. Delete associated logs
+        await BookingLog.destroy({
+            where: { bookingId: booking.id }
+        });
+
+        // 3. Delete Booking
+        await booking.destroy();
+
+        // Check Waitlist
+        await this.checkWaitlist(venueId, date, startTime, endTime);
+
+        return true;
+    }
+
     async createBooking(bookingData, user) {
+        if (bookingData.categoryId === '') bookingData.categoryId = null;
+
         // Check availability
         const existingBooking = await Booking.findOne({
             where: {
@@ -130,6 +181,8 @@ class BookingService {
     }
 
     async updateBooking(id, updateData, user) {
+        if (updateData.categoryId === '') updateData.categoryId = null;
+
         const booking = await this.getBookingById(id);
         if (!booking) {
             throw new Error('Booking not found');
@@ -183,6 +236,86 @@ class BookingService {
         });
 
         return booking;
+    }
+    async deleteBooking(id, user) {
+        const booking = await this.getBookingById(id);
+        if (!booking) {
+            throw new Error('Booking not found');
+        }
+
+        // Authorization check
+        if (booking.userId !== user.id && user.role !== 'admin') {
+            throw new Error('Not authorized to delete this booking');
+        }
+
+        // Store details for waitlist check before deletion
+        const { venueId, date, startTime, endTime } = booking;
+
+        // Create Log before deletion (so it has a valid reference if needed, though it might be deleted if cascaded)
+        // Actually, if we delete the booking, the log might be lost if it cascades. 
+        // But let's try to log it.
+        try {
+            await BookingLog.create({
+                bookingId: booking.id,
+                userId: user.id,
+                action: 'delete',
+                details: {
+                    venueId, date, startTime, endTime
+                }
+            });
+        } catch (logError) {
+            console.error('Failed to create delete log:', logError);
+        }
+
+        // Delete associated logs first to avoid foreign key constraint violation
+        await BookingLog.destroy({
+            where: { bookingId: booking.id }
+        });
+
+        await booking.destroy();
+
+        // Check Waitlist
+        await this.checkWaitlist(venueId, date, startTime, endTime);
+
+        return true;
+    }
+
+    async checkWaitlist(venueId, date, startTime, endTime) {
+        try {
+            // Find people waiting for this slot
+            const waitlistEntries = await Waitlist.findAll({
+                where: {
+                    venueId,
+                    date,
+                    startTime,
+                    endTime,
+                    notified: false
+                },
+                include: [{ model: User, attributes: ['email', 'name'] }]
+            });
+
+            if (waitlistEntries.length > 0) {
+                // Notify them
+                for (const entry of waitlistEntries) {
+                    try {
+                        if (entry.User && entry.User.email) {
+                            await sendEmail({
+                                email: entry.User.email,
+                                subject: 'Slot Available!',
+                                message: `Good news ${entry.User.name}! A slot has opened up at Venue ${venueId} on ${date} from ${startTime} to ${endTime}. Log in now to book it!`
+                            });
+
+                            // Mark as notified
+                            await entry.update({ notified: true });
+                        }
+                    } catch (error) {
+                        console.error(`Failed to notify user ${entry.userId}`, error);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error checking waitlist:', error);
+        }
     }
 }
 

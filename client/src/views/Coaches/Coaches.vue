@@ -5,12 +5,20 @@
             <ComponentCard title="Coaches Management">
                 <div class="mb-4 flex justify-between items-center">
                     <h3 class="text-lg font-semibold text-gray-800 dark:text-white">All Coaches</h3>
-                    <button 
-                        @click="goToAddCoach"
-                        class="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-                    >
-                        Add Coach
-                    </button>
+                    <div class="flex gap-3">
+                        <button 
+                            @click="goToPackages"
+                            class="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
+                        >
+                            Packages Dashboard
+                        </button>
+                        <button 
+                            @click="goToAddCoach"
+                            class="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
+                        >
+                            Add Coach
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Loading State -->
@@ -31,14 +39,14 @@
                     <template #column-user="{ item }">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                                <img v-if="item.User?.avatar" :src="item.User.avatar" alt="Avatar" class="w-full h-full object-cover" />
+                                <img v-if="item.image || item.User?.avatar" :src="item.image || item.User?.avatar" alt="Avatar" class="w-full h-full object-cover" />
                                 <span v-else class="flex items-center justify-center w-full h-full text-sm font-medium text-gray-600 dark:text-gray-300">
-                                    {{ item.User?.name?.charAt(0) || 'C' }}
+                                    {{ (item.name || item.User?.name || 'C').charAt(0) }}
                                 </span>
                             </div>
                             <div>
                                 <span class="block font-medium text-gray-800 text-sm dark:text-white/90">
-                                    {{ item.User?.name || 'Unknown' }}
+                                    {{ item.name || item.User?.name || 'Unknown' }}
                                 </span>
                                 <span class="block text-gray-500 text-xs dark:text-gray-400">
                                     {{ item.User?.email }}
@@ -93,6 +101,10 @@ const fetchCoaches = async () => {
 
 const goToAddCoach = () => {
     router.push('/coaches/add');
+};
+
+const goToPackages = () => {
+    router.push('/packages');
 };
 
 const viewCoach = (item: any) => {

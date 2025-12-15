@@ -6,5 +6,8 @@ export const BookingsAPI = {
     createBooking: (data: any) => api.post('/bookings', data),
     updateBooking: (id: string, data: any) => api.put(`/bookings/${id}`, data),
     deleteBooking: (id: string) => api.delete(`/bookings/${id}`),
+    joinWaitlist: (data: any) => api.post('/bookings/waitlist', data),
+    getMyWaitlist: () => api.get('/bookings/waitlist'),
+    getWaitlistForSlot: (params: any) => api.get('/bookings/waitlist/slot', { params }),
     getDailySummary: () => api.get('/bookings/daily-summary'),
 };

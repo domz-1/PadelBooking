@@ -48,6 +48,7 @@ exports.createBooking = async (req, res, next) => {
         const booking = await bookingService.createBooking(req.body, req.user);
         res.status(201).json({ success: true, data: booking });
     } catch (error) {
+        console.error('Create Booking Error:', error);
         next(error);
     }
 };
@@ -192,6 +193,15 @@ exports.updateBooking = async (req, res, next) => {
 
         booking = await bookingService.updateBooking(req.params.id, req.body, req.user);
         res.status(200).json({ success: true, data: booking });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.deleteBooking = async (req, res, next) => {
+    try {
+        await bookingService.deleteBooking(req.params.id, req.user);
+        res.status(200).json({ success: true, data: {} });
     } catch (error) {
         next(error);
     }

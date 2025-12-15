@@ -5,14 +5,15 @@ const { createBooking,
     getBooking,
     getBookingLogs,
     getDailySummary,
-    updateBooking
+    updateBooking,
+    deleteBooking
 } = require('./booking.controller');
 const { importBookings } = require('./import.controller');
 const { protect, authorize } = require('../../middleware/auth');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 
-const { joinWaitlist, leaveWaitlist, getMyWaitlist } = require('./waitlist.controller');
+const { joinWaitlist, leaveWaitlist, getMyWaitlist, getWaitlistForSlot } = require('./waitlist.controller');
 
 const router = express.Router();
 
@@ -125,6 +126,43 @@ router.get('/logs', authorize('admin'), getBookingLogs);
  */
 router.post('/waitlist', joinWaitlist);
 router.post('/waitlist', joinWaitlist);
+
+/**
+ * @swagger
+ * /bookings/waitlist/slot:
+ *   get:
+ *     summary: Get waitlist for a specific slot (Admin only)
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: venueId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: date
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: startTime
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: endTime
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of waitlist entries
+ *       403:
+ *         description: Not authorized
+ */
+router.get('/waitlist/slot', authorize('admin'), getWaitlistForSlot);
 
 /**
  * @swagger
@@ -276,7 +314,31 @@ router.route('/:id')
      *       404:
      *         description: Booking not found
      */
-    .put(updateBooking);
+    .put(updateBooking)
+    /**
+     * @swagger
+     * /bookings/{id}:
+     *   delete:
+     *     summary: Delete booking
+     *     tags: [Bookings]
+     *     security:
+     *       - bearerAuth: []
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: string
+     *         description: Booking ID
+     *     responses:
+     *       200:
+     *         description: Booking deleted
+     *       403:
+     *         description: Not authorized
+     *       404:
+     *         description: Booking not found
+     */
+    .delete(deleteBooking);
 
 /**
  * @swagger

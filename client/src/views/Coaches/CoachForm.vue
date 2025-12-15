@@ -39,6 +39,18 @@ const initialData = ref({});
 
 const formFields = computed<FormFieldConfig[]>(() => [
     {
+        key: 'name',
+        label: 'Name',
+        type: 'text',
+        required: true
+    },
+    {
+        key: 'image',
+        label: 'Profile Image URL',
+        type: 'text',
+        required: false
+    },
+    {
         key: 'bio',
         label: 'Bio',
         type: 'textarea',

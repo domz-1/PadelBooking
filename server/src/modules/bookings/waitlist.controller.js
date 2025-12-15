@@ -53,3 +53,26 @@ exports.getMyWaitlist = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.getWaitlistForSlot = async (req, res, next) => {
+    try {
+        const { venueId, date, startTime, endTime } = req.query;
+
+        const entries = await Waitlist.findAll({
+            where: {
+                venueId,
+                date,
+                startTime,
+                endTime
+            },
+            include: [{
+                model: require('../users/user.model'),
+                attributes: ['id', 'name', 'email', 'phone']
+            }]
+        });
+
+        res.status(200).json({ success: true, data: entries });
+    } catch (error) {
+        next(error);
+    }
+};

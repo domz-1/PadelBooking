@@ -12,6 +12,14 @@ const Coach = sequelize.define('Coach', {
         type: DataTypes.TEXT,
         allowNull: true
     },
+    name: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    image: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     specialties: {
         type: DataTypes.ARRAY(DataTypes.STRING),
         defaultValue: []
