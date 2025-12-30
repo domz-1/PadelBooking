@@ -4,7 +4,11 @@ A complete Padel Booking solution with a Node.js/Express backend and a Vue.js da
 
 ## Project Structure
 
+<<<<<<< HEAD
 - `client/`: Frontend
+=======
+- `client/`: Vue.js Dashboard application
+>>>>>>> 90869d642b3ca936ee13bbf3124770eb3070163c
 - `server/`: Node.js/Express API server
 - `package.json`: Root orchestration scripts
 - `Dockerfile`: Multi-stage build for production deployment
