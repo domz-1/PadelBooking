@@ -1,0 +1,1 @@
+import{a as e}from"./index-BChQAjBg.js";const t={createSubcategory:async(t,s,a)=>e.post(`/categories/${t}/subcategories/`,s),getAllSubcategories:async t=>e.get(`/categories/${t}/subcategories/`),updateSubcategory:async(t,s,a,c)=>e.put(`/categories/${t}/subcategories/${s}`,a),deleteSubcategory:async(t,s,a)=>e.delete(`/categories/${t}/subcategories/${s}`)};export{t as S};

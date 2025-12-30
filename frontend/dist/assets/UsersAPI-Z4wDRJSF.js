@@ -1,0 +1,1 @@
+import{a as s}from"./index-BChQAjBg.js";const e={createUser:async e=>s.post("/users/",e),getAllUsers:async(e={})=>s.get("/users/",{params:e}),getMe:async()=>s.get("/users/me"),getUser:async e=>s.get(`/users/${e}`),updateUser:async(e,r)=>s.put(`/users/${e}`,r),deleteUser:async e=>s.delete(`/users/${e}`),changeUserPassword:async(e,r)=>s.patch(`/users/${e}`,r)};export{e as U};

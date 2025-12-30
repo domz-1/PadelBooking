@@ -1,0 +1,1 @@
+import{a as t}from"./index-BChQAjBg.js";const e={getOpenMatches:e=>t.get("/matches",{params:e}),createMatch:e=>t.post("/matches",e),joinMatch:e=>t.post(`/matches/${e}/join`),handleRequest:(e,a)=>t.put(`/matches/requests/${e}`,{status:a}),getMatch:e=>t.get(`/matches/${e}`),updateMatch:(e,a)=>t.put(`/matches/${e}`,a),deleteMatch:e=>t.delete(`/matches/${e}`)};export{e as M};

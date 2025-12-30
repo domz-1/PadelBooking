@@ -1,0 +1,1 @@
+import{a as e}from"./index-BChQAjBg.js";const a={getAllCoaches:a=>e.get("/coaches",{params:a}),createProfile:a=>e.post("/coaches/profile",a),createPackage:a=>e.post("/coaches/packages",a),getCoach:a=>e.get(`/coaches/${a}`),updateCoach:(a,c)=>e.put(`/coaches/${a}`,c),deleteCoach:a=>e.delete(`/coaches/${a}`)};export{a as C};
