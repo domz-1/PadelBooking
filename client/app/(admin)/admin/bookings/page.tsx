@@ -76,7 +76,15 @@ export default function BookingsPage() {
                 <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                     <DatePicker
                         date={date}
-                        setDate={setDate}
+                        setDate={(d) => {
+                            if (d) {
+                                const newDate = new Date(d);
+                                newDate.setHours(12, 0, 0, 0); // Normalize to noon
+                                setDate(newDate);
+                            } else {
+                                setDate(undefined);
+                            }
+                        }}
                         className="w-full sm:w-[200px]"
                     />
 

@@ -139,7 +139,15 @@ export default function BookingsPage() {
                         <Calendar
                             mode="single"
                             selected={date}
-                            onSelect={(d: Date | undefined) => d && setDate(d)}
+                            onSelect={(d: Date | undefined) => {
+                                if (d) {
+                                    // Adjust for timezone offset to ensure "YYYY-MM-DD" matches selected day
+                                    // Or simply set to noon to avoid midnight shifts
+                                    const newDate = new Date(d);
+                                    newDate.setHours(12, 0, 0, 0);
+                                    setDate(newDate);
+                                }
+                            }}
                             initialFocus
                         />
                     </PopoverContent>
