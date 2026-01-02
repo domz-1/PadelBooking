@@ -22,6 +22,12 @@ class StoryService {
             order: [['createdAt', 'DESC']]
         });
     }
+
+    async deleteStory(id) {
+        const story = await Story.findByPk(id);
+        if (!story) return null;
+        return await story.destroy();
+    }
 }
 
 module.exports = new StoryService();

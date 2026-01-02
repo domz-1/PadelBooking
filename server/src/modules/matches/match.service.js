@@ -17,6 +17,16 @@ class MatchService {
         });
     }
 
+    async getAllMatches() {
+        return await Match.findAll({
+            include: [
+                { model: User, as: 'Creator', attributes: ['name', 'image'] },
+                { model: Venue, attributes: ['name', 'location'] }
+            ],
+            order: [['date', 'DESC']]
+        });
+    }
+
     async requestJoin(matchId, userId) {
         const match = await Match.findByPk(matchId);
         if (!match || match.status !== 'open') throw new Error('Match not available');
@@ -39,6 +49,12 @@ class MatchService {
         // If accepted, check if match is full logic could be added here
 
         return request;
+    }
+
+    async deleteMatch(id) {
+        const match = await Match.findByPk(id);
+        if (!match) return null;
+        return await match.destroy();
     }
 }
 

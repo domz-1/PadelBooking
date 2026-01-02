@@ -44,6 +44,10 @@ const User = sequelize.define('User', {
         type: DataTypes.BOOLEAN,
         defaultValue: true
     },
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
+    },
     stats: {
         type: DataTypes.JSONB, // { played: 0, won: 0, lost: 0 }
         defaultValue: { played: 0, won: 0, lost: 0 }

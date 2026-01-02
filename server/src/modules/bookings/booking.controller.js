@@ -6,8 +6,12 @@ exports.getBookings = async (req, res, next) => {
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
 
-        // If admin, get all. If user, get own.
-        const userId = req.user.role === 'admin' ? null : req.user.id;
+        // If admin, get all or filter by query. If user, get own.
+        let userId = req.user.id;
+        if (req.user.role === 'admin') {
+            userId = req.query.userId || null;
+        }
+
         const { date } = req.query;
 
         const { count, rows } = await bookingService.getBookings({ limit, offset, date }, userId);

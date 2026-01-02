@@ -1,0 +1,135 @@
+
+"use client";
+
+import Link from "next/link";
+import { useAuthStore } from "@/hooks/use-auth-store";
+import { Button } from "@/components/ui/button";
+import { usePathname, useRouter } from "next/navigation";
+import { LogOut, User, Menu } from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Toaster } from "@/components/ui/sonner"
+
+export default function Navbar() {
+    const { isAuthenticated, logout } = useAuthStore();
+    const router = useRouter();
+    const pathname = usePathname();
+
+    // Don't show navbar on auth pages
+    if (pathname.startsWith("/auth")) return null;
+
+    const handleLogout = () => {
+        logout();
+        router.push("/auth/login");
+    };
+
+    return (
+        <nav className="border-b bg-white dark:bg-gray-950 sticky top-0 z-50">
+            <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+                <Link href="/" className="font-bold text-xl flex items-center gap-2">
+                    PadelBooking
+                </Link>
+
+                <div className="hidden md:flex items-center gap-6">
+                    <NavLinks />
+                    {isAuthenticated && useAuthStore.getState().user?.role === 'admin' && (
+                        <Link href="/admin/dashboard" className="text-sm font-medium text-brand-600 hover:text-brand-700 transition-colors">
+                            Admin Panel
+                        </Link>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-4">
+                    {isAuthenticated ? (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="rounded-full">
+                                    <User className="h-5 w-5" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => router.push('/profile')}>
+                                    Profile
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => router.push('/my-bookings')}>
+                                    My Bookings
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleLogout} className="text-red-500">
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    Logout
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    ) : (
+                        <div className="hidden md:flex gap-2">
+                            <Button variant="ghost" asChild>
+                                <Link href="/auth/login">Login</Link>
+                            </Button>
+                            <Button asChild>
+                                <Link href="/auth/register">Register</Link>
+                            </Button>
+                        </div>
+                    )}
+
+                    {/* Mobile Menu */}
+                    <Sheet>
+                        <SheetTrigger asChild>
+                            <Button variant="ghost" size="icon" className="md:hidden">
+                                <Menu className="h-5 w-5" />
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="right">
+                            <div className="flex flex-col gap-4 mt-8">
+                                <NavLinks />
+                                {isAuthenticated && useAuthStore.getState().user?.role === 'admin' && (
+                                    <Link href="/admin/dashboard" className="text-sm font-medium text-brand-600">
+                                        Admin Panel
+                                    </Link>
+                                )}
+                                {!isAuthenticated && (
+                                    <>
+                                        <Link href="/auth/login" className="text-sm font-medium">
+                                            Login
+                                        </Link>
+                                        <Link href="/auth/register" className="text-sm font-medium">
+                                            Register
+                                        </Link>
+                                    </>
+                                )}
+                            </div>
+                        </SheetContent>
+                    </Sheet>
+                </div>
+            </div>
+            <Toaster />
+        </nav>
+    );
+}
+
+const NavLinks = () => (
+    <>
+        <Link href="/bookings" className="text-sm font-medium hover:text-brand-600 transition-colors">
+            Book Court
+        </Link>
+        <Link href="/matches" className="text-sm font-medium hover:text-brand-600 transition-colors">
+            Matches
+        </Link>
+        <Link href="/partners" className="text-sm font-medium hover:text-brand-600 transition-colors">
+            Partners
+        </Link>
+        <Link href="/store" className="text-sm font-medium hover:text-brand-600 transition-colors">
+            Store
+        </Link>
+        <Link href="/coaches" className="text-sm font-medium hover:text-brand-600 transition-colors">
+            Coaches
+        </Link>
+        <Link href="/chat" className="text-sm font-medium hover:text-brand-600 transition-colors">
+            Chat
+        </Link>
+    </>
+);

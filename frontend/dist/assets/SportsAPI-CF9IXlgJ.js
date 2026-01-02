@@ -1,1 +1,0 @@
-import{a as t}from"./index-BChQAjBg.js";const s={getAllSports:s=>t.get("/sports",{params:s}),getSport:s=>t.get(`/sports/${s}`),createSport:s=>t.post("/sports",s),updateSport:(s,p)=>t.put(`/sports/${s}`,p),deleteSport:s=>t.delete(`/sports/${s}`)};export{s as S};

@@ -1,1 +1,0 @@
-import{a as o}from"./index-BChQAjBg.js";const e={getAllBookings:e=>o.get("/bookings",{params:e}),getBooking:e=>o.get(`/bookings/${e}`),createBooking:e=>o.post("/bookings",e),updateBooking:(e,g)=>o.put(`/bookings/${e}`,g),deleteBooking:e=>o.delete(`/bookings/${e}`),getDailySummary:()=>o.get("/bookings/daily-summary")};export{e as B};

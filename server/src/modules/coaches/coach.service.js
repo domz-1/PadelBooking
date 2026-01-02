@@ -23,6 +23,18 @@ class CoachService {
     async createPackage(coachId, data) {
         return await Package.create({ ...data, coachId });
     }
+
+    async deleteCoach(id) {
+        const coach = await Coach.findByPk(id);
+        if (!coach) return null;
+        return await coach.destroy();
+    }
+
+    async deletePackage(id) {
+        const pkg = await Package.findByPk(id);
+        if (!pkg) return null;
+        return await pkg.destroy();
+    }
 }
 
 module.exports = new CoachService();

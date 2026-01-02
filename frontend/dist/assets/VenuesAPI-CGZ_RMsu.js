@@ -1,1 +1,0 @@
-import{a as e}from"./index-BChQAjBg.js";const t={getAllVenues:t=>e.get("/venues",{params:t}),getVenue:t=>e.get(`/venues/${t}`),createVenue:t=>e.post("/venues",t),updateVenue:(t,n)=>e.put(`/venues/${t}`,n),deleteVenue:t=>e.delete(`/venues/${t}`)};export{t as V};

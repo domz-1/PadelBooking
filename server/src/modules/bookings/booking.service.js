@@ -83,6 +83,24 @@ class BookingService {
             throw new Error('Venue is already booked for this time slot');
         }
 
+        // Calculate Total Price if not provided
+        if (!bookingData.totalPrice) {
+            const venue = await Venue.findByPk(bookingData.venueId);
+            if (!venue) {
+                throw new Error('Venue not found');
+            }
+
+            const start = new Date(`1970-01-01T${bookingData.startTime}Z`);
+            const end = new Date(`1970-01-01T${bookingData.endTime}Z`);
+            const durationHours = (end - start) / (1000 * 60 * 60);
+
+            if (durationHours <= 0) {
+                throw new Error('Invalid time range');
+            }
+
+            bookingData.totalPrice = venue.pricePerHour * durationHours;
+        }
+
         const status = bookingData.type === 'academy' ? 'pending-coach' : 'confirmed';
 
         // Determine userId: if admin and userId provided in data, use it; otherwise use logged-in user

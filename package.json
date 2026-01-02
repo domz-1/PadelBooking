@@ -2,20 +2,26 @@
   "name": "padel-booking",
   "private": true,
   "workspaces": [
-    "frontend",
     "server",
     "client"
   ],
   "scripts": {
-    "frontend": "bun --cwd frontend",
     "client": "bun --cwd client",
     "server": "bun --cwd server",
-    "dev": "concurrently \"bun run dev:frontend\" \"bun run dev:client\" \"bun run dev:server\"",
-    "dev:frontend": "bun --cwd frontend dev",
+    "dev": "concurrently \"bun run dev:client\" \"bun run dev:server\"",
     "dev:client": "bun --cwd client dev",
-    "dev:server": "bun --cwd server dev"
+    "dev:server": "bun --cwd server dev",
+    "dev:all": "concurrently --names \"DB,REDIS,SERVER,CLIENT\" --prefix-colors \"bgBlue.bold,bgMagenta.bold,bgGreen.bold,bgCyan.bold\" \"bun run db:up\" \"bun run redis:up\" \"bun run dev:server:wait\" \"bun run dev:client\"",
+    "db:up": "docker compose up -d db",
+    "redis:up": "docker compose up -d redis",
+    "db:down": "docker compose down",
+    "dev:server:wait": "bun run wait:db && bun run dev:server",
+    "wait:db": "bash scripts/wait-for-db.sh",
+    "setup:all": "bun run db:up && bun run redis:up && echo 'Services started successfully!'",
+    "clean:all": "bun run db:down && echo 'Services stopped and cleaned up'"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^9.2.1",
+    "wait-on": "^9.0.3"
   }
 }

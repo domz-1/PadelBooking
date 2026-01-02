@@ -1,1 +1,0 @@
-import{a as t}from"./index-BChQAjBg.js";const a={getMyNotifications:a=>t.get("/notifications",{params:a}),markAsRead:a=>t.put(`/notifications/${a}/read`),sendBroadcast:a=>t.post("/notifications/broadcast",a)};export{a as N};

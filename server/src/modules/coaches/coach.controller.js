@@ -30,3 +30,27 @@ exports.createPackage = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.deleteCoach = async (req, res, next) => {
+    try {
+        const coach = await coachService.deleteCoach(req.params.id);
+        if (!coach) {
+            return res.status(404).json({ success: false, message: req.t('notFound') });
+        }
+        res.status(200).json({ success: true, data: {}, message: req.t('success') });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.deletePackage = async (req, res, next) => {
+    try {
+        const pkg = await coachService.deletePackage(req.params.id);
+        if (!pkg) {
+            return res.status(404).json({ success: false, message: req.t('notFound') });
+        }
+        res.status(200).json({ success: true, data: {}, message: req.t('success') });
+    } catch (error) {
+        next(error);
+    }
+};

@@ -39,6 +39,32 @@ exports.createProduct = async (req, res, next) => {
     }
 };
 
+exports.updateProduct = async (req, res, next) => {
+    try {
+        const product = await Product.findByPk(req.params.id);
+        if (!product) {
+            return res.status(404).json({ success: false, message: req.t('notFound') });
+        }
+        await product.update(req.body);
+        res.status(200).json({ success: true, data: product, message: req.t('success') });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.deleteProduct = async (req, res, next) => {
+    try {
+        const product = await Product.findByPk(req.params.id);
+        if (!product) {
+            return res.status(404).json({ success: false, message: req.t('notFound') });
+        }
+        await product.destroy();
+        res.status(200).json({ success: true, data: {}, message: req.t('success') });
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.createOrder = async (req, res, next) => {
     try {
         const { items, paymentMethod, bookingId } = req.body; // items: [{ productId, quantity }], bookingId optional
@@ -95,6 +121,45 @@ exports.getMyOrders = async (req, res, next) => {
             include: [{ model: OrderItem, include: [Product] }]
         });
         res.status(200).json({ success: true, data: orders });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getAllOrders = async (req, res, next) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+
+        const { count, rows } = await Order.findAndCountAll({
+            include: [{ model: OrderItem, include: [Product] }],
+            limit,
+            offset,
+            order: [['createdAt', 'DESC']]
+        });
+
+        res.status(200).json({
+            success: true,
+            count,
+            totalPages: Math.ceil(count / limit),
+            currentPage: page,
+            data: rows
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.updateOrderStatus = async (req, res, next) => {
+    try {
+        const { status } = req.body;
+        const order = await Order.findByPk(req.params.id);
+        if (!order) {
+            return res.status(404).json({ success: false, message: req.t('notFound') });
+        }
+        await order.update({ status });
+        res.status(200).json({ success: true, data: order, message: req.t('success') });
     } catch (error) {
         next(error);
     }

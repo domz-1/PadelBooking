@@ -1,1 +1,0 @@
-import{a as o}from"./index-BChQAjBg.js";const s={getAllSponsors:s=>o.get("/sponsors",{params:s}),getSponsor:s=>o.get(`/sponsors/${s}`),createSponsor:s=>o.post("/sponsors",s,{headers:{"Content-Type":"multipart/form-data"}}),updateSponsor:(s,e)=>o.put(`/sponsors/${s}`,e,{headers:{"Content-Type":"multipart/form-data"}}),deleteSponsor:s=>o.delete(`/sponsors/${s}`)};export{s as S};
