@@ -80,7 +80,9 @@ router.get('/analysis', getAnalysis);
  *       201:
  *         description: Category created
  */
-router.post('/categories', createCategory);
+router.route('/categories')
+    .get(getCategories)
+    .post(createCategory);
 
 /**
  * @swagger

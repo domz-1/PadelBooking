@@ -18,7 +18,14 @@ const Coach = sequelize.define('Coach', {
     },
     image: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true,
+        get() {
+            const rawValue = this.getDataValue('image');
+            if (!rawValue) return null;
+            if (rawValue.startsWith('http')) return rawValue;
+            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            return `${baseUrl}/${rawValue.replace(/\\/g, '/')}`;
+        }
     },
     specialties: {
         type: DataTypes.ARRAY(DataTypes.STRING),
@@ -26,7 +33,17 @@ const Coach = sequelize.define('Coach', {
     },
     images: {
         type: DataTypes.ARRAY(DataTypes.STRING),
-        defaultValue: []
+        defaultValue: [],
+        get() {
+            const rawValue = this.getDataValue('images');
+            if (!rawValue || !Array.isArray(rawValue)) return [];
+            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            return rawValue.map(path => {
+                if (!path) return path;
+                if (path.startsWith('http')) return path;
+                return `${baseUrl}/${path.replace(/\\/g, '/')}`;
+            });
+        }
     },
     rating: {
         type: DataTypes.FLOAT,

@@ -12,9 +12,12 @@ import BookingGrid from "@/components/bookings/BookingGrid"
 import { Button } from "@/components/ui/button"
 import { LayoutGrid, List } from "lucide-react"
 import { FileUploadDialog } from "@/components/ui/file-upload-dialog"
+import { socketService } from "@/lib/socket"
+import { useAuthStore } from "@/hooks/use-auth-store"
 
 export default function BookingsPage() {
-    const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
+    const { user } = useAuthStore()
+    const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
     const [date, setDate] = useState<Date | undefined>(new Date())
     const [data, setData] = useState<Booking[]>([])
     const [venues, setVenues] = useState<Venue[]>([])
@@ -53,6 +56,36 @@ export default function BookingsPage() {
         fetchBookings()
     }, [pagination, date]) // Re-fetch when date changes
 
+    // Real-time updates listener
+    useEffect(() => {
+        socketService.connect(Number(user?.id));
+        const socket = socketService.getSocket();
+
+        if (socket) {
+            socket.on("bookingUpdate", ({ type, data, id }: any) => {
+                const affectedDate = data?.date || null;
+                const currentDateStr = date ? date.toISOString().split('T')[0] : null;
+
+                // If we are filtering by date, only update if it matches
+                if (currentDateStr && affectedDate && affectedDate !== currentDateStr) return;
+
+                if (type === 'create') {
+                    setData(prev => [data, ...prev]);
+                    setTotalBookings(prev => prev + 1);
+                } else if (type === 'update') {
+                    setData(prev => prev.map(b => b.id === data.id ? data : b));
+                } else if (type === 'delete') {
+                    setData(prev => prev.filter(b => b.id !== Number(id)));
+                    setTotalBookings(prev => prev - 1);
+                }
+            });
+        }
+
+        return () => {
+            if (socket) socket.off("bookingUpdate");
+        };
+    }, [date, user?.id]);
+
     // Fetch Venues and Branches for Grid
     useEffect(() => {
         const fetchGridData = async () => {
@@ -62,7 +95,7 @@ export default function BookingsPage() {
                     adminBranchService.getAll()
                 ]);
                 setVenues(venuesRes.data);
-                setBranches(branchesRes.data || []);
+                setBranches(branchesRes || []);
             } catch (e) {
                 console.error(e);
             }

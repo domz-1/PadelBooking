@@ -30,6 +30,9 @@ exports.getAllOffers = async (req, res, next) => {
 
 exports.createOffer = async (req, res, next) => {
     try {
+        if (req.file) {
+            req.body.image = req.file.path;
+        }
         const offer = await offerService.createOffer(req.body);
         res.status(201).json({ success: true, data: offer, message: req.t('success') });
     } catch (error) {

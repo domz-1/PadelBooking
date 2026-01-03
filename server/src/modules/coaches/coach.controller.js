@@ -11,6 +11,9 @@ exports.getCoaches = async (req, res, next) => {
 
 exports.createProfile = async (req, res, next) => {
     try {
+        if (req.file) {
+            req.body.image = req.file.path;
+        }
         const coach = await coachService.createCoachProfile(req.user.id, req.body);
         res.status(201).json({ success: true, data: coach, message: req.t('success') });
     } catch (error) {

@@ -54,6 +54,14 @@ const Booking = sequelize.define('Booking', {
             model: 'Categories',
             key: 'id'
         }
+    },
+    hasOffer: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    offerValue: {
+        type: DataTypes.FLOAT,
+        defaultValue: 0
     }
 }, {
     timestamps: true

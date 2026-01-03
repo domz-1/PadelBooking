@@ -1,6 +1,7 @@
 const express = require('express');
 const { createVenue, updateVenue, deleteVenue, getVenues, getVenue } = require('./venue.controller');
 const { protect, authorize } = require('../../middleware/auth');
+const { upload, convertImage } = require('../../middleware/upload');
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ router.use(authorize('admin'));
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -45,7 +46,7 @@ router.use(authorize('admin'));
  */
 router.route('/')
     .get(getVenues)
-    .post(createVenue);
+    .post(upload.array('images', 5), convertImage, createVenue);
 
 /**
  * @swagger
@@ -70,7 +71,7 @@ router.route('/')
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *     responses:
@@ -89,7 +90,7 @@ router.route('/')
  */
 router.route('/:id')
     .get(getVenue)
-    .put(updateVenue)
+    .put(upload.array('images', 5), convertImage, updateVenue)
     .delete(deleteVenue);
 
 module.exports = router;

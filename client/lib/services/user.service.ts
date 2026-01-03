@@ -17,7 +17,7 @@ export const userService = {
         return response.data;
     },
 
-    findPartners: async (params?: { level?: string; region?: string }) => {
+    findPartners: async (params?: { level?: string; region?: string; page?: number; limit?: number }) => {
         const response = await api.get<ApiListResponse<User>>('/users/partners', { params });
         return response.data;
     }

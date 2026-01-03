@@ -53,6 +53,9 @@ exports.getVenue = async (req, res, next) => {
 
 exports.createVenue = async (req, res, next) => {
     try {
+        if (req.files && req.files.length > 0) {
+            req.body.images = req.files.map(file => file.path);
+        }
         const venue = await venueService.createVenue(req.body);
         res.status(201).json({ success: true, data: venue });
     } catch (error) {
@@ -62,6 +65,9 @@ exports.createVenue = async (req, res, next) => {
 
 exports.updateVenue = async (req, res, next) => {
     try {
+        if (req.files && req.files.length > 0) {
+            req.body.images = req.files.map(file => file.path);
+        }
         const venue = await venueService.updateVenue(req.params.id, req.body);
         if (!venue) {
             return res.status(404).json({ success: false, message: 'Venue not found' });

@@ -32,18 +32,17 @@ class UserService {
     }
 
     async findPartners(filters) {
-        const { level, region } = filters;
+        const { level, region, limit, offset } = filters;
         const where = { isPublic: true };
 
         if (level) {
-            // Assuming level is stored in stats or a separate field.
-            // For simplicity, let's assume a 'level' field was added or we filter by rating
             // where.level = level;
         }
 
-        // Basic implementation returning all public users for now, can be enhanced
-        return await User.findAll({
+        return await User.findAndCountAll({
             where,
+            limit,
+            offset,
             attributes: ['id', 'name', 'image', 'bio', 'stats']
         });
     }

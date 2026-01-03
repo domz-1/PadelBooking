@@ -10,6 +10,9 @@ import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { FileUploadDialog } from "@/components/ui/file-upload-dialog"
 
+import { Input } from "@/components/ui/input"
+import { useDebounce } from "@/hooks/use-debounce"
+
 export default function UsersPage() {
     const router = useRouter();
     const [data, setData] = useState<User[]>([])
@@ -20,32 +23,25 @@ export default function UsersPage() {
     })
     const [totalUsers, setTotalUsers] = useState(0)
     const [activeTab, setActiveTab] = useState("all")
-    const [searchQuery, setSearchQuery] = useState("")
+    const [searchInput, setSearchInput] = useState("")
+    const searchQuery = useDebounce(searchInput, 500)
 
     const fetchUsers = useCallback(async () => {
         setLoading(true)
         try {
-            // Logic to filter by tab
-            // "all": no filter
-            // "normal": isGuest = false (verify service implementation)
-            // "guest": isGuest = true 
-            // Note: adminUserService.getAll needs to support isGuest param if not already.
-            // Let's assume we pass search and pagination for now. 
-            // If backend doesn't support 'isGuest' filter yet, we might need to filter client side OR update backend.
-            // The existing backend 'users.admin.routes.js' calls 'getUsers'. Let's check 'user.controller.js' later if needed.
-            // For now passing it as param.
-
-            const response = await adminUserService.getAll({
+            const params: any = {
                 page: pagination.pageIndex + 1,
                 limit: pagination.pageSize,
                 search: searchQuery
-            });
+            };
 
-            // Client side filtering for tabs if backend doesn't support it yet (Optimization todo)
-            // But relying on pagination means we should filter on backend.
-            // Ideally we need to update service to support 'isGuest'. 
-            // But let's start with this structure.
+            if (activeTab === "normal") {
+                params.isGuest = false;
+            } else if (activeTab === "guest") {
+                params.isGuest = true;
+            }
 
+            const response = await adminUserService.getAll(params);
             setData(response.data)
             setTotalUsers(response.count)
         } catch (error) {
@@ -59,9 +55,14 @@ export default function UsersPage() {
         fetchUsers()
     }, [fetchUsers])
 
+    // Reset pagination when tab or search changes
+    useEffect(() => {
+        setPagination(prev => ({ ...prev, pageIndex: 0 }));
+    }, [activeTab, searchQuery]);
+
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <h1 className="text-3xl font-bold tracking-tight">Users Management</h1>
                 <div className="flex items-center gap-2">
                     <FileUploadDialog
@@ -76,44 +77,52 @@ export default function UsersPage() {
                 </div>
             </div>
 
-            <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-                <TabsList>
-                    <TabsTrigger value="all">All Users</TabsTrigger>
-                    <TabsTrigger value="normal">Normal Users</TabsTrigger>
-                    <TabsTrigger value="guest">Guest Users</TabsTrigger>
-                </TabsList>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <Tabs defaultValue="all" className="w-full sm:w-auto" onValueChange={setActiveTab}>
+                    <TabsList>
+                        <TabsTrigger value="all">All Users</TabsTrigger>
+                        <TabsTrigger value="normal">Normal Users</TabsTrigger>
+                        <TabsTrigger value="guest">Guest Users</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+                <div className="w-full sm:w-72">
+                    <Input
+                        placeholder="Search users..."
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                    />
+                </div>
+            </div>
 
-                <TabsContent value="all" className="mt-4">
+            <Tabs value={activeTab} className="w-full">
+                <TabsContent value="all" className="mt-0">
                     <DataTable
                         columns={columns}
                         data={data}
                         pageCount={Math.ceil(totalUsers / pagination.pageSize)}
                         pagination={pagination}
                         onPaginationChange={setPagination}
-                        searchKey="name" // Client side search within page? No, we have server side search. DataTable supports client side.
-                    // We might need to handle server side search via input outside DataTable or update DataTable to support server search callback.
-                    // For now using DataTable internal search if it only filters current page, wait. 
-                    // The current DataTable implementation supports 'searchKey' which filters *data passed to it*.
-                    // Since we have server side pagination, we need server side search.
-                    // Let's assume DataTable handles visual filter only or we need to add a Search Input above.
+                        loading={loading}
                     />
                 </TabsContent>
-                <TabsContent value="normal" className="mt-4">
+                <TabsContent value="normal" className="mt-0">
                     <DataTable
                         columns={columns}
-                        data={data} // This should be filtered data
+                        data={data}
                         pageCount={Math.ceil(totalUsers / pagination.pageSize)}
                         pagination={pagination}
                         onPaginationChange={setPagination}
+                        loading={loading}
                     />
                 </TabsContent>
-                <TabsContent value="guest" className="mt-4">
+                <TabsContent value="guest" className="mt-0">
                     <DataTable
                         columns={columns}
-                        data={data} // This should be filtered data
+                        data={data}
                         pageCount={Math.ceil(totalUsers / pagination.pageSize)}
                         pagination={pagination}
                         onPaginationChange={setPagination}
+                        loading={loading}
                     />
                 </TabsContent>
             </Tabs>

@@ -99,6 +99,33 @@ export default function ViewBranchPage() {
                     </div>
                 </CardContent>
             </Card>
-        </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-xl">Associated Venues</CardTitle>
+                    <CardDescription>Venues managed by this branch.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {branch.Venues && branch.Venues.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {branch.Venues.map((venue: any) => (
+                                <div key={venue.id} className="border rounded-lg p-4 bg-card hover:bg-muted/50 transition-colors">
+                                    <h4 className="font-semibold">{venue.name}</h4>
+                                    <p className="text-sm text-muted-foreground mt-1">{venue.type || "Standard"}</p>
+                                    <div className="mt-4 flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                                        <span className="text-xs text-muted-foreground mr-2">Price/Hr</span>
+                                        <Badge variant="outline">${venue.pricePerHour}</Badge>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-10 text-muted-foreground">
+                            No venues assigned to this branch yet.
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div >
     )
 }

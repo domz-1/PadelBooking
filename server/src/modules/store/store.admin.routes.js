@@ -1,6 +1,7 @@
 const express = require('express');
 const { createProduct, updateProduct, deleteProduct, getAllOrders, updateOrderStatus } = require('./store.controller');
 const { protect, authorize } = require('../../middleware/auth');
+const { upload, convertImage } = require('../../middleware/upload');
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ router.use(authorize('admin'));
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -37,7 +38,7 @@ router.use(authorize('admin'));
  *       201:
  *         description: Product created
  */
-router.post('/products', createProduct);
+router.post('/products', upload.single('image'), convertImage, createProduct);
 
 /**
  * @swagger
@@ -70,7 +71,7 @@ router.post('/products', createProduct);
  *         description: Product deleted
  */
 router.route('/products/:id')
-    .put(updateProduct)
+    .put(upload.single('image'), convertImage, updateProduct)
     .delete(deleteProduct);
 
 /**

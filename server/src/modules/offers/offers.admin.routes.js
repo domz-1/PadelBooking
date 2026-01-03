@@ -1,6 +1,7 @@
 const express = require('express');
 const { createOffer, deleteOffer, getAllOffers } = require('./offer.controller');
 const { protect, authorize } = require('../../middleware/auth');
+const { upload, convertImage } = require('../../middleware/upload');
 
 const router = express.Router();
 
@@ -56,7 +57,7 @@ router.use(authorize('admin'));
  */
 router.route('/')
     .get(getAllOffers)
-    .post(createOffer);
+    .post(upload.single('image'), convertImage, createOffer);
 
 /**
  * @swagger

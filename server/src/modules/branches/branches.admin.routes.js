@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const branchController = require('./branch.controller');
 const { protect, authorize } = require('../../middleware/auth');
+const { upload, convertImage } = require('../../middleware/upload');
 
 /**
  * @swagger
@@ -21,7 +22,7 @@ const { protect, authorize } = require('../../middleware/auth');
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -39,7 +40,7 @@ const { protect, authorize } = require('../../middleware/auth');
  *       400:
  *         description: Invalid input
  */
-router.post('/', protect, authorize('admin', 'super-admin'), branchController.createBranch);
+router.post('/', protect, authorize('admin', 'super-admin'), upload.array('images', 5), convertImage, branchController.createBranch);
 
 /**
  * @swagger
@@ -94,7 +95,7 @@ router.get('/:id', protect, authorize('admin', 'super-admin'), branchController.
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
@@ -112,7 +113,7 @@ router.get('/:id', protect, authorize('admin', 'super-admin'), branchController.
  *       404:
  *         description: Branch not found
  */
-router.put('/:id', protect, authorize('admin', 'super-admin'), branchController.updateBranch);
+router.put('/:id', protect, authorize('admin', 'super-admin'), upload.array('images', 5), convertImage, branchController.updateBranch);
 
 /**
  * @swagger

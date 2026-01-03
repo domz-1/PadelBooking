@@ -76,3 +76,36 @@ exports.getWaitlistForSlot = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.adminJoinWaitlist = async (req, res, next) => {
+    try {
+        const { userId, venueId, date, startTime, endTime } = req.body;
+
+        const waitlistEntry = await Waitlist.create({
+            userId,
+            venueId,
+            date,
+            startTime,
+            endTime
+        });
+
+        res.status(201).json({ success: true, data: waitlistEntry });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.adminDeleteWaitlist = async (req, res, next) => {
+    try {
+        const entry = await Waitlist.findByPk(req.params.id);
+
+        if (!entry) {
+            return res.status(404).json({ success: false, message: req.t('notFound') });
+        }
+
+        await entry.destroy();
+        res.status(200).json({ success: true, data: {} });
+    } catch (error) {
+        next(error);
+    }
+};

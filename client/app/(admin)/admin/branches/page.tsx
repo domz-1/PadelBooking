@@ -46,7 +46,7 @@ export default function AdminBranchesPage() {
                 </Button>
             </div>
 
-            <DataTable columns={columns} data={branches} filterColumn="name" />
+            <DataTable columns={columns} data={branches} searchKey="name" />
         </div>
     )
 }

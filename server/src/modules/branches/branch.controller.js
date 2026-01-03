@@ -2,6 +2,9 @@ const branchService = require('./branch.service');
 
 const createBranch = async (req, res) => {
     try {
+        if (req.files && req.files.length > 0) {
+            req.body.images = req.files.map(file => file.path);
+        }
         const branch = await branchService.createBranch(req.body);
         res.status(201).json(branch);
     } catch (error) {
@@ -30,6 +33,9 @@ const getBranchById = async (req, res) => {
 
 const updateBranch = async (req, res) => {
     try {
+        if (req.files && req.files.length > 0) {
+            req.body.images = req.files.map(file => file.path);
+        }
         const branch = await branchService.updateBranch(req.params.id, req.body);
         res.status(200).json(branch);
     } catch (error) {

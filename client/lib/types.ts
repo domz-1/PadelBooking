@@ -100,9 +100,9 @@ export interface Offer {
 export interface Sponsor {
     id: number;
     name: string;
-    imageUrl?: string;
-    website?: string;
-    active: boolean;
+    image: string;
+    link: string;
+    isActive: boolean;
 }
 
 export interface Sport {

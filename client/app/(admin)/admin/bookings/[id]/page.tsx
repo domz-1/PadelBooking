@@ -6,16 +6,27 @@ import { adminBookingService } from "@/lib/services/admin/bookings.service"
 import type { Booking } from "@/lib/schemas"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Trash, Calendar, Clock, MapPin, DollarSign, User } from "lucide-react"
+import {
+    ArrowLeft,
+    Trash,
+    Calendar,
+    Clock,
+    MapPin,
+    DollarSign,
+    User,
+    Pencil
+} from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { EditBookingDialog } from "@/components/admin/bookings/EditBookingDialog"
 
 export default function ViewBookingPage() {
     const params = useParams()
     const router = useRouter()
     const [booking, setBooking] = useState<Booking | null>(null)
     const [loading, setLoading] = useState(true)
+    const [showEdit, setShowEdit] = useState(false)
 
     useEffect(() => {
         const fetchBooking = async () => {
@@ -38,7 +49,7 @@ export default function ViewBookingPage() {
     const handleDelete = async () => {
         if (!booking) return
         try {
-            await adminBookingService.deleteBooking(booking.id)
+            if (booking.id) await adminBookingService.deleteBooking(booking.id)
             toast.success("Booking deleted")
             router.push("/admin/bookings")
         } catch (error) {
@@ -57,6 +68,9 @@ export default function ViewBookingPage() {
                 </Button>
                 <h1 className="text-2xl font-bold tracking-tight">Booking Details</h1>
                 <div className="ml-auto flex gap-2">
+                    <Button variant="outline" onClick={() => setShowEdit(true)}>
+                        <Pencil className="mr-2 h-4 w-4" /> Edit
+                    </Button>
                     <ConfirmDialog
                         title="Delete Booking"
                         description="Are you sure you want to delete this booking?"
@@ -68,6 +82,15 @@ export default function ViewBookingPage() {
                     </ConfirmDialog>
                 </div>
             </div>
+
+            {booking && (
+                <EditBookingDialog
+                    booking={booking}
+                    open={showEdit}
+                    onOpenChange={setShowEdit}
+                    onSuccess={() => window.location.reload()}
+                />
+            )}
 
             <Card>
                 <CardHeader>

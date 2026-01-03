@@ -25,7 +25,7 @@ const User = sequelize.define('User', {
         allowNull: false
     },
     role: {
-        type: DataTypes.ENUM('user', 'admin'),
+        type: DataTypes.ENUM('user', 'admin', 'coach'),
         defaultValue: 'user'
     },
     phone: {
@@ -34,7 +34,14 @@ const User = sequelize.define('User', {
     },
     image: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true,
+        get() {
+            const rawValue = this.getDataValue('image');
+            if (!rawValue) return null;
+            if (rawValue.startsWith('http')) return rawValue;
+            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            return `${baseUrl}/${rawValue.replace(/\\/g, '/')}`;
+        }
     },
     bio: {
         type: DataTypes.TEXT,

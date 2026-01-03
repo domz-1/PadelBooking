@@ -32,5 +32,30 @@ export const adminBookingService = {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;
+    },
+
+    update: async (id: number, data: Partial<Booking>) => {
+        const response = await adminApi.put<{ success: boolean; data: Booking }>(`/bookings/${id}`, data);
+        return response.data;
+    },
+
+    getWaitlistForSlot: async (params: { venueId: number; date: string; startTime: string; endTime: string }) => {
+        const response = await adminApi.get<{ success: boolean; data: any[] }>('/bookings/waitlist/slot', { params });
+        return response.data;
+    },
+
+    joinWaitlist: async (data: { userId: number; venueId: number; date: string; startTime: string; endTime: string }) => {
+        const response = await adminApi.post<{ success: boolean; data: any }>('/bookings/waitlist', data);
+        return response.data;
+    },
+
+    deleteWaitlistEntry: async (id: number) => {
+        const response = await adminApi.delete<{ success: boolean }>(`/bookings/waitlist/${id}`);
+        return response.data;
+    },
+
+    create: async (data: Partial<Booking>) => {
+        const response = await adminApi.post<{ success: boolean; data: Booking }>('/bookings', data);
+        return response.data;
     }
 };

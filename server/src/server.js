@@ -12,18 +12,17 @@ const io = socketio(server, {
 });
 
 // Make io accessible in routes
-app.use((req, res, next) => {
-    req.io = io;
-    next();
-});
+app.set('io', io);
 
 // Socket.io logic
 io.on('connection', (socket) => {
     console.log('New WebSocket connection');
 
     socket.on('join', (userId) => {
-        socket.join(userId);
-        console.log(`User ${userId} joined their room`);
+        if (userId) {
+            socket.join(userId.toString());
+            console.log(`User ${userId} joined their room`);
+        }
     });
 
     socket.on('disconnect', () => {

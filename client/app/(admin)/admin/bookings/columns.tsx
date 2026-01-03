@@ -93,17 +93,21 @@ export const columns: ColumnDef<Booking>[] = [
 
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { useState } from "react"
+import { EditBookingDialog } from "@/components/admin/bookings/EditBookingDialog"
+import { toast } from "sonner"
 
 function BookingActions({ booking }: { booking: Booking }) {
     const [showDelete, setShowDelete] = useState(false)
+    const [showEdit, setShowEdit] = useState(false)
 
     const handleDelete = async () => {
         if (!booking.id) return;
         try {
             await adminBookingService.deleteBooking(booking.id);
+            toast.success("Booking deleted successfully")
             window.location.reload();
         } catch (e) {
-            console.error(e)
+            toast.error("Failed to delete booking")
         }
     }
 
@@ -116,6 +120,14 @@ function BookingActions({ booking }: { booking: Booking }) {
                 description="Are you sure you want to delete this booking? This action cannot be undone."
                 onConfirm={handleDelete}
             />
+
+            <EditBookingDialog
+                booking={booking}
+                open={showEdit}
+                onOpenChange={setShowEdit}
+                onSuccess={() => window.location.reload()}
+            />
+
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
@@ -127,6 +139,8 @@ function BookingActions({ booking }: { booking: Booking }) {
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => window.location.href = `/admin/bookings/${booking.id}`}>View details</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setShowEdit(true)}>Edit Booking</DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onSelect={() => setShowDelete(true)} className="text-destructive">Delete Booking</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

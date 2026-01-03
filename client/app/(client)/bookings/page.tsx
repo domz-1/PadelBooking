@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import type { Venue, Booking } from "@/lib/schemas";
 import { toast } from "sonner";
 import { useAuthStore } from "@/hooks/use-auth-store";
+import { socketService } from "@/lib/socket";
 import { useRouter } from "next/navigation";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -34,6 +35,7 @@ export default function BookingsPage() {
     const [venues, setVenues] = useState<Venue[]>([]);
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [branches, setBranches] = useState<any[]>([]);
+    const [waitlistEntries, setWaitlistEntries] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Booking Modal State
@@ -41,7 +43,7 @@ export default function BookingsPage() {
     const [selectedSlot, setSelectedSlot] = useState<{ venueId: number, time: string } | null>(null);
     const [bookingDuration, setBookingDuration] = useState(1); // Hours
 
-    const { isAuthenticated } = useAuthStore();
+    const { isAuthenticated, user } = useAuthStore();
     const router = useRouter();
 
     const formattedDate = format(date, "yyyy-MM-dd");
@@ -50,22 +52,31 @@ export default function BookingsPage() {
         setLoading(true);
         try {
             // Parallel fetch
-            const [venuesRes, bookingsRes, branchesRes] = await Promise.all([
+            const [venuesRes, bookingsRes, branchesRes, waitlistRes] = await Promise.all([
                 api.get("/venues"),
                 api.get(`/bookings?date=${formattedDate}&limit=100`),
-                api.get("/branches")
+                api.get("/branches"),
+                isAuthenticated ? api.get("/bookings/waitlist") : Promise.resolve({ data: { success: true, data: [] } })
             ]);
 
             if (venuesRes.data.success) {
                 setVenues(venuesRes.data.data);
             }
 
+            if (waitlistRes.data.success) {
+                setWaitlistEntries(waitlistRes.data.data);
+            }
+
             if (bookingsRes.data.success) {
                 setBookings(bookingsRes.data.data);
             }
 
-            if (branchesRes.data.success) {
-                setBranches(branchesRes.data.data);
+            if (branchesRes.data) {
+                if (Array.isArray(branchesRes.data)) {
+                    setBranches(branchesRes.data);
+                } else if (branchesRes.data.success) {
+                    setBranches(branchesRes.data.data);
+                }
             }
 
         } catch (error) {
@@ -79,6 +90,32 @@ export default function BookingsPage() {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    // Real-time updates listener
+    useEffect(() => {
+        socketService.connect(Number(user?.id));
+        const socket = socketService.getSocket();
+
+        if (socket) {
+            socket.on("bookingUpdate", ({ type, data, id }: any) => {
+                // Determine if the update affects currently viewed date
+                const affectedDate = data?.date || null;
+                if (affectedDate && affectedDate !== formattedDate) return;
+
+                if (type === 'create') {
+                    setBookings(prev => [...prev, data]);
+                } else if (type === 'update') {
+                    setBookings(prev => prev.map(b => b.id === data.id ? data : b));
+                } else if (type === 'delete') {
+                    setBookings(prev => prev.filter(b => b.id !== Number(id)));
+                }
+            });
+        }
+
+        return () => {
+            if (socket) socket.off("bookingUpdate");
+        };
+    }, [formattedDate, user?.id]);
 
     const handleCreateBooking = (venueId: number, time: string) => {
         if (!isAuthenticated) {
@@ -170,7 +207,9 @@ export default function BookingsPage() {
                     bookings={bookings}
                     branches={branches}
                     date={formattedDate}
+                    waitlistEntries={waitlistEntries}
                     onCreateBooking={handleCreateBooking}
+                    onWaitlistUpdate={fetchData}
                     onViewBooking={(booking) => console.log(booking)}
                     publicView={!isAuthenticated}
                 />

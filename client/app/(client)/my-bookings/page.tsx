@@ -130,7 +130,7 @@ export default function MyBookingsPage() {
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => cancelBooking(booking.id)} className="bg-red-600 hover:bg-red-700">
+                                                    <AlertDialogAction onClick={() => booking.id && cancelBooking(booking.id)} className="bg-red-600 hover:bg-red-700">
                                                         Yes, Cancel Booking
                                                     </AlertDialogAction>
                                                 </AlertDialogFooter>

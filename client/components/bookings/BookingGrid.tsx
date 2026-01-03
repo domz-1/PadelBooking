@@ -4,6 +4,9 @@ import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import type { Venue, Booking, Branch } from "@/lib/schemas";
 import { useAuthStore } from "@/hooks/use-auth-store";
+import { bookingService } from "@/lib/services/booking.service";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import {
     Clock,
     MapPin,
@@ -12,19 +15,36 @@ import {
     Shield,
     Pencil,
     Trash2,
-    CalendarPlus
+    CalendarPlus,
+    Loader2
 } from "lucide-react";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogFooter,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
+
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { EditBookingDialog } from "@/components/admin/bookings/EditBookingDialog";
+import { AdminCreateBookingDialog } from "@/components/admin/bookings/AdminCreateBookingDialog";
+
 
 interface BookingGridProps {
     bookings: Booking[];
@@ -37,6 +57,8 @@ interface BookingGridProps {
     onEditBooking?: (booking: Booking) => void;
     onDeleteBooking?: (bookingId: number) => void;
     publicView?: boolean;
+    waitlistEntries?: any[];
+    onWaitlistUpdate?: () => void;
 }
 
 export default function BookingGrid({
@@ -48,12 +70,27 @@ export default function BookingGrid({
     onJoinWaitlist,
     onEditBooking,
     onDeleteBooking,
-    publicView = false
+    date,
+    publicView = false,
+    waitlistEntries = [],
+    onWaitlistUpdate
 }: BookingGridProps) {
-    const { user } = useAuthStore();
-    const { toast } = useToast();
+    const { user, isAuthenticated } = useAuthStore();
+    const router = useRouter();
     const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
     const [selectedBranchId, setSelectedBranchId] = useState<number | 'all'>('all');
+
+    // Modals State
+    const [showWaitlistModal, setShowWaitlistModal] = useState(false);
+    const [showManagementModal, setShowManagementModal] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [slotInfo, setSlotInfo] = useState<{ venueId: number; time: string } | null>(null);
+    const [editDuration, setEditDuration] = useState<number>(1);
+    const [isEditing, setIsEditing] = useState(false);
+    const [showAdminCreate, setShowAdminCreate] = useState(false);
+    const [adminCreateSlot, setAdminCreateSlot] = useState<{ venueId: number; venueName: string; time: string } | null>(null);
 
     // Filter venues by branch if branches exist
     const filteredVenues = useMemo(() => {
@@ -61,7 +98,7 @@ export default function BookingGrid({
         return venues.filter(v => v.branchId === selectedBranchId);
     }, [venues, selectedBranchId]);
 
-    const hours = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM to 11 PM
+    const hours = Array.from({ length: 24 }, (_, i) => i); // 12 AM to 11 PM (0-23)
 
     const formatHour = (hour: number) => {
         const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -89,16 +126,38 @@ export default function BookingGrid({
         return startHour === hour;
     };
 
-    const isOwnBooking = (booking: Booking) => {
-        if (!user) return false;
-        if (typeof booking.userId === 'string' || typeof user.id === 'string') {
-            return String(booking.userId) === String(user.id);
-        }
-        return booking.userId === user.id;
+    const getWaitlistEntry = (venueId: number, hour: number) => {
+        const timeStr = formatTimeForValue(hour); // HH:00
+        return waitlistEntries.find(w => {
+            if (Number(w.venueId) !== Number(venueId)) return false;
+            if (w.date !== date) return false;
+            // Compare first 5 characters (HH:MM) to ignore potential seconds (:SS)
+            const wTime = w.startTime.substring(0, 5);
+            return wTime === timeStr;
+        });
     };
 
-    const getStatusColor = (status: string, isOwn: boolean) => {
-        if (!isOwn) return 'bg-primary/90 text-primary-foreground border-primary'; // Blocked for others
+    const isOwnBooking = (booking: Booking) => {
+        if (!user) return false;
+        return String(booking.userId) === String(user.id);
+    };
+
+    const isAdmin = user?.role === 'admin';
+
+    const getStatusStyle = (booking: Booking, isOwn: boolean) => {
+        if (!isOwn && !isAdmin) return { className: 'bg-primary/90 text-primary-foreground border-primary' }; // Blocked for others
+
+        // Use category color if available
+        if (booking.Category?.color) {
+            return {
+                style: {
+                    backgroundColor: `${booking.Category.color}22`, // 13% opacity
+                    color: booking.Category.color,
+                    borderColor: `${booking.Category.color}44`
+                },
+                className: 'hover:bg-opacity-20'
+            };
+        }
 
         const colors: Record<string, string> = {
             'confirmed': 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200',
@@ -107,7 +166,83 @@ export default function BookingGrid({
             'pending-coach': 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200',
             'no-show': 'bg-gray-100 text-gray-800 border-gray-200'
         };
-        return colors[status] || colors.pending;
+        return { className: colors[booking.status] || colors.pending };
+    };
+
+    const handleUpdateBooking = async () => {
+        if (!selectedBooking?.id) return;
+        setLoading(true);
+        try {
+            const [hour] = selectedBooking.startTime.split(':').map(Number);
+            const endHour = hour + editDuration;
+            const endTime = `${Math.floor(endHour).toString().padStart(2, '0')}:${(endHour % 1 * 60).toString().padStart(2, '0')}`;
+
+            await bookingService.update(selectedBooking.id, {
+                endTime
+            });
+            toast.success("Booking updated!");
+            setShowManagementModal(false);
+            setIsEditing(false);
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to update booking");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleJoinWaitlist = async () => {
+        if (!slotInfo) return;
+        setLoading(true);
+        try {
+            const [hour] = slotInfo.time.split(':').map(Number);
+            const endTime = `${(hour + 1).toString().padStart(2, '0')}:00`;
+
+            await bookingService.joinWaitlist({
+                venueId: slotInfo.venueId,
+                date,
+                startTime: slotInfo.time,
+                endTime
+            });
+            toast.success("Joined waitlist! You will be notified if this slot becomes available.");
+            setShowWaitlistModal(false);
+            onWaitlistUpdate?.();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to join waitlist");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLeaveWaitlist = async () => {
+        const entry = slotInfo ? getWaitlistEntry(slotInfo.venueId, parseInt(slotInfo.time.split(':')[0])) : null;
+        if (!entry?.id) return;
+        setLoading(true);
+        try {
+            await bookingService.leaveWaitlist(entry.id);
+            toast.success("Left waitlist!");
+            setShowWaitlistModal(false);
+            onWaitlistUpdate?.();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to leave waitlist");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteBooking = async () => {
+        if (!selectedBooking?.id) return;
+        setLoading(true);
+        try {
+            await bookingService.delete(selectedBooking.id);
+            toast.success("Booking cancelled successfully");
+            setShowDeleteConfirm(false);
+            setShowManagementModal(false);
+            // Optionally redirect or refresh via parent - but socket should handle update
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to cancel booking");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -143,10 +278,17 @@ export default function BookingGrid({
                                 <div
                                     key={venue.id}
                                     onClick={() => setSelectedVenue(venue)}
-                                    className="h-10 flex items-center justify-center font-semibold text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer gap-1 px-2 border border-transparent hover:border-gray-200 transition-all text-center"
+                                    className="h-14 flex flex-col items-center justify-center font-semibold text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer gap-0.5 px-2 border border-transparent hover:border-gray-200 transition-all text-center"
                                 >
-                                    <MapPin className="w-3 h-3 text-brand-500" />
-                                    <span className="truncate">{venue.name}</span>
+                                    {venue.Branch && (
+                                        <span className="text-[10px] text-muted-foreground uppercase tracking-wide truncate max-w-full">
+                                            {venue.Branch.name}
+                                        </span>
+                                    )}
+                                    <div className="flex items-center gap-1">
+                                        <MapPin className="w-3 h-3 text-brand-500" />
+                                        <span className="truncate">{venue.name}</span>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -169,6 +311,7 @@ export default function BookingGrid({
                                     const isBooked = !!booking;
                                     const isStart = isStartOfBooking(booking, hour);
                                     const isOwn = booking ? isOwnBooking(booking) : false;
+                                    const waitlisted = getWaitlistEntry(venue.id, hour);
 
                                     return (
                                         <div
@@ -176,66 +319,76 @@ export default function BookingGrid({
                                             className={cn(
                                                 "h-24 relative rounded-lg border transition-all duration-200",
                                                 !isBooked && "bg-background hover:bg-secondary/40 cursor-pointer border-dashed border-border/60 hover:border-primary/50 group flex flex-col items-center justify-center",
-                                                isBooked && "border-none bg-transparent"
+                                                isBooked && "border-none bg-transparent",
+                                                waitlisted && "border-orange-400 border-2 bg-orange-50/30"
                                             )}
-                                            onClick={() => !isBooked && onCreateBooking(venue.id, formatTimeForValue(hour))}
+                                            onClick={() => {
+                                                if (!isBooked) {
+                                                    if (isAdmin) {
+                                                        setAdminCreateSlot({
+                                                            venueId: venue.id,
+                                                            venueName: venue.name,
+                                                            time: formatTimeForValue(hour)
+                                                        });
+                                                        setShowAdminCreate(true);
+                                                    } else {
+                                                        onCreateBooking(venue.id, formatTimeForValue(hour));
+                                                    }
+                                                }
+                                            }}
                                         >
                                             {/* Booking Slot */}
                                             {isBooked && isStart && (
                                                 <div
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        if (isOwn) {
-                                                            onViewBooking(booking);
-                                                        }
-                                                    }}
                                                     className={cn(
-                                                        "absolute inset-0 z-20 rounded-md p-2 text-xs flex flex-col gap-1 shadow-sm border animate-in fade-in zoom-in-95 overflow-hidden",
-                                                        getStatusColor(booking.status, isOwn),
-                                                        isOwn ? "cursor-pointer ring-2 ring-primary ring-offset-1" : "cursor-not-allowed opacity-90"
+                                                        "absolute inset-0 z-20 rounded-md p-2 text-xs flex flex-col gap-1 shadow-sm border animate-in fade-in zoom-in-95 overflow-hidden transition-transform active:scale-[0.98]",
+                                                        getStatusStyle(booking, isOwn).className,
+                                                        "cursor-pointer ring-offset-1",
+                                                        isOwn && "ring-2 ring-primary"
                                                     )}
                                                     style={{
+                                                        ...getStatusStyle(booking, isOwn).style,
                                                         height: `calc(100% * ${parseInt(booking.endTime.split(':')[0]) - parseInt(booking.startTime.split(':')[0])} + ${(parseInt(booking.endTime.split(':')[0]) - parseInt(booking.startTime.split(':')[0]) - 1) * 0.5}rem)`,
                                                     }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (!isAuthenticated) {
+                                                            router.push("/auth/login");
+                                                            return;
+                                                        }
+                                                        if (isOwn || isAdmin) {
+                                                            setSelectedBooking(booking);
+                                                            setShowManagementModal(true);
+                                                        } else {
+                                                            setSlotInfo({ venueId: venue.id, time: formatTimeForValue(hour) });
+                                                            setShowWaitlistModal(true);
+                                                        }
+                                                    }}
                                                 >
+                                                    {waitlisted && (
+                                                        <div className="absolute top-1 right-1 z-30">
+                                                            <Badge className="bg-orange-500 hover:bg-orange-600 text-[9px] px-1.5 h-4.5 border-white shadow-sm animate-pulse">
+                                                                My Waitlist
+                                                            </Badge>
+                                                        </div>
+                                                    )}
                                                     <div className="font-bold truncate flex items-center justify-between gap-1.5">
                                                         <div className="flex items-center gap-1">
                                                             {isOwn ? <User className="w-3.5 h-3.5" /> : <Shield className="w-3.5 h-3.5" />}
-                                                            {publicView ? "Reserved" : (isOwn ? "My Booking" : "Booked")}
+                                                            {/* User name always visible for admin or owner */}
+                                                            {(isOwn || isAdmin) && (
+                                                                <span className="truncate">{booking.User?.name || "Booked"}</span>
+                                                            )}
+                                                            {!isOwn && !isAdmin && <span>Reserved</span>}
                                                         </div>
                                                     </div>
 
-                                                    {isOwn && (
-                                                        <>
-                                                            <div className="mt-1 opacity-90 truncate text-[10px]">
-                                                                {booking.User?.name}
-                                                            </div>
-                                                            <div className="flex justify-between items-center opacity-90 mt-auto">
-                                                                <span className="truncate text-[10px] uppercase tracking-wider font-semibold">{booking.type || "Standard"}</span>
-                                                                {!publicView && booking.totalPrice && <span className="font-mono">${booking.totalPrice}</span>}
-                                                            </div>
-                                                            {/* Action Buttons for Owner */}
-                                                            <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/20 rounded p-1 backdrop-blur-sm">
-                                                                {onEditBooking && (
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); onEditBooking(booking); }}
-                                                                        className="p-1 hover:bg-white/30 rounded text-foreground"
-                                                                        title="Edit"
-                                                                    >
-                                                                        <Pencil className="w-3 h-3" />
-                                                                    </button>
-                                                                )}
-                                                                {onDeleteBooking && (
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); onDeleteBooking(booking.id); }}
-                                                                        className="p-1 hover:bg-red-500/30 rounded text-red-700 dark:text-red-300"
-                                                                        title="Cancel"
-                                                                    >
-                                                                        <Trash2 className="w-3 h-3" />
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        </>
+                                                    {(isOwn || isAdmin) && (
+                                                        <div className="flex justify-between items-center opacity-90 mt-auto">
+                                                            <span className="truncate text-[9px] uppercase tracking-wider font-bold">
+                                                                {booking.Category?.name || (booking.type === 'academy' ? 'Academy' : 'Standard')}
+                                                            </span>
+                                                        </div>
                                                     )}
                                                 </div>
                                             )}
@@ -243,23 +396,30 @@ export default function BookingGrid({
                                             {/* Empty Slot Placeholder */}
                                             {!isBooked && (
                                                 <div className="w-full h-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {waitlisted && (
+                                                        <div className="absolute top-1 right-1 z-30 pointer-events-none">
+                                                            <Badge className="bg-orange-500 text-[9px] px-1.5 h-4.5 border-white shadow-sm">
+                                                                My Waitlist
+                                                            </Badge>
+                                                        </div>
+                                                    )}
                                                     <span className="text-xs text-primary font-bold flex items-center gap-1 mb-1">
                                                         <Plus className="w-3 h-3" /> Book
                                                     </span>
                                                     <span className="text-[10px] text-muted-foreground">${venue.pricePerHour}</span>
 
-                                                    {/* Waitlist Option (Visual only for now if not hovered, but could be separate action) */}
-                                                    {onJoinWaitlist && (
-                                                        <button
-                                                            className="mt-2 text-[10px] flex items-center gap-1 text-orange-600 hover:underline"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                onJoinWaitlist(venue.id, formatTimeForValue(hour));
-                                                            }}
-                                                        >
-                                                            <CalendarPlus className="w-3 h-3" /> Waitlist
-                                                        </button>
-                                                    )}
+                                                    {/* Waitlist Option */}
+                                                    <button
+                                                        className="mt-2 text-[10px] flex items-center gap-1 text-orange-600 hover:underline"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSlotInfo({ venueId: venue.id, time: formatTimeForValue(hour) });
+                                                            setShowWaitlistModal(true);
+                                                        }}
+                                                    >
+                                                        <CalendarPlus className="w-3 h-3" />
+                                                        {getWaitlistEntry(venue.id, hour) ? "Leave Waitlist" : "Waitlist"}
+                                                    </button>
                                                 </div>
                                             )}
                                         </div>
@@ -304,6 +464,186 @@ export default function BookingGrid({
                         </div>
                     </DialogContent>
                 </Dialog>
+
+                {/* Waitlist Modal */}
+                <Dialog open={showWaitlistModal} onOpenChange={setShowWaitlistModal}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>
+                                {slotInfo && getWaitlistEntry(slotInfo.venueId, parseInt(slotInfo.time.split(':')[0]))
+                                    ? "Leave Waitlist"
+                                    : "Join Waitlist"}
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="py-6 text-center space-y-4">
+                            <div className="flex justify-center">
+                                <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                                    <Clock className="w-6 h-6" />
+                                </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                {slotInfo && getWaitlistEntry(slotInfo.venueId, parseInt(slotInfo.time.split(':')[0]))
+                                    ? "You are currently on the waitlist for this slot. Would you like to leave?"
+                                    : "This slot is currently fully booked. Would you like to join the waitlist? We will notify you immediately if it becomes available."}
+                            </p>
+                            <div className="grid grid-cols-2 gap-4 text-left">
+                                <div className="p-3 bg-secondary/50 rounded-lg">
+                                    <Label className="text-[10px] uppercase text-muted-foreground">Time</Label>
+                                    <div className="text-sm font-semibold">{slotInfo?.time}</div>
+                                </div>
+                                <div className="p-3 bg-secondary/50 rounded-lg">
+                                    <Label className="text-[10px] uppercase text-muted-foreground">Date</Label>
+                                    <div className="text-sm font-semibold">{date}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setShowWaitlistModal(false)} disabled={loading}>
+                                Cancel
+                            </Button>
+                            {slotInfo && getWaitlistEntry(slotInfo.venueId, parseInt(slotInfo.time.split(':')[0])) ? (
+                                <Button variant="destructive" onClick={handleLeaveWaitlist} disabled={loading}>
+                                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                    Leave Waitlist
+                                </Button>
+                            ) : (
+                                <Button onClick={handleJoinWaitlist} disabled={loading}>
+                                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                    Join Waitlist
+                                </Button>
+                            )}
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Management Modal (My Booking) */}
+                {isAdmin ? (
+                    selectedBooking && (
+                        <EditBookingDialog
+                            booking={selectedBooking}
+                            open={showManagementModal}
+                            onOpenChange={setShowManagementModal}
+                            onSuccess={() => window.location.reload()}
+                        />
+                    )
+                ) : (
+                    <Dialog open={showManagementModal} onOpenChange={setShowManagementModal}>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Manage Your Booking</DialogTitle>
+                            </DialogHeader>
+                            {selectedBooking && (
+                                <div className="py-4 space-y-6">
+                                    <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl border">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                                <CalendarPlus className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <div className="font-semibold">{selectedBooking.startTime} - {selectedBooking.endTime}</div>
+                                                <div className="text-xs text-muted-foreground">{date}</div>
+                                            </div>
+                                        </div>
+                                        <Badge variant="outline" className="capitalize">
+                                            {selectedBooking.status}
+                                        </Badge>
+                                    </div>
+
+                                    {isEditing ? (
+                                        <div className="space-y-4 animate-in fade-in slide-in-from-top-1">
+                                            <Label>New Duration</Label>
+                                            <div className="flex items-center gap-2">
+                                                {[1, 1.5, 2].map(dur => (
+                                                    <Button
+                                                        key={dur}
+                                                        variant={editDuration === dur ? "default" : "outline"}
+                                                        size="sm"
+                                                        onClick={() => setEditDuration(dur)}
+                                                    >
+                                                        {dur} Hour{dur > 1 ? 's' : ''}
+                                                    </Button>
+                                                ))}
+                                            </div>
+                                            <div className="flex gap-2 pt-2">
+                                                <Button className="flex-1" onClick={handleUpdateBooking} disabled={loading}>
+                                                    {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                                                    Save Changes
+                                                </Button>
+                                                <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <Button
+                                                variant="outline"
+                                                className="h-20 flex flex-col gap-2"
+                                                onClick={() => {
+                                                    const [start] = selectedBooking.startTime.split(':').map(Number);
+                                                    const [end] = selectedBooking.endTime.split(':').map(Number);
+                                                    setEditDuration(end - start);
+                                                    setIsEditing(true);
+                                                }}
+                                            >
+                                                <Pencil className="w-5 h-5" />
+                                                <span>Edit Booking</span>
+                                            </Button>
+                                            <Button
+                                                variant="destructive"
+                                                className="h-20 flex flex-col gap-2"
+                                                onClick={() => setShowDeleteConfirm(true)}
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                                <span>Cancel Booking</span>
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            <DialogFooter>
+                                <Button variant="ghost" onClick={() => setShowManagementModal(false)}>
+                                    Close
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                )}
+
+                {/* Delete Confirmation */}
+                <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will cancel your booking. You can't undo this action if someone else books the slot.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel disabled={loading}>Back</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={(e) => { e.preventDefault(); handleDeleteBooking(); }}
+                                className="bg-red-600 hover:bg-red-700"
+                                disabled={loading}
+                            >
+                                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                Yes, Cancel Booking
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+
+                {adminCreateSlot && (
+                    <AdminCreateBookingDialog
+                        open={showAdminCreate}
+                        onOpenChange={setShowAdminCreate}
+                        venueId={adminCreateSlot.venueId}
+                        venueName={adminCreateSlot.venueName}
+                        date={date}
+                        startTime={adminCreateSlot.time}
+                        onSuccess={() => {
+                            // The parent page (BookingsPage) has a socket listener that will refresh the data
+                        }}
+                    />
+                )}
             </div>
         </div>
     );

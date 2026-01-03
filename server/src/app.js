@@ -23,6 +23,7 @@ const adminCoachRoutes = require('./modules/coaches/coaches.admin.routes'); // N
 const adminMatchRoutes = require('./modules/matches/matches.admin.routes'); // NEW
 const adminStoryRoutes = require('./modules/stories/stories.admin.routes'); // NEW
 const adminBranchRoutes = require('./modules/branches/branches.admin.routes'); // NEW
+const adminMetricsRoutes = require('./modules/metrics/metrics.routes'); // NEW
 
 // Client Route Imports
 const clientAuthRoutes = require('./modules/auth/auth.client.routes');
@@ -44,7 +45,9 @@ const clientBranchRoutes = require('./modules/branches/branches.client.routes');
 const app = express();
 
 // Security Middleware
-app.use(helmet());
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 app.use(cors());
 app.use(rateLimit);
 app.use(i18n);
@@ -75,6 +78,7 @@ adminRouter.use('/coaches', adminCoachRoutes); // NEW
 adminRouter.use('/matches', adminMatchRoutes); // NEW
 adminRouter.use('/stories', adminStoryRoutes); // NEW
 adminRouter.use('/branches', adminBranchRoutes); // NEW
+adminRouter.use('/metrics', adminMetricsRoutes); // NEW
 
 app.use('/admin', adminRouter);
 
@@ -100,6 +104,7 @@ app.use('/api', clientRouter);
 
 // Serve static files
 app.use(express.static(path.join(__dirname, '../public')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Handle SPA
 app.get(/.*/, (req, res, next) => {

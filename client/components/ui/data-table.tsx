@@ -34,6 +34,7 @@ interface DataTableProps<TData, TValue> {
     pageCount?: number
     pagination?: PaginationState
     onPaginationChange?: OnChangeFn<PaginationState>
+    loading?: boolean
 }
 
 export function DataTable<TData, TValue>({
@@ -43,13 +44,13 @@ export function DataTable<TData, TValue>({
     pageCount,
     pagination,
     onPaginationChange,
+    loading,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = React.useState({})
 
-    // If pagination props provided, we interpret as manual (server-side)
     const isManualPagination = !!pagination;
 
     const table = useReactTable({
@@ -66,7 +67,6 @@ export function DataTable<TData, TValue>({
         manualPagination: isManualPagination,
         onPaginationChange: onPaginationChange,
         getCoreRowModel: getCoreRowModel(),
-        // Conditional models based on mode
         getPaginationRowModel: isManualPagination ? undefined : getPaginationRowModel(),
         onSortingChange: setSorting,
         getSortedRowModel: getSortedRowModel(),
@@ -111,7 +111,16 @@ export function DataTable<TData, TValue>({
                         ))}
                     </TableHeader>
                     <TableBody>
-                        {table.getRowModel().rows?.length ? (
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={columns.length} className="h-24 text-center">
+                                    <div className="flex items-center justify-center space-x-2">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                                        <span>Loading...</span>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ) : table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map((row) => (
                                 <TableRow
                                     key={row.id}

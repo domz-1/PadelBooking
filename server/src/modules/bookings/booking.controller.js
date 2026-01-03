@@ -50,6 +50,10 @@ exports.getBooking = async (req, res, next) => {
 exports.createBooking = async (req, res, next) => {
     try {
         const booking = await bookingService.createBooking(req.body, req.user);
+
+        // Notify all clients about new booking
+        req.app.get('io').emit('bookingUpdate', { type: 'create', data: booking });
+
         res.status(201).json({ success: true, data: booking });
     } catch (error) {
         console.error('Create Booking Error:', error);
@@ -196,6 +200,10 @@ exports.updateBooking = async (req, res, next) => {
         }
 
         booking = await bookingService.updateBooking(req.params.id, req.body, req.user);
+
+        // Notify all clients about updated booking
+        req.app.get('io').emit('bookingUpdate', { type: 'update', data: booking });
+
         res.status(200).json({ success: true, data: booking });
     } catch (error) {
         next(error);
@@ -205,6 +213,10 @@ exports.updateBooking = async (req, res, next) => {
 exports.deleteBooking = async (req, res, next) => {
     try {
         await bookingService.deleteBooking(req.params.id, req.user);
+
+        // Notify all clients about deleted booking
+        req.app.get('io').emit('bookingUpdate', { type: 'delete', id: req.params.id });
+
         res.status(200).json({ success: true, data: {} });
     } catch (error) {
         next(error);

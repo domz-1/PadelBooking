@@ -1,8 +1,7 @@
 const express = require('express');
 const { createSponsor, updateSponsor, deleteSponsor, getSponsors, getSponsor } = require('./sponsor.controller');
 const { protect, authorize } = require('../../middleware/auth');
-const multer = require('multer');
-const upload = multer({ dest: 'uploads/' });
+const { upload, convertImage } = require('../../middleware/upload');
 
 const router = express.Router();
 
@@ -41,7 +40,7 @@ router.use(authorize('admin'));
  */
 router.route('/')
     .get(getSponsors)
-    .post(upload.single('image'), createSponsor);
+    .post(upload.single('image'), convertImage, createSponsor);
 
 /**
  * @swagger
@@ -84,7 +83,7 @@ router.route('/')
  */
 router.route('/:id')
     .get(getSponsor)
-    .put(upload.single('image'), updateSponsor)
+    .put(upload.single('image'), convertImage, updateSponsor)
     .delete(deleteSponsor);
 
 module.exports = router;

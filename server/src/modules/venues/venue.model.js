@@ -23,13 +23,32 @@ const Venue = sequelize.define('Venue', {
         type: DataTypes.FLOAT,
         allowNull: false
     },
+
+    contactEmail: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    contactPhone: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     amenities: {
         type: DataTypes.ARRAY(DataTypes.STRING),
         defaultValue: []
     },
     images: {
         type: DataTypes.ARRAY(DataTypes.STRING),
-        defaultValue: []
+        defaultValue: [],
+        get() {
+            const rawValue = this.getDataValue('images');
+            if (!rawValue || !Array.isArray(rawValue)) return [];
+            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            return rawValue.map(path => {
+                if (!path) return path;
+                if (path.startsWith('http')) return path;
+                return `${baseUrl}/${path.replace(/\\/g, '/')}`;
+            });
+        }
     },
     branchId: {
         type: DataTypes.INTEGER,

@@ -35,15 +35,23 @@ export const BranchSchema = z.object({
     location: z.string().optional(),
     description: z.string().optional(),
     isActive: z.boolean().optional(),
+    createdAt: z.string().optional(),
+    Venues: z.array(z.any()).optional(),
 });
 
 export const VenueSchema = z.object({
     id: z.number(),
     name: z.string(),
     type: VenueType.optional(),
+    location: z.string().optional(),
     pricePerHour: z.number().optional(),
+
+    contactEmail: z.string().email().optional().or(z.literal('')),
+    contactPhone: z.string().optional(),
     description: z.string().optional(),
     image: z.string().optional(),
+    images: z.array(z.string()).optional(),
+    amenities: z.array(z.string()).optional(),
     branchId: z.number().optional(),
     Branch: BranchSchema.optional(),
 });
@@ -58,6 +66,7 @@ export const BookingSchema = z.object({
     userId: z.number().optional(),
     status: z.enum(['pending', 'confirmed', 'cancelled', 'completed', 'no-show', 'pending-coach']),
     User: z.object({
+        id: z.number(),
         name: z.string(),
         email: z.string().email(),
         phone: z.string().optional()
@@ -70,7 +79,15 @@ export const BookingSchema = z.object({
         }).optional()
     }).optional(),
     totalPrice: z.number().optional(),
-    type: z.string().optional()
+    type: z.string().optional(),
+    categoryId: z.number().optional(),
+    hasOffer: z.boolean().optional(),
+    offerValue: z.number().optional(),
+    Category: z.object({
+        id: z.number(),
+        name: z.string(),
+        color: z.string().optional()
+    }).optional()
 });
 
 export const CreateBookingSchema = z.object({

@@ -9,6 +9,7 @@ import {
     Megaphone,
     Store,
     Building,
+    Palette,
 } from "lucide-react";
 
 export interface NavItem {
@@ -73,5 +74,10 @@ export const adminNavItems: NavItem[] = [
         title: "Coaches",
         href: "/admin/coaches",
         icon: Megaphone,
+    },
+    {
+        title: "Categories",
+        href: "/admin/categories",
+        icon: Palette,
     },
 ];

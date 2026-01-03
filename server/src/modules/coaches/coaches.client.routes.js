@@ -1,6 +1,7 @@
 const express = require('express');
 const { getCoaches, createProfile, createPackage } = require('./coach.controller');
 const { protect, authorize } = require('../../middleware/auth');
+const { upload, convertImage } = require('../../middleware/upload');
 
 const router = express.Router();
 
@@ -49,7 +50,7 @@ router.get('/', getCoaches);
  *       201:
  *         description: Coach profile created
  */
-router.post('/profile', protect, createProfile); // User becomes coach
+router.post('/profile', protect, upload.single('image'), convertImage, createProfile); // User becomes coach
 
 /**
  * @swagger

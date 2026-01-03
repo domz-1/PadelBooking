@@ -10,7 +10,7 @@ exports.sendMessage = async (req, res, next) => {
         });
 
         // Emit socket event (handled in server.js or socket config)
-        // req.io.to(receiverId).emit('message', chat);
+        req.app.get('io').to(req.user.id.toString()).to(receiverId.toString()).emit('message', chat);
 
         res.status(201).json({ success: true, data: chat });
     } catch (error) {

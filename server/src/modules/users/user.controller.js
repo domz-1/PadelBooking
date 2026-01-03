@@ -2,8 +2,38 @@ const userService = require('./user.service');
 
 exports.getUsers = async (req, res, next) => {
     try {
-        const users = await userService.getAllUsers();
-        res.status(200).json({ success: true, count: users.count, data: users.rows });
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+        const { search, role, isGuest } = req.query;
+
+        const { Op } = require('sequelize');
+        const where = {};
+
+        if (search) {
+            where[Op.or] = [
+                { name: { [Op.iLike]: `%${search}%` } },
+                { email: { [Op.iLike]: `%${search}%` } }
+            ];
+        }
+
+        if (role) {
+            where.role = role;
+        }
+
+        if (isGuest !== undefined) {
+            where.isGuest = isGuest === 'true';
+        }
+
+        const users = await userService.getAllUsers({ limit, offset, where });
+
+        res.status(200).json({
+            success: true,
+            count: users.count,
+            totalPages: Math.ceil(users.count / limit),
+            currentPage: page,
+            data: users.rows
+        });
     } catch (error) {
         next(error);
     }
@@ -56,6 +86,9 @@ exports.banUser = async (req, res, next) => {
 
 exports.updateProfile = async (req, res, next) => {
     try {
+        if (req.file) {
+            req.body.image = req.file.path;
+        }
         const user = await userService.updateUser(req.user.id, req.body);
         res.status(200).json({ success: true, data: user, message: req.t('success') });
     } catch (error) {
@@ -79,8 +112,23 @@ exports.updatePassword = async (req, res, next) => {
 
 exports.findPartners = async (req, res, next) => {
     try {
-        const partners = await userService.findPartners(req.query);
-        res.status(200).json({ success: true, data: partners });
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+
+        const partners = await userService.findPartners({
+            ...req.query,
+            limit,
+            offset
+        });
+
+        res.status(200).json({
+            success: true,
+            count: partners.count,
+            totalPages: Math.ceil(partners.count / limit),
+            currentPage: page,
+            data: partners.rows
+        });
     } catch (error) {
         next(error);
     }

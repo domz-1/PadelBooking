@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { chatService } from "@/lib/services/chat.service";
 import { userService } from "@/lib/services/user.service";
 import { Message, User } from "@/lib/types";
@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Send, Loader2 } from "lucide-react";
 
-import { Suspense } from "react";
+import { socketService } from "@/lib/socket";
 
 function ChatContent() {
     const searchParams = useSearchParams();
@@ -28,6 +28,12 @@ function ChatContent() {
     const [loading, setLoading] = useState(true);
 
     const scrollRef = useRef<HTMLDivElement>(null);
+
+    const scrollToBottom = () => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    };
 
     // Initialize
     useEffect(() => {
@@ -50,7 +56,7 @@ function ChatContent() {
         init();
     }, [initialUserId, currentUser?.id]);
 
-    // Load messages when selected user changes
+    // Load messages and setup real-time listener when selected user changes
     useEffect(() => {
         if (!selectedUser) return;
 
@@ -58,7 +64,7 @@ function ChatContent() {
             try {
                 const res = await chatService.getMessages(selectedUser.id.toString());
                 setMessages(res.data);
-                scrollToBottom();
+                setTimeout(scrollToBottom, 100);
             } catch (error) {
                 console.error("Failed to load messages");
             }
@@ -66,19 +72,35 @@ function ChatContent() {
 
         loadMessages();
 
-        // Polling for new messages every 5 seconds
-        const interval = setInterval(loadMessages, 5000);
-        return () => clearInterval(interval);
-    }, [selectedUser]);
+        // Real-time listener
+        const userId = Number(currentUser?.id);
+        socketService.connect(userId);
+        const socket = socketService.getSocket();
 
-    const scrollToBottom = () => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        if (socket) {
+            socket.on("message", (msg: Message) => {
+                // If the message is from the person we are currently chatting with
+                // OR if it's from us (though we usually have optimistic updates)
+                if (Number(msg.senderId) === Number(selectedUser.id) || Number(msg.senderId) === userId) {
+                    setMessages(prev => {
+                        // Avoid duplicates if we already added it optimistically
+                        if (prev.find(m => m.id === msg.id)) return prev;
+                        return [...prev, msg];
+                    });
+                    setTimeout(scrollToBottom, 100);
+                }
+            });
         }
-    };
+
+        return () => {
+            if (socket) {
+                socket.off("message");
+            }
+        };
+    }, [selectedUser, currentUser?.id]);
 
     const handleSend = async () => {
-        if (!process.env && !newMessage.trim() || !selectedUser) return;
+        if (!newMessage.trim() || !selectedUser) return;
 
         const optimisticMessage: Message = {
             id: Date.now(),
@@ -91,21 +113,20 @@ function ChatContent() {
 
         setMessages(prev => [...prev, optimisticMessage]);
         setNewMessage("");
-        scrollToBottom();
+        setTimeout(scrollToBottom, 100);
 
         try {
             await chatService.sendMessage({
                 receiverId: selectedUser.id.toString(),
                 message: optimisticMessage.message
             });
-            // Re-fetch to get strict server sync if needed, or rely on interval
         } catch (error) {
-            // Handle error (revert optimistic update)
             console.error("Failed to send");
         }
     };
 
     if (loading) return <div className="flex justify-center pt-20"><Loader2 className="animate-spin" /></div>;
+
 
     return (
         <div className="container mx-auto py-6 h-[calc(100vh-64px)]">
