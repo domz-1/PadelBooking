@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { LoginSchema, LoginCredentials } from "@/lib/models";
+import { LoginSchema, type LoginCredentials } from "@/lib/schemas";
 import api from "@/lib/api";
 import { useAuthStore } from "@/hooks/use-auth-store";
 import { Button } from "@/components/ui/button";

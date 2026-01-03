@@ -2,19 +2,23 @@
 
 import { useEffect, useState } from "react"
 import { DatePicker } from "@/components/ui/date-picker"
-import { Booking, adminBookingService } from "@/lib/services/admin/bookings.service"
+import { adminBookingService } from "@/lib/services/admin/bookings.service"
+import { adminBranchService } from "@/lib/services/admin/branches.service"
+import type { Booking, Branch } from "@/lib/schemas"
 import { Venue, adminVenueService } from "@/lib/services/admin/venues.service"
 import { DataTable } from "@/components/ui/data-table"
 import { columns } from "./columns"
 import BookingGrid from "@/components/bookings/BookingGrid"
 import { Button } from "@/components/ui/button"
 import { LayoutGrid, List } from "lucide-react"
+import { FileUploadDialog } from "@/components/ui/file-upload-dialog"
 
 export default function BookingsPage() {
     const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
     const [date, setDate] = useState<Date | undefined>(new Date())
     const [data, setData] = useState<Booking[]>([])
     const [venues, setVenues] = useState<Venue[]>([])
+    const [branches, setBranches] = useState<Branch[]>([]) // Added branches state
     const [loading, setLoading] = useState(true)
 
     // Pagination state for List View
@@ -49,17 +53,23 @@ export default function BookingsPage() {
         fetchBookings()
     }, [pagination, date]) // Re-fetch when date changes
 
-    // Fetch Venues for Grid
+    // Fetch Venues and Branches for Grid
     useEffect(() => {
-        const fetchVenues = async () => {
+        const fetchGridData = async () => {
             try {
-                const res = await adminVenueService.getAll({ limit: 100 });
-                setVenues(res.data);
-            } catch (e) { console.error(e) }
+                const [venuesRes, branchesRes] = await Promise.all([
+                    adminVenueService.getAll({ limit: 100 }),
+                    adminBranchService.getAll()
+                ]);
+                setVenues(venuesRes.data);
+                setBranches(branchesRes.data || []);
+            } catch (e) {
+                console.error(e);
+            }
         }
-        // Always fetch venues if we might switch to grid, or just when mode changes
+        // Always fetch venues/branches if we might switch to grid, or just when mode changes
         if (viewMode === 'grid' && venues.length === 0) {
-            fetchVenues()
+            fetchGridData()
         }
     }, [viewMode, venues.length])
 
@@ -74,6 +84,11 @@ export default function BookingsPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                    <FileUploadDialog
+                        title="Import Bookings"
+                        onUpload={adminBookingService.importBookings}
+                        description="Upload a CSV or Excel file with columns: branchName, venueName, userEmail, date, startTime, endTime"
+                    />
                     <DatePicker
                         date={date}
                         setDate={(d) => {
@@ -134,6 +149,7 @@ export default function BookingsPage() {
                             <BookingGrid
                                 bookings={data as any}
                                 venues={venues as any}
+                                branches={branches}
                                 date={date ? date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
                                 onCreateBooking={() => { }}
                                 onViewBooking={(b) => console.log(b)}

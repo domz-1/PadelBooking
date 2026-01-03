@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { FileUploadDialog } from "@/components/ui/file-upload-dialog"
 
 export default function UsersPage() {
     const router = useRouter();
@@ -62,9 +63,17 @@ export default function UsersPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Users Management</h1>
-                <Button onClick={() => router.push('/admin/users/new')}>
-                    <Plus className="mr-2 h-4 w-4" /> Add User
-                </Button>
+                <div className="flex items-center gap-2">
+                    <FileUploadDialog
+                        title="Import Users"
+                        onUpload={adminUserService.importUsers}
+                        triggerLabel="Import Users"
+                        description="Upload a CSV or Excel file with columns: name, email, phone, role (optional)"
+                    />
+                    <Button onClick={() => router.push('/admin/users/new')}>
+                        <Plus className="mr-2 h-4 w-4" /> Add User
+                    </Button>
+                </div>
             </div>
 
             <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>

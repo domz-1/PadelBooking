@@ -8,6 +8,7 @@ import {
     Trophy,
     Megaphone,
     Store,
+    Building,
 } from "lucide-react";
 
 export interface NavItem {
@@ -22,6 +23,11 @@ export const adminNavItems: NavItem[] = [
         title: "Dashboard",
         href: "/admin/dashboard",
         icon: LayoutDashboard,
+    },
+    {
+        title: "Branches",
+        href: "/admin/branches",
+        icon: Building,
     },
     {
         title: "Users",

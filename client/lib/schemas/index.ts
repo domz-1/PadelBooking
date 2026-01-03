@@ -29,6 +29,14 @@ export const RegisterSchema = z.object({
     path: ["confirmPassword"],
 });
 
+export const BranchSchema = z.object({
+    id: z.number(),
+    name: z.string(),
+    location: z.string().optional(),
+    description: z.string().optional(),
+    isActive: z.boolean().optional(),
+});
+
 export const VenueSchema = z.object({
     id: z.number(),
     name: z.string(),
@@ -36,20 +44,33 @@ export const VenueSchema = z.object({
     pricePerHour: z.number().optional(),
     description: z.string().optional(),
     image: z.string().optional(),
+    branchId: z.number().optional(),
+    Branch: BranchSchema.optional(),
 });
 
 export const BookingSchema = z.object({
-    id: z.number(),
-    date: z.string(), // YYYY-MM-DD
-    startTime: z.string(), // HH:mm
-    endTime: z.string(), // HH:mm
-    status: BookingStatus.default('pending'),
-    venueId: z.number(),
-    userId: z.number(),
-    User: UserSchema.optional(),
-    Venue: VenueSchema.optional(),
-    type: z.string().optional(),
-    totalPrice: z.number().optional()
+    id: z.number().optional(),
+    date: z.string(),
+    startTime: z.string(),
+    endTime: z.string(),
+    courtId: z.number().optional(),
+    venueId: z.number().optional(),
+    userId: z.number().optional(),
+    status: z.enum(['pending', 'confirmed', 'cancelled', 'completed', 'no-show', 'pending-coach']),
+    User: z.object({
+        name: z.string(),
+        email: z.string().email(),
+        phone: z.string().optional()
+    }).optional(),
+    Venue: z.object({
+        name: z.string(),
+        type: z.string().optional(),
+        Branch: z.object({
+            name: z.string()
+        }).optional()
+    }).optional(),
+    totalPrice: z.number().optional(),
+    type: z.string().optional()
 });
 
 export const CreateBookingSchema = z.object({
@@ -60,9 +81,10 @@ export const CreateBookingSchema = z.object({
 });
 
 // --- Types ---
-export type User = z.infer<typeof UserSchema>;
 export type LoginCredentials = z.infer<typeof LoginSchema>;
 export type RegisterCredentials = z.infer<typeof RegisterSchema>;
+export type User = z.infer<typeof UserSchema>;
 export type Venue = z.infer<typeof VenueSchema>;
 export type Booking = z.infer<typeof BookingSchema>;
+export type Branch = z.infer<typeof BranchSchema>;
 export type CreateBooking = z.infer<typeof CreateBookingSchema>;

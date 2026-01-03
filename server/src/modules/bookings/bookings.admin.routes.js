@@ -7,7 +7,7 @@ const {
     updateBooking,
     deleteBooking
 } = require('./booking.controller');
-const { importBookings } = require('./import.controller');
+const { importExcel } = require('./import.controller');
 const { getWaitlistForSlot } = require('./waitlist.controller');
 const { protect, authorize } = require('../../middleware/auth');
 const multer = require('multer');
@@ -61,7 +61,7 @@ router.get('/', getBookings);
  *       200:
  *         description: Bookings imported successfully
  */
-router.post('/import', upload.single('file'), importBookings);
+router.post('/import', upload.single('file'), importExcel);
 
 /**
  * @swagger

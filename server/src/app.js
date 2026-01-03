@@ -22,6 +22,7 @@ const adminOfferRoutes = require('./modules/offers/offers.admin.routes');
 const adminCoachRoutes = require('./modules/coaches/coaches.admin.routes'); // NEW
 const adminMatchRoutes = require('./modules/matches/matches.admin.routes'); // NEW
 const adminStoryRoutes = require('./modules/stories/stories.admin.routes'); // NEW
+const adminBranchRoutes = require('./modules/branches/branches.admin.routes'); // NEW
 
 // Client Route Imports
 const clientAuthRoutes = require('./modules/auth/auth.client.routes');
@@ -38,6 +39,7 @@ const clientStoryRoutes = require('./modules/stories/stories.client.routes');
 const clientNotificationRoutes = require('./modules/notifications/notifications.client.routes');
 const clientStoreRoutes = require('./modules/store/store.client.routes');
 const clientSponsorRoutes = require('./modules/sponsors/sponsors.client.routes');
+const clientBranchRoutes = require('./modules/branches/branches.client.routes');
 
 const app = express();
 
@@ -72,6 +74,7 @@ adminRouter.use('/offers', adminOfferRoutes);
 adminRouter.use('/coaches', adminCoachRoutes); // NEW
 adminRouter.use('/matches', adminMatchRoutes); // NEW
 adminRouter.use('/stories', adminStoryRoutes); // NEW
+adminRouter.use('/branches', adminBranchRoutes); // NEW
 
 app.use('/admin', adminRouter);
 
@@ -91,6 +94,7 @@ clientRouter.use('/stories', clientStoryRoutes);
 clientRouter.use('/notifications', clientNotificationRoutes);
 clientRouter.use('/store', clientStoreRoutes);
 clientRouter.use('/sponsors', clientSponsorRoutes);
+clientRouter.use('/branches', clientBranchRoutes);
 
 app.use('/api', clientRouter);
 

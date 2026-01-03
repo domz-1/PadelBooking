@@ -2,6 +2,7 @@ const { sequelize } = require('./config/database');
 const User = require('./modules/users/user.model');
 const Venue = require('./modules/venues/venue.model');
 const Product = require('./modules/store/product.model');
+const Branch = require('./modules/branches/branch.model');
 const GlobalConfig = require('./modules/settings/globalConfig.model');
 const bcrypt = require('bcryptjs');
 
@@ -50,13 +51,32 @@ const seed = async () => {
         });
         console.log('Users created.');
 
-        // 3. Create Venues
+        // 3. Create Branches
+        const branch1 = await Branch.create({
+            name: 'Downtown Branch',
+            location: 'Downtown Cairo',
+            description: 'Main branch in the heart of the city',
+            phoneNumber: '+201234567890',
+            email: 'downtown@padel.com'
+        });
+
+        const branch2 = await Branch.create({
+            name: 'Beachside Branch',
+            location: 'North Coast',
+            description: 'Summer vibes only',
+            phoneNumber: '+201098765432',
+            email: 'beach@padel.com'
+        });
+        console.log('Branches created.');
+
+        // 4. Create Venues
         const venue1 = await Venue.create({
             name: 'Central Court',
             location: 'Downtown',
             type: 'indoor',
             pricePerHour: 100,
-            facilities: ['Showers', 'Parking']
+            facilities: ['Showers', 'Parking'],
+            branchId: branch1.id
         });
 
         const venue2 = await Venue.create({
@@ -64,7 +84,8 @@ const seed = async () => {
             location: 'Beachside',
             type: 'outdoor',
             pricePerHour: 120,
-            facilities: ['Cafe', 'Shop']
+            facilities: ['Cafe', 'Shop'],
+            branchId: branch2.id
         });
         console.log('Venues created.');
 

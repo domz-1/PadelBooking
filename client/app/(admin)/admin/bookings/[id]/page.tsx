@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Booking, adminBookingService } from "@/lib/services/admin/bookings.service"
+import { adminBookingService } from "@/lib/services/admin/bookings.service"
+import type { Booking } from "@/lib/schemas"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Trash, Calendar, Clock, MapPin, DollarSign, User } from "lucide-react"
@@ -102,8 +103,8 @@ export default function ViewBookingPage() {
                                 <MapPin className="h-5 w-5 mr-3 text-muted-foreground" />
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">Venue</p>
-                                    <p className="font-semibold">{booking.Court?.Venue?.name || "Unknown Venue"}</p>
-                                    <p className="text-xs text-muted-foreground">{booking.Court?.name || "Unknown Court"}</p>
+                                    <p className="font-semibold">{booking.Venue?.name || "Unknown Venue"}</p>
+                                    <p className="text-xs text-muted-foreground">{booking.Venue?.type || "Standard"}</p>
                                 </div>
                             </div>
                             <div className="flex items-center p-3 bg-muted/50 rounded-lg">

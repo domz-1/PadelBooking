@@ -12,7 +12,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Booking, adminBookingService } from "@/lib/services/admin/bookings.service"
+import { type Booking } from "@/lib/schemas" // Fixed import
+import { adminBookingService } from "@/lib/services/admin/bookings.service"
 import { Badge } from "@/components/ui/badge"
 
 export const columns: ColumnDef<Booking>[] = [
@@ -31,14 +32,6 @@ export const columns: ColumnDef<Booking>[] = [
         cell: ({ row }) => {
             const booking = row.original;
             return <span className="text-sm font-medium">{`${booking.startTime} - ${booking.endTime}`}</span>
-            // Note: Service interface defines timeSlot. Vue view uses startTime/endTime. 
-            // We should check actual API response. 
-            // Assuming timeSlot might be constructed or raw.
-            // Let's assume startTime/endTime are available on original object if the interface definition is loose or incomplete.
-            // But strict TS will complain.
-            // I'll check service again. Service says `timeSlot` only. 
-            // But Vue view uses `startTime` and `endTime`.
-            // The API response likely returns both. I should update service interface.
         }
     },
     {
@@ -58,12 +51,14 @@ export const columns: ColumnDef<Booking>[] = [
         id: "venue",
         header: "Venue",
         cell: ({ row }) => {
-            const venue = row.original.Court?.Venue || row.original.Court; // Depending on structure
-            // Vue: item.Venue?.name
-            // Service: Court?: { name: string; Venue?: { name: string } };
-            // The structure in Vue suggests 'Venue' is direct property or nested in Court.
-            // Let's try Court.Venue.name first.
-            return <span className="text-sm">{row.original.Court?.Venue?.name || "Unknown"}</span>
+            return <span className="text-sm">{row.original.Venue?.name || "Unknown"}</span>
+        }
+    },
+    {
+        id: "branch",
+        header: "Branch",
+        cell: ({ row }) => {
+            return <span className="text-sm text-muted-foreground">{row.original.Venue?.Branch?.name || "N/A"}</span>
         }
     },
     {
@@ -82,14 +77,12 @@ export const columns: ColumnDef<Booking>[] = [
         }
     },
     {
-        accessorKey: "totalPrice", // Service missing this
+        accessorKey: "totalPrice",
         header: "Price",
         cell: ({ row }) => {
-            // Check if price exists.
-            // If not in interface, assume it's in data.
-            const price = (row.original as any).totalPrice;
-            if (!price) return "-";
-            return <span className="font-mono">{parseFloat(price).toFixed(2)} USD</span>
+            const price = row.original.totalPrice;
+            if (price === undefined || price === null) return "-";
+            return <span className="font-mono">{Number(price).toFixed(2)} USD</span>
         }
     },
     {
@@ -105,6 +98,7 @@ function BookingActions({ booking }: { booking: Booking }) {
     const [showDelete, setShowDelete] = useState(false)
 
     const handleDelete = async () => {
+        if (!booking.id) return;
         try {
             await adminBookingService.deleteBooking(booking.id);
             window.location.reload();

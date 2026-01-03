@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import BookingGrid from "@/components/bookings/BookingGrid";
 import api from "@/lib/api";
 import { format } from "date-fns";
-import { Venue, Booking } from "@/lib/models";
+import type { Venue, Booking } from "@/lib/schemas";
 import { toast } from "sonner";
 import { useAuthStore } from "@/hooks/use-auth-store";
 import { useRouter } from "next/navigation";
@@ -33,6 +33,7 @@ export default function BookingsPage() {
     const [date, setDate] = useState<Date>(new Date());
     const [venues, setVenues] = useState<Venue[]>([]);
     const [bookings, setBookings] = useState<Booking[]>([]);
+    const [branches, setBranches] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Booking Modal State
@@ -49,9 +50,10 @@ export default function BookingsPage() {
         setLoading(true);
         try {
             // Parallel fetch
-            const [venuesRes, bookingsRes] = await Promise.all([
+            const [venuesRes, bookingsRes, branchesRes] = await Promise.all([
                 api.get("/venues"),
-                api.get(`/bookings?date=${formattedDate}&limit=100`) // Assuming limit=100 is enough for grid
+                api.get(`/bookings?date=${formattedDate}&limit=100`),
+                api.get("/branches")
             ]);
 
             if (venuesRes.data.success) {
@@ -60,6 +62,10 @@ export default function BookingsPage() {
 
             if (bookingsRes.data.success) {
                 setBookings(bookingsRes.data.data);
+            }
+
+            if (branchesRes.data.success) {
+                setBranches(branchesRes.data.data);
             }
 
         } catch (error) {
@@ -162,6 +168,7 @@ export default function BookingsPage() {
                 <BookingGrid
                     venues={venues}
                     bookings={bookings}
+                    branches={branches}
                     date={formattedDate}
                     onCreateBooking={handleCreateBooking}
                     onViewBooking={(booking) => console.log(booking)}

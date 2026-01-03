@@ -1,17 +1,5 @@
 import { adminApi } from "@/lib/api";
-
-export interface Booking {
-    id: number;
-    date: string;
-    startTime: string;
-    endTime: string;
-    status: string;
-    courtId: number;
-    userId: number;
-    totalPrice: number;
-    User?: { name: string; email: string };
-    Court?: { name: string; Venue?: { name: string } };
-}
+import type { Booking } from "@/lib/schemas";
 
 export interface GetBookingsParams {
     page?: number;
@@ -33,6 +21,16 @@ export const adminBookingService = {
 
     deleteBooking: async (id: number) => {
         const response = await adminApi.delete(`/bookings/${id}`);
+        return response.data;
+    },
+
+    importBookings: async (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', 'bookings');
+        const response = await adminApi.post<{ success: boolean; message: string }>('/bookings/import', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
         return response.data;
     }
 };
