@@ -6,7 +6,11 @@ const {
     updateCategory,
     deleteCategory,
     getConfig,
-    getCategories
+    getCategories,
+    getBookingStatuses,
+    createBookingStatus,
+    updateBookingStatus,
+    deleteBookingStatus
 } = require('./settings.controller');
 const { protect, authorize } = require('../../middleware/auth');
 
@@ -120,5 +124,81 @@ router.route('/categories')
 router.route('/categories/:id')
     .put(updateCategory)
     .delete(deleteCategory);
+
+/**
+ * @swagger
+ * /admin/settings/booking-statuses:
+ *   get:
+ *     summary: Get all booking statuses
+ *     tags: [Settings (Admin)]
+ *     responses:
+ *       200:
+ *         description: List of booking statuses
+ *   post:
+ *     summary: Create a booking status
+ *     tags: [Settings (Admin)]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *               color:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Booking status created
+ */
+router.route('/booking-statuses')
+    .get(getBookingStatuses)
+    .post(createBookingStatus);
+
+/**
+ * @swagger
+ * /admin/settings/booking-statuses/{id}:
+ *   put:
+ *     summary: Update booking status
+ *     tags: [Settings (Admin)]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               color:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Booking status updated
+ *   delete:
+ *     summary: Delete booking status
+ *     tags: [Settings (Admin)]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Booking status deleted
+ */
+router.route('/booking-statuses/:id')
+    .put(updateBookingStatus)
+    .delete(deleteBookingStatus);
 
 module.exports = router;

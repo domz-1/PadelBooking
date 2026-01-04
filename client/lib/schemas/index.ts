@@ -64,7 +64,8 @@ export const BookingSchema = z.object({
     courtId: z.number().optional(),
     venueId: z.number().optional(),
     userId: z.number().optional(),
-    status: z.enum(['pending', 'confirmed', 'cancelled', 'completed', 'no-show', 'pending-coach']),
+    status: z.string(),
+    statusId: z.number().optional(),
     User: z.object({
         id: z.number(),
         name: z.string(),
@@ -80,13 +81,16 @@ export const BookingSchema = z.object({
     }).optional(),
     totalPrice: z.number().optional(),
     type: z.string().optional(),
-    categoryId: z.number().optional(),
     hasOffer: z.boolean().optional(),
     offerValue: z.number().optional(),
-    Category: z.object({
+    isOpenMatch: z.boolean().optional(),
+    openMatchPlayers: z.array(z.number()).optional(),
+    openMatchMaxPlayers: z.number().optional(),
+    BookingStatus: z.object({
         id: z.number(),
         name: z.string(),
-        color: z.string().optional()
+        color: z.string().optional(),
+        description: z.string().optional()
     }).optional()
 });
 

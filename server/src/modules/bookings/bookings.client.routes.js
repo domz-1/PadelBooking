@@ -8,6 +8,7 @@ const {
     deleteBooking
 } = require('./booking.controller');
 const { joinWaitlist, leaveWaitlist, getMyWaitlist } = require('./waitlist.controller');
+const { convertToOpenMatch, joinOpenMatch, leaveOpenMatch, getOpenMatches } = require('./booking.controller');
 const { protect } = require('../../middleware/auth');
 
 const router = express.Router();
@@ -67,6 +68,81 @@ router.route('/waitlist')
  *         description: Left waitlist successfully
  */
 router.delete('/waitlist/:id', leaveWaitlist);
+
+/**
+ * @swagger
+ * /api/bookings/open-matches:
+ *   get:
+ *     summary: Get open matches
+ *     tags: [Bookings (Client)]
+ *     parameters:
+ *       - in: query
+ *         name: date
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of open matches
+ */
+router.get('/open-matches', getOpenMatches);
+
+/**
+ * @swagger
+ * /api/bookings/{id}/convert-to-open-match:
+ *   post:
+ *     summary: Convert booking to open match
+ *     tags: [Bookings (Client)]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               maxPlayers:
+ *                 type: integer
+ *                 default: 4
+ *     responses:
+ *       200:
+ *         description: Booking converted to open match
+ */
+router.post('/:id/convert-to-open-match', convertToOpenMatch);
+
+/**
+ * @swagger
+ * /api/bookings/{id}/join:
+ *   post:
+ *     summary: Join an open match
+ *     tags: [Bookings (Client)]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Successfully joined open match
+ */
+router.post('/:id/join', joinOpenMatch);
+
+/**
+ * @swagger
+ * /api/bookings/{id}/leave:
+ *   post:
+ *     summary: Leave an open match
+ *     tags: [Bookings (Client)]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Successfully left open match
+ */
+router.post('/:id/leave', leaveOpenMatch);
 
 /**
  * @swagger

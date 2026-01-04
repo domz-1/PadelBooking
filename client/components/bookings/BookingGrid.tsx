@@ -16,7 +16,8 @@ import {
     Pencil,
     Trash2,
     CalendarPlus,
-    Loader2
+    Loader2,
+    Users
 } from "lucide-react";
 import {
     Dialog,
@@ -56,6 +57,9 @@ interface BookingGridProps {
     onJoinWaitlist?: (venueId: number, time: string) => void; // New Prop
     onEditBooking?: (booking: Booking) => void;
     onDeleteBooking?: (bookingId: number) => void;
+    onConvertToOpenMatch?: (bookingId: number, maxPlayers?: number) => void;
+    onJoinOpenMatch?: (bookingId: number) => void;
+    onLeaveOpenMatch?: (bookingId: number) => void;
     publicView?: boolean;
     waitlistEntries?: any[];
     onWaitlistUpdate?: () => void;
@@ -84,6 +88,8 @@ export default function BookingGrid({
     const [showWaitlistModal, setShowWaitlistModal] = useState(false);
     const [showManagementModal, setShowManagementModal] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showOpenMatchModal, setShowOpenMatchModal] = useState(false);
+    const [showConvertToOpenMatchModal, setShowConvertToOpenMatchModal] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
     const [loading, setLoading] = useState(false);
     const [slotInfo, setSlotInfo] = useState<{ venueId: number; time: string } | null>(null);
@@ -91,6 +97,7 @@ export default function BookingGrid({
     const [isEditing, setIsEditing] = useState(false);
     const [showAdminCreate, setShowAdminCreate] = useState(false);
     const [adminCreateSlot, setAdminCreateSlot] = useState<{ venueId: number; venueName: string; time: string } | null>(null);
+    const [openMatchMaxPlayers, setOpenMatchMaxPlayers] = useState<number>(4);
 
     // Filter venues by branch if branches exist
     const filteredVenues = useMemo(() => {
@@ -144,27 +151,39 @@ export default function BookingGrid({
 
     const isAdmin = user?.role === 'admin';
 
+    const isUserInOpenMatch = (booking: Booking) => {
+        if (!booking.openMatchPlayers || !user) return false;
+        return booking.openMatchPlayers.includes(user.id);
+    };
+
+    const getOpenMatchPlayerCount = (booking: Booking) => {
+        if (!booking.openMatchPlayers) return 0;
+        return booking.openMatchPlayers.length;
+    };
+
     const getStatusStyle = (booking: Booking, isOwn: boolean) => {
         if (!isOwn && !isAdmin) return { className: 'bg-primary/90 text-primary-foreground border-primary' }; // Blocked for others
 
-        // Use category color if available
-        if (booking.Category?.color) {
+        // Use status color if available
+        if (booking.BookingStatus?.color) {
             return {
                 style: {
-                    backgroundColor: `${booking.Category.color}22`, // 13% opacity
-                    color: booking.Category.color,
-                    borderColor: `${booking.Category.color}44`
+                    backgroundColor: `${booking.BookingStatus.color}22`, // 13% opacity
+                    color: booking.BookingStatus.color,
+                    borderColor: `${booking.BookingStatus.color}44`
                 },
                 className: 'hover:bg-opacity-20'
             };
         }
 
+        // Fallback to hardcoded colors if status not found
         const colors: Record<string, string> = {
             'confirmed': 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200',
             'pending': 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200',
             'cancelled': 'bg-red-100 text-red-800 border-red-200',
             'pending-coach': 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200',
-            'no-show': 'bg-gray-100 text-gray-800 border-gray-200'
+            'no-show': 'bg-gray-100 text-gray-800 border-gray-200',
+            'completed': 'bg-cyan-100 text-cyan-800 border-cyan-200 hover:bg-cyan-200'
         };
         return { className: colors[booking.status] || colors.pending };
     };
@@ -260,6 +279,17 @@ export default function BookingGrid({
                     </Tabs>
                 </div>
             )}
+
+            {/* Create Open Match Button */}
+            <div className="flex justify-end mb-4">
+                <Button
+                    onClick={() => setShowOpenMatchModal(true)}
+                    className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                >
+                    <Users className="w-4 h-4" />
+                    Create Open Match
+                </Button>
+            </div>
 
             <div className="w-full bg-white dark:bg-gray-900 rounded-lg shadow-sm border p-4">
                 <ScrollArea className="w-full">
@@ -359,6 +389,15 @@ export default function BookingGrid({
                                                         if (isOwn || isAdmin) {
                                                             setSelectedBooking(booking);
                                                             setShowManagementModal(true);
+                                                        } else if (booking.isOpenMatch) {
+                                                            // Handle Open Match join/leave
+                                                            if (isUserInOpenMatch(booking)) {
+                                                                // User is already in the match, offer to leave
+                                                                onLeaveOpenMatch?.(booking.id);
+                                                            } else {
+                                                                // User can join the match
+                                                                onJoinOpenMatch?.(booking.id);
+                                                            }
                                                         } else {
                                                             setSlotInfo({ venueId: venue.id, time: formatTimeForValue(hour) });
                                                             setShowWaitlistModal(true);
@@ -386,7 +425,18 @@ export default function BookingGrid({
                                                     {(isOwn || isAdmin) && (
                                                         <div className="flex justify-between items-center opacity-90 mt-auto">
                                                             <span className="truncate text-[9px] uppercase tracking-wider font-bold">
-                                                                {booking.Category?.name || (booking.type === 'academy' ? 'Academy' : 'Standard')}
+                                                                {booking.BookingStatus?.name || booking.status || (booking.type === 'academy' ? 'Academy' : 'Standard')}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {booking.isOpenMatch && (
+                                                        <div className="absolute bottom-1 left-1 right-1 flex justify-between items-center text-[9px]">
+                                                            <Badge className="bg-green-600 hover:bg-green-700 text-white h-4 px-1.5 flex items-center gap-1">
+                                                                <Users className="w-2.5 h-2.5" />
+                                                                Open Match
+                                                            </Badge>
+                                                            <span className="text-green-700 font-bold">
+                                                                {getOpenMatchPlayerCount(booking)}/{booking.openMatchMaxPlayers || 4}
                                                             </span>
                                                         </div>
                                                     )}
@@ -574,19 +624,33 @@ export default function BookingGrid({
                                         </div>
                                     ) : (
                                         <div className="grid grid-cols-2 gap-3">
-                                            <Button
-                                                variant="outline"
-                                                className="h-20 flex flex-col gap-2"
-                                                onClick={() => {
-                                                    const [start] = selectedBooking.startTime.split(':').map(Number);
-                                                    const [end] = selectedBooking.endTime.split(':').map(Number);
-                                                    setEditDuration(end - start);
-                                                    setIsEditing(true);
-                                                }}
-                                            >
-                                                <Pencil className="w-5 h-5" />
-                                                <span>Edit Booking</span>
-                                            </Button>
+                                            {!selectedBooking?.isOpenMatch ? (
+                                                <Button
+                                                    className="h-20 flex flex-col gap-2 bg-green-600 hover:bg-green-700 text-white"
+                                                    onClick={() => {
+                                                        setSelectedBooking(selectedBooking);
+                                                        setShowManagementModal(false);
+                                                        setShowConvertToOpenMatchModal(true);
+                                                    }}
+                                                >
+                                                    <Users className="w-5 h-5" />
+                                                    <span>Make Open Match</span>
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    variant="outline"
+                                                    className="h-20 flex flex-col gap-2"
+                                                    onClick={() => {
+                                                        const [start] = selectedBooking.startTime.split(':').map(Number);
+                                                        const [end] = selectedBooking.endTime.split(':').map(Number);
+                                                        setEditDuration(end - start);
+                                                        setIsEditing(true);
+                                                    }}
+                                                >
+                                                    <Pencil className="w-5 h-5" />
+                                                    <span>Edit Booking</span>
+                                                </Button>
+                                            )}
                                             <Button
                                                 variant="destructive"
                                                 className="h-20 flex flex-col gap-2"
@@ -644,6 +708,174 @@ export default function BookingGrid({
                         }}
                     />
                 )}
+
+                {/* Open Match Modal */}
+                <Dialog open={showOpenMatchModal} onOpenChange={setShowOpenMatchModal}>
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Create Open Match</DialogTitle>
+                        </DialogHeader>
+                        <div className="py-6 space-y-6">
+                            <div className="flex justify-center">
+                                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                    <Users className="w-8 h-8" />
+                                </div>
+                            </div>
+                            <p className="text-center text-sm text-muted-foreground">
+                                Select one of your existing bookings to convert it to an Open Match that others can join.
+                            </p>
+
+                            {/* Show user's bookings for today */}
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+                                    Your Bookings for {date}
+                                </h3>
+                                {bookings.filter(b => b.userId === user?.id && !b.isOpenMatch).length > 0 ? (
+                                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                                        {bookings.filter(b => b.userId === user?.id && !b.isOpenMatch).map(booking => (
+                                            <div
+                                                key={booking.id}
+                                                className="p-3 border rounded-lg hover:bg-secondary/50 cursor-pointer transition-colors"
+                                                onClick={() => {
+                                                    setSelectedBooking(booking);
+                                                    setShowOpenMatchModal(false);
+                                                    setShowConvertToOpenMatchModal(true);
+                                                }}
+                                            >
+                                                <div className="flex justify-between items-center">
+                                                    <div>
+                                                        <div className="font-medium">{booking.Venue?.name || 'Venue'}</div>
+                                                        <div className="text-sm text-muted-foreground">
+                                                            {booking.startTime} - {booking.endTime}
+                                                        </div>
+                                                    </div>
+                                                    <Badge variant="outline" className="capitalize">
+                                                        {booking.status}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-6 text-sm text-muted-foreground">
+                                        You don't have any bookings for today. Create a regular booking first, then convert it to an Open Match.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setShowOpenMatchModal(false)}>
+                                Cancel
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Convert to Open Match Modal */}
+                <Dialog open={showConvertToOpenMatchModal} onOpenChange={setShowConvertToOpenMatchModal}>
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Convert to Open Match</DialogTitle>
+                        </DialogHeader>
+                        <div className="py-6 space-y-6">
+                            <div className="flex justify-center">
+                                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                    <Users className="w-8 h-8" />
+                                </div>
+                            </div>
+
+                            {selectedBooking && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl border">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                                <CalendarPlus className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <div className="font-semibold">{selectedBooking.Venue?.name || 'Venue'}</div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {selectedBooking.startTime} - {selectedBooking.endTime}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Badge variant="outline" className="capitalize">
+                                            {selectedBooking.status}
+                                        </Badge>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <Label>Maximum Players</Label>
+                                        <div className="flex items-center gap-2">
+                                            {[2, 4, 6, 8].map(num => (
+                                                <Button
+                                                    key={num}
+                                                    variant={openMatchMaxPlayers === num ? "default" : "outline"}
+                                                    size="sm"
+                                                    onClick={() => setOpenMatchMaxPlayers(num)}
+                                                >
+                                                    {num} Players
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                                        <div className="text-sm font-medium text-green-800 flex items-center gap-2">
+                                            <Users className="w-4 h-4" />
+                                            Open Match Features
+                                        </div>
+                                        <ul className="text-xs text-green-700 mt-2 space-y-1">
+                                            <li className="flex items-start gap-2">
+                                                <span className="mt-0.5">•</span>
+                                                <span>Other players can join your booking</span>
+                                            </li>
+                                            <li className="flex items-start gap-2">
+                                                <span className="mt-0.5">•</span>
+                                                <span>You remain the booking owner</span>
+                                            </li>
+                                            <li className="flex items-start gap-2">
+                                                <span className="mt-0.5">•</span>
+                                                <span>Cost is shared among all players</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <DialogFooter className="gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setShowConvertToOpenMatchModal(false);
+                                    setSelectedBooking(null);
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={async () => {
+                                    if (!selectedBooking) return;
+                                    setLoading(true);
+                                    try {
+                                        await onConvertToOpenMatch?.(selectedBooking.id, openMatchMaxPlayers);
+                                        toast.success("Booking converted to Open Match!");
+                                        setShowConvertToOpenMatchModal(false);
+                                        setSelectedBooking(null);
+                                    } catch (error: any) {
+                                        toast.error(error.response?.data?.message || "Failed to convert to Open Match");
+                                    } finally {
+                                        setLoading(false);
+                                    }
+                                }}
+                                disabled={loading}
+                            >
+                                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                Convert to Open Match
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </div>
     );

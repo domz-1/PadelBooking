@@ -1,5 +1,6 @@
 const GlobalConfig = require('./globalConfig.model');
 const Category = require('./category.model');
+const BookingStatus = require('./bookingStatus.model');
 
 class SettingsService {
     // Global Config
@@ -40,6 +41,27 @@ class SettingsService {
         const category = await Category.findByPk(id);
         if (!category) return null;
         return await category.destroy();
+    }
+
+    // Booking Statuses
+    async createBookingStatus(data) {
+        return await BookingStatus.create(data);
+    }
+
+    async getAllBookingStatuses() {
+        return await BookingStatus.findAll();
+    }
+
+    async updateBookingStatus(id, data) {
+        const status = await BookingStatus.findByPk(id);
+        if (!status) return null;
+        return await status.update(data);
+    }
+
+    async deleteBookingStatus(id) {
+        const status = await BookingStatus.findByPk(id);
+        if (!status) return null;
+        return await status.destroy();
     }
 
     // Analysis

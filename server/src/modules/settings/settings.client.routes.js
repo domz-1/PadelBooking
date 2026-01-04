@@ -1,5 +1,5 @@
 const express = require('express');
-const { getConfig, getCategories } = require('./settings.controller');
+const { getConfig, getCategories, getBookingStatuses } = require('./settings.controller');
 
 const router = express.Router();
 
@@ -32,5 +32,17 @@ router.get('/config', getConfig);
  *         description: List of categories
  */
 router.get('/categories', getCategories);
+
+/**
+ * @swagger
+ * /api/settings/booking-statuses:
+ *   get:
+ *     summary: Get all booking statuses
+ *     tags: [Settings (Client)]
+ *     responses:
+ *       200:
+ *         description: List of booking statuses
+ */
+router.get('/booking-statuses', getBookingStatuses);
 
 module.exports = router;

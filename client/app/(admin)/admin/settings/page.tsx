@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { BookingStatusManagement } from "@/components/admin/settings/BookingStatusManagement";
 
 export default function AdminSettingsPage() {
     const [config, setConfig] = useState<any>(null);
@@ -63,6 +64,16 @@ export default function AdminSettingsPage() {
                     <div className="flex justify-end pt-4">
                         <Button onClick={handleSave}>Save Changes</Button>
                     </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Booking Statuses</CardTitle>
+                    <CardDescription>Manage booking status types and their colors.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <BookingStatusManagement />
                 </CardContent>
             </Card>
         </div>

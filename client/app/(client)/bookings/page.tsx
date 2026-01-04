@@ -127,6 +127,42 @@ export default function BookingsPage() {
         setShowBookingModal(true);
     };
 
+    const handleConvertToOpenMatch = async (bookingId: number, maxPlayers: number = 4) => {
+        try {
+            const res = await api.post(`/bookings/${bookingId}/convert-to-open-match`, { maxPlayers });
+            if (res.data.success) {
+                toast.success("Booking converted to Open Match!");
+                fetchData(); // Refresh grid
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to convert to Open Match");
+        }
+    };
+
+    const handleJoinOpenMatch = async (bookingId: number) => {
+        try {
+            const res = await api.post(`/bookings/${bookingId}/join`);
+            if (res.data.success) {
+                toast.success("Successfully joined Open Match!");
+                fetchData(); // Refresh grid
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to join Open Match");
+        }
+    };
+
+    const handleLeaveOpenMatch = async (bookingId: number) => {
+        try {
+            const res = await api.post(`/bookings/${bookingId}/leave`);
+            if (res.data.success) {
+                toast.success("Successfully left Open Match!");
+                fetchData(); // Refresh grid
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to leave Open Match");
+        }
+    };
+
     const confirmBooking = async () => {
         if (!selectedSlot) return;
 
@@ -211,6 +247,9 @@ export default function BookingsPage() {
                     onCreateBooking={handleCreateBooking}
                     onWaitlistUpdate={fetchData}
                     onViewBooking={(booking) => console.log(booking)}
+                    onConvertToOpenMatch={handleConvertToOpenMatch}
+                    onJoinOpenMatch={handleJoinOpenMatch}
+                    onLeaveOpenMatch={handleLeaveOpenMatch}
                     publicView={!isAuthenticated}
                 />
             )}

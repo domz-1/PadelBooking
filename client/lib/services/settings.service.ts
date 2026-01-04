@@ -35,5 +35,26 @@ export const settingsService = {
     deleteCategory: async (id: string) => {
         const response = await api.delete(`/settings/categories/${id}`);
         return response.data;
+    },
+
+    // Booking Statuses
+    getBookingStatuses: async () => {
+        const response = await api.get('/settings/booking-statuses');
+        return response.data;
+    },
+
+    createBookingStatus: async (data: { name: string; color: string; description?: string }) => {
+        const response = await api.post('/settings/booking-statuses', data);
+        return response.data;
+    },
+
+    updateBookingStatus: async (id: string, data: { name?: string; color?: string; description?: string }) => {
+        const response = await api.put(`/settings/booking-statuses/${id}`, data);
+        return response.data;
+    },
+
+    deleteBookingStatus: async (id: string) => {
+        const response = await api.delete(`/settings/booking-statuses/${id}`);
+        return response.data;
     }
 };

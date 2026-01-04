@@ -5,6 +5,12 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "seed": "node src/seeder.js",
+    "seed-with-statuses": "node scripts/seed-with-statuses.js",
+    "migrate-statuses": "node scripts/migrate-bookings-to-statuses.js",
+    "test-statuses": "node scripts/test-booking-statuses.js",
+    "test-booking-update": "node scripts/test-booking-update.js",
+    "test-admin-flow": "node scripts/test-admin-booking-flow.js",
+    "test-all": "npm run test-statuses && npm run test-booking-update && npm run test-admin-flow",
     "prepare": "husky"
   },
   "dependencies": {

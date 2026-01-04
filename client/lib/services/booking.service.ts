@@ -43,5 +43,26 @@ export const bookingService = {
     leaveWaitlist: async (id: string | number) => {
         const response = await api.delete(`/bookings/waitlist/${id}`);
         return response.data;
+    },
+
+    // Open Match Methods
+    convertToOpenMatch: async (bookingId: string | number, maxPlayers: number = 4) => {
+        const response = await api.post(`/bookings/${bookingId}/convert-to-open-match`, { maxPlayers });
+        return response.data;
+    },
+
+    joinOpenMatch: async (bookingId: string | number) => {
+        const response = await api.post(`/bookings/${bookingId}/join`);
+        return response.data;
+    },
+
+    leaveOpenMatch: async (bookingId: string | number) => {
+        const response = await api.post(`/bookings/${bookingId}/leave`);
+        return response.data;
+    },
+
+    getOpenMatches: async (date?: string) => {
+        const response = await api.get('/bookings/open-matches', { params: { date } });
+        return response.data;
     }
 };

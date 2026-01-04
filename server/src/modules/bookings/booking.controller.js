@@ -222,3 +222,54 @@ exports.deleteBooking = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.convertToOpenMatch = async (req, res, next) => {
+    try {
+        const { maxPlayers = 4 } = req.body;
+        const booking = await bookingService.convertToOpenMatch(req.params.id, req.user.id, maxPlayers);
+
+        // Notify all clients about updated booking
+        req.app.get('io').emit('bookingUpdate', { type: 'update', data: booking });
+
+        res.status(200).json({ success: true, data: booking });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.joinOpenMatch = async (req, res, next) => {
+    try {
+        const booking = await bookingService.joinOpenMatch(req.params.id, req.user.id);
+
+        // Notify all clients about updated booking
+        req.app.get('io').emit('bookingUpdate', { type: 'update', data: booking });
+
+        res.status(200).json({ success: true, data: booking });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.leaveOpenMatch = async (req, res, next) => {
+    try {
+        const booking = await bookingService.leaveOpenMatch(req.params.id, req.user.id);
+
+        // Notify all clients about updated booking
+        req.app.get('io').emit('bookingUpdate', { type: 'update', data: booking });
+
+        res.status(200).json({ success: true, data: booking });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getOpenMatches = async (req, res, next) => {
+    try {
+        const { date } = req.query;
+        const bookings = await bookingService.getOpenMatches(date);
+
+        res.status(200).json({ success: true, data: bookings });
+    } catch (error) {
+        next(error);
+    }
+};

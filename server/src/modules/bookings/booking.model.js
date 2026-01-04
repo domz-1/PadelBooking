@@ -31,8 +31,8 @@ const Booking = sequelize.define('Booking', {
         allowNull: true
     },
     status: {
-        type: DataTypes.ENUM('pending', 'confirmed', 'cancelled', 'completed', 'no-show', 'pending-coach'),
-        defaultValue: 'pending'
+        type: DataTypes.STRING,
+        allowNull: false
     },
     totalPrice: {
         type: DataTypes.FLOAT,
@@ -47,11 +47,11 @@ const Booking = sequelize.define('Booking', {
         defaultValue: []
     },
 
-    categoryId: {
+    statusId: {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-            model: 'Categories',
+            model: 'BookingStatuses',
             key: 'id'
         }
     },
@@ -62,6 +62,18 @@ const Booking = sequelize.define('Booking', {
     offerValue: {
         type: DataTypes.FLOAT,
         defaultValue: 0
+    },
+    isOpenMatch: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    openMatchPlayers: {
+        type: DataTypes.ARRAY(DataTypes.INTEGER),
+        defaultValue: []
+    },
+    openMatchMaxPlayers: {
+        type: DataTypes.INTEGER,
+        defaultValue: 4
     }
 }, {
     timestamps: true
@@ -70,8 +82,8 @@ const Booking = sequelize.define('Booking', {
 // Associations
 Booking.belongsTo(User, { foreignKey: 'userId' });
 Booking.belongsTo(Venue, { foreignKey: 'venueId' });
-const Category = require('../settings/category.model');
-Booking.belongsTo(Category, { foreignKey: 'categoryId' });
+const BookingStatus = require('../settings/bookingStatus.model');
+Booking.belongsTo(BookingStatus, { foreignKey: 'statusId' });
 const Coach = require('../coaches/coach.model');
 const Package = require('../coaches/package.model');
 Booking.belongsTo(Coach, { foreignKey: 'coachId' });

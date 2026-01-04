@@ -51,7 +51,7 @@ import { Booking, User } from "@/lib/schemas"
 import { adminBookingService } from "@/lib/services/admin/bookings.service"
 import { adminUserService, User as AdminUser } from "@/lib/services/admin/users.service"
 import { adminVenueService } from "@/lib/services/admin/venues.service"
-import { adminCategoryService, Category as CategoryType } from "@/lib/services/admin/categories.service"
+import { adminBookingStatusService, BookingStatus as BookingStatusType } from "@/lib/services/admin/bookingStatus.service"
 import { toast } from "sonner"
 
 const bookingFormSchema = z.object({
@@ -62,7 +62,7 @@ const bookingFormSchema = z.object({
     totalPrice: z.number().min(0),
     userId: z.number(),
     venueId: z.number(),
-    categoryId: z.number().optional(),
+    statusId: z.number().optional(),
     hasOffer: z.boolean(),
     offerValue: z.number().min(0),
 })
@@ -90,7 +90,7 @@ export function EditBookingDialog({
     const [waitlistUsers, setWaitlistUsers] = useState<AdminUser[]>([])
     const [selectedWaitlistUser, setSelectedWaitlistUser] = useState<string | null>(null)
     const [venues, setVenues] = useState<any[]>([])
-    const [categories, setCategories] = useState<any[]>([])
+    const [statuses, setStatuses] = useState<any[]>([])
 
     const form = useForm<BookingFormValues>({
         resolver: zodResolver(bookingFormSchema),
@@ -102,7 +102,7 @@ export function EditBookingDialog({
             totalPrice: Number(booking.totalPrice),
             userId: Number(booking.userId),
             venueId: Number(booking.venueId),
-            categoryId: booking.categoryId ? Number(booking.categoryId) : undefined,
+            statusId: booking.statusId ? Number(booking.statusId) : undefined,
             hasOffer: !!booking.hasOffer,
             offerValue: Number(booking.offerValue || 0),
         },
@@ -130,7 +130,7 @@ export function EditBookingDialog({
                 const [usersRes, venuesRes, categoriesRes] = await Promise.all([
                     adminUserService.getAll({ limit: 50, search: userSearch }),
                     adminVenueService.getAll({ limit: 100 }),
-                    adminCategoryService.getAll()
+                    adminBookingStatusService.getAll()
                 ])
                 await fetchWaitlist()
 
@@ -147,7 +147,7 @@ export function EditBookingDialog({
 
                 setUsers(Array.from(userMap.values()));
                 setVenues(venuesRes?.data || []);
-                setCategories(categoriesRes?.data || []);
+                setStatuses(categoriesRes?.data || []);
             } catch (error) {
                 console.error("Failed to fetch main data", error)
             }
@@ -172,11 +172,11 @@ export function EditBookingDialog({
     }, [waitlistSearch])
 
     const handleDelete = async () => {
-        if (!confirm("Are you sure you want to delete this booking?")) return
+        if (!confirm("⚠️ Are you sure you want to PERMANENTLY delete this booking? This cannot be undone.")) return
         setLoading(true)
         try {
             await adminBookingService.deleteBooking(booking.id as number)
-            toast.success("Booking deleted")
+            toast.success("Booking deleted successfully")
             onOpenChange(false)
             onSuccess?.()
         } catch (error: any) {
@@ -226,7 +226,7 @@ export function EditBookingDialog({
             const formattedData = {
                 ...values,
                 date: format(values.date, "yyyy-MM-dd"),
-                categoryId: values.categoryId || null
+                statusId: values.statusId || null
             }
             await adminBookingService.update(booking.id as number, formattedData as any)
             toast.success("Booking updated successfully")
@@ -396,29 +396,29 @@ export function EditBookingDialog({
                                     />
                                     <FormField
                                         control={form.control}
-                                        name="categoryId"
+                                        name="statusId"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Category</FormLabel>
+                                                <FormLabel>Status</FormLabel>
                                                 <Select
                                                     onValueChange={(val) => field.onChange(val !== "none" ? Number(val) : undefined)}
                                                     value={field.value ? String(field.value) : "none"}
                                                 >
                                                     <FormControl>
                                                         <SelectTrigger>
-                                                            <SelectValue placeholder="Select category" />
+                                                            <SelectValue placeholder="Select status" />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
                                                         <SelectItem value="none">Standard / None</SelectItem>
-                                                        {categories.map((c) => (
-                                                            <SelectItem key={c.id} value={String(c.id)}>
+                                                        {statuses.map((s) => (
+                                                            <SelectItem key={s.id} value={String(s.id)}>
                                                                 <div className="flex items-center gap-2">
                                                                     <div
                                                                         className="w-2 h-2 rounded-full"
-                                                                        style={{ backgroundColor: c.color }}
+                                                                        style={{ backgroundColor: s.color }}
                                                                     />
-                                                                    {c.name}
+                                                                    {s.name}
                                                                 </div>
                                                             </SelectItem>
                                                         ))}
@@ -517,14 +517,16 @@ export function EditBookingDialog({
                                         size="sm"
                                         onClick={handleDelete}
                                         disabled={loading}
+                                        className="bg-red-600 hover:bg-red-700"
                                     >
-                                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                        {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                                        Delete Booking
                                     </Button>
                                     <div className="flex gap-2">
                                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)} size="sm">
                                             Cancel
                                         </Button>
-                                        <Button type="submit" disabled={loading} size="sm">
+                                        <Button type="submit" disabled={loading} size="sm" className="bg-primary hover:bg-primary/90">
                                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                             Save Changes
                                         </Button>

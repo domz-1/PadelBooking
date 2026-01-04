@@ -62,6 +62,49 @@ exports.deleteCategory = async (req, res, next) => {
     }
 };
 
+// Booking Statuses
+exports.getBookingStatuses = async (req, res, next) => {
+    try {
+        const statuses = await settingsService.getAllBookingStatuses();
+        res.status(200).json({ success: true, data: statuses });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.createBookingStatus = async (req, res, next) => {
+    try {
+        const status = await settingsService.createBookingStatus(req.body);
+        res.status(201).json({ success: true, data: status, message: req.t('success') });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.updateBookingStatus = async (req, res, next) => {
+    try {
+        const status = await settingsService.updateBookingStatus(req.params.id, req.body);
+        if (!status) {
+            return res.status(404).json({ success: false, message: req.t('notFound') });
+        }
+        res.status(200).json({ success: true, data: status, message: req.t('success') });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.deleteBookingStatus = async (req, res, next) => {
+    try {
+        const status = await settingsService.deleteBookingStatus(req.params.id);
+        if (!status) {
+            return res.status(404).json({ success: false, message: req.t('notFound') });
+        }
+        res.status(200).json({ success: true, data: {}, message: req.t('success') });
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.getAnalysis = async (req, res, next) => {
     try {
         const analysis = await settingsService.getAnalysis();

@@ -33,17 +33,18 @@ import { Loader2, Search } from "lucide-react"
 import { toast } from "sonner"
 import { adminBookingService } from "@/lib/services/admin/bookings.service"
 import { adminUserService } from "@/lib/services/admin/users.service"
-import { adminCategoryService, Category } from "@/lib/services/admin/categories.service"
+import { adminBookingStatusService, BookingStatus } from "@/lib/services/admin/bookingStatus.service"
 import { adminVenueService } from "@/lib/services/admin/venues.service"
 import { User } from "@/lib/schemas"
 
 const bookingFormSchema = z.object({
     userId: z.number({ message: "User is required" }),
-    categoryId: z.number().optional(),
+    statusId: z.number().optional(),
     venueId: z.number({ message: "Venue is required" }),
     duration: z.string(),
     totalPrice: z.number().min(0),
-    status: z.string()
+    status: z.string(),
+    type: z.enum(['standard', 'academy']).default('standard')
 })
 
 type BookingFormValues = z.infer<typeof bookingFormSchema>
@@ -69,7 +70,7 @@ export function AdminCreateBookingDialog({
 }: AdminCreateBookingDialogProps) {
     const [loading, setLoading] = useState(false)
     const [users, setUsers] = useState<User[]>([])
-    const [categories, setCategories] = useState<Category[]>([])
+    const [statuses, setStatuses] = useState<BookingStatus[]>([])
     const [userSearch, setUserSearch] = useState("")
 
     const form = useForm<BookingFormValues>({
@@ -78,7 +79,8 @@ export function AdminCreateBookingDialog({
             duration: "1",
             totalPrice: 0,
             status: "confirmed",
-            venueId: venueId
+            venueId: venueId,
+            type: "standard"
         }
     })
 
@@ -89,7 +91,7 @@ export function AdminCreateBookingDialog({
             try {
                 const [usersRes, categoriesRes, venuesRes] = await Promise.all([
                     adminUserService.getAll({ limit: 50, search: userSearch }),
-                    adminCategoryService.getAll(),
+                    adminBookingStatusService.getAll(),
                     adminVenueService.getAll({ limit: 100 })
                 ])
                 const userMap = new Map();
@@ -124,10 +126,10 @@ export function AdminCreateBookingDialog({
                 date,
                 startTime: startTime.substring(0, 5),
                 endTime: endTimeStr,
-                categoryId: values.categoryId,
+                statusId: values.statusId,
                 totalPrice: values.totalPrice,
                 status: values.status as any,
-                type: "admin"
+                type: values.type
             })
 
             toast.success("Booking created successfully")
@@ -245,10 +247,10 @@ export function AdminCreateBookingDialog({
 
                             <FormField
                                 control={form.control}
-                                name="categoryId"
+                                name="statusId"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Category</FormLabel>
+                                        <FormLabel>Status</FormLabel>
                                         <Select
                                             onValueChange={(v) => field.onChange(v === "none" ? undefined : Number(v))}
                                             value={field.value ? String(field.value) : "none"}
@@ -260,14 +262,14 @@ export function AdminCreateBookingDialog({
                                             </FormControl>
                                             <SelectContent>
                                                 <SelectItem value="none">Standard / None</SelectItem>
-                                                {categories.map((cat) => (
-                                                    <SelectItem key={cat.id} value={String(cat.id)}>
+                                                {statuses.map((status) => (
+                                                    <SelectItem key={status.id} value={String(status.id)}>
                                                         <div className="flex items-center gap-2">
                                                             <div
                                                                 className="w-3 h-3 rounded-full"
-                                                                style={{ backgroundColor: cat.color }}
+                                                                style={{ backgroundColor: status.color }}
                                                             />
-                                                            {cat.name}
+                                                            {status.name}
                                                         </div>
                                                     </SelectItem>
                                                 ))}
@@ -298,6 +300,30 @@ export function AdminCreateBookingDialog({
                                 )}
                             />
 
+                            <FormField
+                                control={form.control}
+                                name="type"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Booking Type</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Type" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="standard">Standard</SelectItem>
+                                                <SelectItem value="academy">Academy</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4">
                             <FormField
                                 control={form.control}
                                 name="status"
