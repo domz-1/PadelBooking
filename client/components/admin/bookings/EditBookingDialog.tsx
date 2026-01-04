@@ -4,8 +4,9 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { CalendarIcon, Loader2, Clock, Trash2, UserPlus, Search } from "lucide-react"
+import { CalendarIcon, Loader2, Clock, Trash2, UserPlus, Search, RefreshCw } from "lucide-react"
 import { format } from "date-fns"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -16,53 +17,38 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+import { TimePicker } from "@/components/ui/time-picker"
 import { Calendar } from "@/components/ui/calendar"
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover"
-import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-} from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
-import { Booking, User } from "@/lib/schemas"
-import { adminBookingService } from "@/lib/services/admin/bookings.service"
-import { adminUserService, User as AdminUser } from "@/lib/services/admin/users.service"
-import { adminVenueService } from "@/lib/services/admin/venues.service"
-import { adminBookingStatusService, BookingStatus as BookingStatusType } from "@/lib/services/admin/bookingStatus.service"
-import { toast } from "sonner"
+import { Booking } from "@/lib/schemas"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+
+import { useBookingData } from "@/hooks/useBookingData"
+import { useBookingOperations } from "@/hooks/useBookingOperations"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { VenueSelectField } from "./fields/VenueSelectField"
+import { UserSelectField } from "./fields/UserSelectField"
+import { StatusFields } from "./fields/StatusFields"
+import { PriceOfferFields } from "./fields/PriceOfferFields"
+import { BookingTypeField } from "./fields/BookingTypeField"
+
+import { adminUserService } from "@/lib/services/admin/users.service"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const bookingFormSchema = z.object({
     date: z.date(),
     startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Invalid time format (HH:mm)"),
     endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Invalid time format (HH:mm)"),
-    status: z.enum(["pending", "confirmed", "cancelled", "completed", "no-show", "pending-coach"]),
     totalPrice: z.number().min(0),
     userId: z.number(),
     venueId: z.number(),
     statusId: z.number().optional(),
+    type: z.enum(['standard', 'academy']),
     hasOffer: z.boolean(),
     offerValue: z.number().min(0),
 })
@@ -82,15 +68,23 @@ export function EditBookingDialog({
     onOpenChange,
     onSuccess,
 }: EditBookingDialogProps) {
-    const [loading, setLoading] = useState(false)
-    const [users, setUsers] = useState<AdminUser[]>([])
     const [userSearch, setUserSearch] = useState("")
-    const [waitlist, setWaitlist] = useState<any[]>([])
+    const { users, venues, statuses } = useBookingData(open, userSearch)
+    const {
+        loading,
+        updateBooking,
+        deleteBooking,
+        waitlist,
+        fetchWaitlist,
+        joinWaitlist,
+        deleteWaitlistEntry
+    } = useBookingOperations()
+
     const [waitlistSearch, setWaitlistSearch] = useState("")
-    const [waitlistUsers, setWaitlistUsers] = useState<AdminUser[]>([])
+    const [waitlistUsers, setWaitlistUsers] = useState<any[]>([])
     const [selectedWaitlistUser, setSelectedWaitlistUser] = useState<string | null>(null)
-    const [venues, setVenues] = useState<any[]>([])
-    const [statuses, setStatuses] = useState<any[]>([])
+    const [seriesOption, setSeriesOption] = useState<'single' | 'upcoming'>('single')
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
     const form = useForm<BookingFormValues>({
         resolver: zodResolver(bookingFormSchema),
@@ -98,64 +92,26 @@ export function EditBookingDialog({
             date: new Date(booking.date + 'T12:00:00'),
             startTime: booking.startTime.substring(0, 5),
             endTime: booking.endTime.substring(0, 5),
-            status: booking.status as any,
             totalPrice: Number(booking.totalPrice),
             userId: Number(booking.userId),
             venueId: Number(booking.venueId),
             statusId: booking.statusId ? Number(booking.statusId) : undefined,
+            type: (booking.type as any) || "standard",
             hasOffer: !!booking.hasOffer,
             offerValue: Number(booking.offerValue || 0),
         },
     })
 
-    const hasOffer = form.watch("hasOffer")
-
-    const fetchWaitlist = async () => {
-        try {
-            const res = await adminBookingService.getWaitlistForSlot({
+    useEffect(() => {
+        if (open && booking.venueId && booking.date && booking.startTime && booking.endTime) {
+            fetchWaitlist({
                 venueId: Number(booking.venueId),
                 date: booking.date,
                 startTime: booking.startTime,
                 endTime: booking.endTime
             })
-            setWaitlist(res.data)
-        } catch (error) {
-            console.error("Failed to fetch waitlist", error)
         }
-    }
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [usersRes, venuesRes, categoriesRes] = await Promise.all([
-                    adminUserService.getAll({ limit: 50, search: userSearch }),
-                    adminVenueService.getAll({ limit: 100 }),
-                    adminBookingStatusService.getAll()
-                ])
-                await fetchWaitlist()
-
-                const userMap = new Map();
-                usersRes.data.forEach((u: any) => {
-                    if (u && u.id !== undefined && u.id !== null) {
-                        userMap.set(Number(u.id), u);
-                    }
-                });
-
-                if (booking.User && booking.User.id !== undefined && booking.User.id !== null) {
-                    userMap.set(Number(booking.User.id), booking.User);
-                }
-
-                setUsers(Array.from(userMap.values()));
-                setVenues(venuesRes?.data || []);
-                setStatuses(categoriesRes?.data || []);
-            } catch (error) {
-                console.error("Failed to fetch main data", error)
-            }
-        }
-        if (open) {
-            fetchData()
-        }
-    }, [open, userSearch, booking.id])
+    }, [open, booking.id, booking.venueId, booking.date, booking.startTime, booking.endTime, fetchWaitlist])
 
     useEffect(() => {
         const fetchWaitlistSearch = async () => {
@@ -171,82 +127,105 @@ export function EditBookingDialog({
         fetchWaitlistSearch()
     }, [waitlistSearch])
 
-    const handleDelete = async () => {
-        if (!confirm("⚠️ Are you sure you want to PERMANENTLY delete this booking? This cannot be undone.")) return
-        setLoading(true)
-        try {
-            await adminBookingService.deleteBooking(booking.id as number)
-            toast.success("Booking deleted successfully")
+    async function onSubmit(values: BookingFormValues) {
+        if (!booking.id) return
+        const formattedData = {
+            ...values,
+            date: format(values.date, "yyyy-MM-dd"),
+            statusId: values.statusId || undefined,
+            seriesOption: booking.recurrenceId ? seriesOption : 'single'
+        }
+        await updateBooking(booking.id as number, formattedData, () => {
             onOpenChange(false)
             onSuccess?.()
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Failed to delete booking")
-        } finally {
-            setLoading(false)
-        }
+        })
+    }
+
+    const handleDelete = async () => {
+        if (!booking.id) return
+        await deleteBooking(booking.id as number, booking.recurrenceId ? seriesOption : 'single', () => {
+            onOpenChange(false)
+            onSuccess?.()
+        })
     }
 
     const onAddWaitlist = async () => {
         if (!selectedWaitlistUser) return
-        setLoading(true)
-        try {
-            await adminBookingService.joinWaitlist({
-                userId: Number(selectedWaitlistUser),
+        await joinWaitlist({
+            userId: Number(selectedWaitlistUser),
+            venueId: Number(booking.venueId),
+            date: booking.date,
+            startTime: booking.startTime,
+            endTime: booking.endTime
+        }, () => {
+            setSelectedWaitlistUser(null)
+            setWaitlistSearch("")
+            fetchWaitlist({
                 venueId: Number(booking.venueId),
                 date: booking.date,
                 startTime: booking.startTime,
                 endTime: booking.endTime
             })
-            toast.success("User added to waitlist")
-            setSelectedWaitlistUser(null)
-            setWaitlistSearch("")
-            fetchWaitlist()
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Failed to add user to waitlist")
-        } finally {
-            setLoading(false)
+        })
+    }
+
+    const formatPhoneForWhatsApp = (phone: string | undefined) => {
+        if (!phone) return ""
+        return phone.replace(/\D/g, "")
+    }
+
+    const handleWhatsAppChat = () => {
+        const phone = formatPhoneForWhatsApp(booking.User?.phone)
+        if (phone) {
+            window.open(`https://wa.me/${phone}`, "_blank")
+        } else {
+            toast.info("No phone number available for WhatsApp")
         }
     }
 
-    const onDeleteWaitlistEntry = async (id: number) => {
-        if (!confirm("Remove user from waitlist?")) return
-        try {
-            await adminBookingService.deleteWaitlistEntry(id)
-            toast.success("User removed from waitlist")
-            fetchWaitlist()
-        } catch (error: any) {
-            toast.error("Failed to remove user")
+    const getStatusStyles = (statusId: number | undefined) => {
+        const status = statuses.find(s => s.id === statusId)
+        if (!status) {
+            // Default styles for "no status"
+            return { dot: 'bg-gray-400', bg: 'bg-gray-50', text: 'text-gray-600', name: 'No Status' }
+        }
+        return {
+            dot: '', // Will use custom style
+            color: status.color,
+            bg: 'bg-opacity-10',
+            text: '', // Will use custom style
+            name: status.name
         }
     }
 
-    async function onSubmit(values: BookingFormValues) {
-        if (!booking.id) return
-        setLoading(true)
-        try {
-            const formattedData = {
-                ...values,
-                date: format(values.date, "yyyy-MM-dd"),
-                statusId: values.statusId || null
-            }
-            await adminBookingService.update(booking.id as number, formattedData as any)
-            toast.success("Booking updated successfully")
-            onOpenChange(false)
-            onSuccess?.()
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Failed to update booking")
-        } finally {
-            setLoading(false)
-        }
-    }
+    const currentStatusId = form.watch('statusId')
+    const currentStatus = statuses.find(s => s.id === currentStatusId) || booking.BookingStatus
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Management: Booking #{booking.id}</DialogTitle>
-                    <DialogDescription>
-                        Manage details, status, and waitlist.
-                    </DialogDescription>
+                    <div className="flex items-center justify-between gap-4">
+                        <div>
+                            <DialogTitle>Management: Booking #{booking.id}</DialogTitle>
+                            {currentStatus && (
+                                <div
+                                    className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize border"
+                                    style={{
+                                        backgroundColor: `${currentStatus.color}15`,
+                                        color: currentStatus.color,
+                                        borderColor: `${currentStatus.color}30`
+                                    }}
+                                >
+                                    <span
+                                        className="w-1.5 h-1.5 rounded-full animate-pulse"
+                                        style={{ backgroundColor: currentStatus.color }}
+                                    />
+                                    {currentStatus.name}
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </DialogHeader>
 
                 <Tabs defaultValue="info" className="w-full">
@@ -297,44 +276,10 @@ export function EditBookingDialog({
                                     )}
                                 />
 
-                                <FormField
-                                    control={form.control}
-                                    name="userId"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Customer</FormLabel>
-                                            <Select
-                                                onValueChange={(v) => field.onChange(Number(v))}
-                                                value={String(field.value)}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select customer" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    <div className="flex items-center px-3 pb-2 pt-1">
-                                                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                                        <Input
-                                                            placeholder="Search users..."
-                                                            value={userSearch}
-                                                            onChange={(e) => setUserSearch(e.target.value)}
-                                                            className="h-8 border-none focus-visible:ring-0 p-0"
-                                                        />
-                                                    </div>
-                                                    {users.map((u) => (
-                                                        <SelectItem key={`user-${u.id}`} value={String(u.id)}>
-                                                            <div className="flex flex-col">
-                                                                <span>{u.name}</span>
-                                                                <span className="text-[10px] text-muted-foreground">{u.email}</span>
-                                                            </div>
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
+                                <UserSelectField
+                                    form={form}
+                                    users={users}
+                                    setUserSearch={setUserSearch}
                                 />
 
                                 <div className="grid grid-cols-2 gap-4">
@@ -345,7 +290,10 @@ export function EditBookingDialog({
                                             <FormItem>
                                                 <FormLabel>Start Time</FormLabel>
                                                 <FormControl>
-                                                    <Input {...field} />
+                                                    <TimePicker
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                    />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -358,177 +306,70 @@ export function EditBookingDialog({
                                             <FormItem>
                                                 <FormLabel>End Time</FormLabel>
                                                 <FormControl>
-                                                    <Input {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="venueId"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Venue (Court)</FormLabel>
-                                                <Select
-                                                    onValueChange={(val) => field.onChange(Number(val))}
-                                                    value={String(field.value)}
-                                                >
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select venue" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        {venues.map((v) => (
-                                                            <SelectItem key={v.id} value={String(v.id)}>
-                                                                {v.name}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="statusId"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Status</FormLabel>
-                                                <Select
-                                                    onValueChange={(val) => field.onChange(val !== "none" ? Number(val) : undefined)}
-                                                    value={field.value ? String(field.value) : "none"}
-                                                >
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select status" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="none">Standard / None</SelectItem>
-                                                        {statuses.map((s) => (
-                                                            <SelectItem key={s.id} value={String(s.id)}>
-                                                                <div className="flex items-center gap-2">
-                                                                    <div
-                                                                        className="w-2 h-2 rounded-full"
-                                                                        style={{ backgroundColor: s.color }}
-                                                                    />
-                                                                    {s.name}
-                                                                </div>
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="status"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Status</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Status" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="pending">Pending</SelectItem>
-                                                        <SelectItem value="confirmed">Confirmed</SelectItem>
-                                                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                                                        <SelectItem value="completed">Completed</SelectItem>
-                                                        <SelectItem value="no-show">No Show</SelectItem>
-                                                        <SelectItem value="pending-coach">Pending Coach</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="totalPrice"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Total Price (USD)</FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        type="number"
-                                                        step="0.01"
-                                                        {...field}
-                                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                    <TimePicker
+                                                        value={field.value}
+                                                        onChange={field.onChange}
                                                     />
                                                 </FormControl>
+                                                <FormMessage />
                                             </FormItem>
                                         )}
                                     />
                                 </div>
 
-                                <div className="space-y-4 p-4 bg-secondary/20 rounded-lg">
-                                    <FormField
-                                        control={form.control}
-                                        name="hasOffer"
-                                        render={({ field }) => (
-                                            <FormItem className="flex flex-row items-center justify-between">
-                                                <div className="space-y-0.5">
-                                                    <FormLabel>Special Offer</FormLabel>
-                                                    <div className="text-[10px] text-muted-foreground">Apply custom discount</div>
-                                                </div>
-                                                <FormControl>
-                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                </FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
-                                    {hasOffer && (
-                                        <FormField
-                                            control={form.control}
-                                            name="offerValue"
-                                            render={({ field }) => (
-                                                <FormItem className="animate-in fade-in slide-in-from-top-2">
-                                                    <FormLabel>Offer Amount (USD)</FormLabel>
-                                                    <FormControl>
-                                                        <Input
-                                                            type="number"
-                                                            {...field}
-                                                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                                        />
-                                                    </FormControl>
-                                                </FormItem>
-                                            )}
-                                        />
-                                    )}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <VenueSelectField form={form} venues={venues} />
+                                    <BookingTypeField form={form} />
                                 </div>
 
-                                <DialogFooter className="flex flex-row justify-between pt-4 border-t">
+                                <StatusFields form={form} statuses={statuses} />
+                                <PriceOfferFields form={form} />
+
+                                {booking.recurrenceId && (
+                                    <div className="bg-primary/5 border border-primary/10 rounded-lg p-4 mb-4">
+                                        <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-primary">
+                                            <RefreshCw className="w-4 h-4" />
+                                            Update Options
+                                        </div>
+                                        <RadioGroup
+                                            value={seriesOption}
+                                            onValueChange={(v: any) => setSeriesOption(v)}
+                                            className="grid grid-cols-1 gap-2"
+                                        >
+                                            <div className="flex items-center space-x-2 bg-background p-2 rounded border cursor-pointer hover:bg-accent/50">
+                                                <RadioGroupItem value="single" id="single" />
+                                                <Label htmlFor="single" className="flex-1 cursor-pointer">This booking only</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2 bg-background p-2 rounded border cursor-pointer hover:bg-accent/50">
+                                                <RadioGroupItem value="upcoming" id="upcoming" />
+                                                <Label htmlFor="upcoming" className="flex-1 cursor-pointer">This and all upcoming bookings</Label>
+                                            </div>
+                                        </RadioGroup>
+                                        <p className="text-[10px] text-muted-foreground mt-2 px-1">
+                                            Note: "Upcoming" will apply changes to all future instances in this series.
+                                        </p>
+                                    </div>
+                                )}
+
+                                <DialogFooter className="flex flex-row justify-between pt-4 border-t gap-2">
                                     <Button
                                         type="button"
                                         variant="destructive"
                                         size="sm"
-                                        onClick={handleDelete}
+                                        onClick={() => setShowDeleteConfirm(true)}
                                         disabled={loading}
                                         className="bg-red-600 hover:bg-red-700"
                                     >
                                         {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
-                                        Delete Booking
+                                        Delete
                                     </Button>
                                     <div className="flex gap-2">
                                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)} size="sm">
                                             Cancel
                                         </Button>
-                                        <Button type="submit" disabled={loading} size="sm" className="bg-primary hover:bg-primary/90">
+                                        <Button type="submit" disabled={loading} size="sm">
                                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                            Save Changes
+                                            {booking.recurrenceId && seriesOption === 'upcoming' ? "Save Series" : "Save Changes"}
                                         </Button>
                                     </div>
                                 </DialogFooter>
@@ -539,7 +380,7 @@ export function EditBookingDialog({
                     <TabsContent value="waitlist" className="py-4 space-y-6">
                         <div className="space-y-4">
                             <div className="flex flex-col gap-2">
-                                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                <label className="text-sm font-medium leading-none">
                                     Add User to Waitlist
                                 </label>
                                 <div className="flex gap-2">
@@ -568,11 +409,6 @@ export function EditBookingDialog({
                                                     </div>
                                                 </SelectItem>
                                             ))}
-                                            {waitlistUsers.length === 0 && waitlistSearch.length > 1 && (
-                                                <div className="p-4 text-center text-xs text-muted-foreground">
-                                                    No matches found
-                                                </div>
-                                            )}
                                         </SelectContent>
                                     </Select>
                                     <Button
@@ -592,14 +428,14 @@ export function EditBookingDialog({
                                         Waitlist Queue
                                     </h4>
                                 </div>
-                                <div className="divide-y max-h-[250px] overflow-auto">
-                                    {waitlist.length === 0 ? (
-                                        <div className="p-8 text-center text-sm text-muted-foreground italic">
-                                            No users in waitlist
-                                        </div>
-                                    ) : (
-                                        waitlist.map((entry, idx) => (
-                                            <div key={entry.id || `wait-${idx}`} className="flex items-center justify-between p-3 group hover:bg-muted/50 transition-colors">
+                                {waitlist.length === 0 ? (
+                                    <div className="p-8 text-center text-sm text-muted-foreground italic">
+                                        No users in waitlist
+                                    </div>
+                                ) : (
+                                    <div className="bg-muted/20 border rounded-xl overflow-hidden divide-y">
+                                        {waitlist.map((entry, idx) => (
+                                            <div key={entry.id || `wait-${idx}`} className="flex items-center justify-between p-2.5 px-4 hover:bg-muted/40 transition-colors">
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-[10px] font-bold text-primary border border-primary/20">
                                                         {idx + 1}
@@ -612,20 +448,39 @@ export function EditBookingDialog({
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    onClick={() => onDeleteWaitlistEntry(entry.id)}
+                                                    className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                    onClick={() => deleteWaitlistEntry(entry.id, () => {
+                                                        fetchWaitlist({
+                                                            venueId: Number(booking.venueId),
+                                                            date: booking.date,
+                                                            startTime: booking.startTime,
+                                                            endTime: booking.endTime
+                                                        })
+                                                    })}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </div>
-                                        ))
-                                    )}
-                                </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </TabsContent>
                 </Tabs>
             </DialogContent>
+
+            <ConfirmDialog
+                open={showDeleteConfirm}
+                onOpenChange={setShowDeleteConfirm}
+                title="Delete Booking"
+                description={booking.recurrenceId && seriesOption === "upcoming"
+                    ? "Are you sure you want to delete this AND ALL UPCOMING bookings in this series? This action cannot be undone."
+                    : "Are you sure you want to permanently delete this booking? This action cannot be undone."
+                }
+                onConfirm={handleDelete}
+                variant="destructive"
+            />
         </Dialog>
     )
 }

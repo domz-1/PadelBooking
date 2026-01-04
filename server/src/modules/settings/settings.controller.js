@@ -19,6 +19,26 @@ exports.updateConfig = async (req, res, next) => {
     }
 };
 
+exports.uploadLogo = async (req, res, next) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No file uploaded' });
+        }
+
+        const logoUrl = `${req.protocol}://${req.get('host')}/${req.file.path}`;
+        const config = await settingsService.updateConfig({ logo: logoUrl });
+
+        res.status(200).json({
+            success: true,
+            data: config,
+            logoUrl,
+            message: req.t('success')
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 // Categories
 exports.getCategories = async (req, res, next) => {
     try {

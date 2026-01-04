@@ -212,7 +212,8 @@ exports.updateBooking = async (req, res, next) => {
 
 exports.deleteBooking = async (req, res, next) => {
     try {
-        await bookingService.deleteBooking(req.params.id, req.user);
+        const { seriesOption = 'single' } = req.query;
+        await bookingService.deleteBooking(req.params.id, req.user, seriesOption);
 
         // Notify all clients about deleted booking
         req.app.get('io').emit('bookingUpdate', { type: 'delete', id: req.params.id });

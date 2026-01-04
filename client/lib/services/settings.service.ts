@@ -1,4 +1,4 @@
-import api from '../api';
+import { api, adminApi } from '../api';
 import { ApiListResponse, ApiResponse } from '../types';
 
 export const settingsService = {
@@ -8,12 +8,23 @@ export const settingsService = {
     },
 
     updateConfig: async (data: Record<string, unknown>) => {
-        const response = await api.put('/settings/config', data);
+        const response = await adminApi.put('/settings/config', data);
+        return response.data;
+    },
+
+    uploadLogo: async (file: File) => {
+        const formData = new FormData();
+        formData.append('logo', file);
+        const response = await adminApi.post('/settings/config/logo', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return response.data;
     },
 
     getAnalysis: async () => {
-        const response = await api.get('/settings/analysis');
+        const response = await adminApi.get('/settings/analysis');
         return response.data;
     },
 
@@ -23,17 +34,17 @@ export const settingsService = {
     },
 
     createCategory: async (data: { name: string }) => {
-        const response = await api.post('/settings/categories', data);
+        const response = await adminApi.post('/settings/categories', data);
         return response.data;
     },
 
     updateCategory: async (id: string, data: { name: string }) => {
-        const response = await api.put(`/settings/categories/${id}`, data);
+        const response = await adminApi.put(`/settings/categories/${id}`, data);
         return response.data;
     },
 
     deleteCategory: async (id: string) => {
-        const response = await api.delete(`/settings/categories/${id}`);
+        const response = await adminApi.delete(`/settings/categories/${id}`);
         return response.data;
     },
 
@@ -44,17 +55,17 @@ export const settingsService = {
     },
 
     createBookingStatus: async (data: { name: string; color: string; description?: string }) => {
-        const response = await api.post('/settings/booking-statuses', data);
+        const response = await adminApi.post('/settings/booking-statuses', data);
         return response.data;
     },
 
     updateBookingStatus: async (id: string, data: { name?: string; color?: string; description?: string }) => {
-        const response = await api.put(`/settings/booking-statuses/${id}`, data);
+        const response = await adminApi.put(`/settings/booking-statuses/${id}`, data);
         return response.data;
     },
 
     deleteBookingStatus: async (id: string) => {
-        const response = await api.delete(`/settings/booking-statuses/${id}`);
+        const response = await adminApi.delete(`/settings/booking-statuses/${id}`);
         return response.data;
     }
 };

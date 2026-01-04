@@ -29,13 +29,14 @@ class BookingService {
             limit,
             offset,
             order: [['createdAt', 'DESC']],
+            attributes: { exclude: ['status'] },
             include: [
                 {
                     model: Venue,
                     attributes: ['name', 'location'],
                     include: [{ model: Branch, attributes: ['name', 'location'] }]
                 },
-                { model: User, attributes: ['name', 'email'] },
+                { model: User, attributes: ['name', 'email', 'phone'] },
                 { model: BookingStatus, attributes: ['id', 'name', 'color', 'description'] }
             ]
         });
@@ -43,13 +44,14 @@ class BookingService {
 
     async getBookingById(id) {
         return await Booking.findByPk(id, {
+            attributes: { exclude: ['status'] },
             include: [
                 {
                     model: Venue,
                     attributes: ['name', 'location'],
                     include: [{ model: Branch, attributes: ['name', 'location'] }]
                 },
-                { model: User, attributes: ['name', 'email'] },
+                { model: User, attributes: ['name', 'email', 'phone'] },
                 { model: BookingStatus, attributes: ['id', 'name', 'color', 'description'] }
             ]
         });
@@ -59,7 +61,61 @@ class BookingService {
     async createBooking(bookingData, user) {
         if (bookingData.statusId === '') bookingData.statusId = null;
 
-        // Check availability
+        const { repeat } = bookingData;
+        const occurrences = repeat?.count ? parseInt(repeat.count) : 1;
+        const frequency = repeat?.frequency || 'weekly';
+
+        if (occurrences > 1) {
+            const recurrenceId = require('crypto').randomUUID();
+            const dates = [];
+            let currentDate = new Date(bookingData.date);
+
+            for (let i = 0; i < occurrences; i++) {
+                dates.push(currentDate.toISOString().split('T')[0]);
+                if (frequency === 'weekly') {
+                    currentDate.setDate(currentDate.getDate() + 7);
+                } else if (frequency === 'daily') {
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+            }
+
+            // 1. Pre-check availability for ALL dates
+            for (const date of dates) {
+                const existingBooking = await Booking.findOne({
+                    where: {
+                        venueId: bookingData.venueId,
+                        date: date,
+                        [Op.and]: [
+                            { startTime: { [Op.lt]: bookingData.endTime } },
+                            { endTime: { [Op.gt]: bookingData.startTime } }
+                        ]
+                    }
+                });
+
+                if (existingBooking) {
+                    throw new Error(`Conflict on ${date}: Venue is already booked for this time slot`);
+                }
+            }
+
+            // 2. Create bookings
+            const results = [];
+            for (const date of dates) {
+                const booking = await this._internalCreateSingleBooking({
+                    ...bookingData,
+                    date,
+                    recurrenceId
+                }, user);
+                results.push(booking);
+            }
+
+            return results[0]; // Return the first booking as reference
+        }
+
+        return await this._internalCreateSingleBooking(bookingData, user);
+    }
+
+    async _internalCreateSingleBooking(bookingData, user) {
+        // Check availability (double check for safety or single booking case)
         const existingBooking = await Booking.findOne({
             where: {
                 venueId: bookingData.venueId,
@@ -93,18 +149,22 @@ class BookingService {
             bookingData.totalPrice = venue.pricePerHour * durationHours;
         }
 
-        const status = bookingData.type === 'academy' ? 'pending-coach' : 'confirmed';
-        
-        // Get statusId from status name if provided, otherwise use default
+        // Determine status string: if statusId is provided, get its name; otherwise use default
+        let status = bookingData.type === 'academy' ? 'pending-coach' : 'confirmed';
         let statusId = bookingData.statusId;
-        if (!statusId) {
-            const BookingStatus = require('../settings/bookingStatus.model');
+
+        if (statusId) {
+            const statusRecord = await BookingStatus.findByPk(statusId);
+            if (statusRecord) {
+                status = statusRecord.name;
+            }
+        } else {
             const statusRecord = await BookingStatus.findOne({ where: { name: status } });
             if (statusRecord) {
                 statusId = statusRecord.id;
             }
         }
-        
+
         // Set Open Match defaults
         const isOpenMatch = bookingData.isOpenMatch || false;
         const openMatchMaxPlayers = bookingData.openMatchMaxPlayers || (isOpenMatch ? 4 : null);
@@ -173,7 +233,7 @@ class BookingService {
             offset,
             order: [['timestamp', 'DESC']],
             include: [
-                { model: User, attributes: ['name', 'email'] },
+                { model: User, attributes: ['name', 'email', 'phone'] },
                 { model: Booking, attributes: ['id', 'date', 'startTime'] }
             ]
         });
@@ -204,7 +264,7 @@ class BookingService {
         }
 
         // Check availability if time or venue is actually changing to different values
-        const isTimeOrVenueChanging = 
+        const isTimeOrVenueChanging =
             (updateData.date && updateData.date !== booking.date) ||
             (updateData.startTime && updateData.startTime !== booking.startTime) ||
             (updateData.endTime && updateData.endTime !== booking.endTime) ||
@@ -217,10 +277,10 @@ class BookingService {
             const checkVenueId = updateData.venueId || booking.venueId;
 
             // Only check availability if the new time slot is actually different from the current one
-            const isSameTimeSlot = checkDate === booking.date && 
-                                  checkStartTime === booking.startTime && 
-                                  checkEndTime === booking.endTime &&
-                                  checkVenueId === booking.venueId;
+            const isSameTimeSlot = checkDate === booking.date &&
+                checkStartTime === booking.startTime &&
+                checkEndTime === booking.endTime &&
+                checkVenueId === booking.venueId;
 
             console.log(`[DEBUG] Updating booking ${id}:`);
             console.log(`[DEBUG] Current: date=${booking.date}, start=${booking.startTime}, end=${booking.endTime}, venue=${booking.venueId}`);
@@ -256,6 +316,57 @@ class BookingService {
             }
         }
 
+        const seriesOption = updateData.seriesOption || 'single';
+        delete updateData.seriesOption;
+
+        if (seriesOption === 'upcoming' && booking.recurrenceId) {
+            const bookingsToUpdate = await Booking.findAll({
+                where: {
+                    recurrenceId: booking.recurrenceId,
+                    date: { [Op.gte]: booking.date }
+                }
+            });
+
+            for (const b of bookingsToUpdate) {
+                // For each booking, we still want to check availability if crucial fields change
+                // But bulk update might be complex if venue/time changes cause conflicts in future slots.
+                // For simplicity as requested, we'll apply the updateData to all.
+                // If venue/time is changing, we should ideally re-run availability checks for each slot.
+
+                if (isTimeOrVenueChanging) {
+                    const checkDate = updateData.date || b.date;
+                    const checkStartTime = updateData.startTime || b.startTime;
+                    const checkEndTime = updateData.endTime || b.endTime;
+                    const checkVenueId = updateData.venueId || b.venueId;
+
+                    const conflict = await Booking.findOne({
+                        where: {
+                            id: { [Op.ne]: b.id },
+                            venueId: checkVenueId,
+                            date: checkDate,
+                            [Op.and]: [
+                                { startTime: { [Op.lt]: checkEndTime } },
+                                { endTime: { [Op.gt]: checkStartTime } }
+                            ]
+                        }
+                    });
+
+                    if (conflict) {
+                        throw new Error(`Conflict on ${checkDate}: This slot is already taken for one of the recurring bookings.`);
+                    }
+                }
+
+                await b.update(updateData);
+                await BookingLog.create({
+                    bookingId: b.id,
+                    userId: user.id,
+                    action: 'update',
+                    details: { ...updateData, seriesOption: 'upcoming' }
+                });
+            }
+            return bookingsToUpdate[0];
+        }
+
         await booking.update(updateData);
 
         // Create Log
@@ -269,7 +380,7 @@ class BookingService {
         return booking;
     }
 
-    async deleteBooking(id, user) {
+    async deleteBooking(id, user, seriesOption = 'single') {
         const booking = await this.getBookingById(id);
         if (!booking) {
             throw new Error('Booking not found');
@@ -280,6 +391,24 @@ class BookingService {
             throw new Error('Not authorized to delete this booking');
         }
 
+        if (seriesOption === 'upcoming' && booking.recurrenceId) {
+            const bookingsToDelete = await Booking.findAll({
+                where: {
+                    recurrenceId: booking.recurrenceId,
+                    date: { [Op.gte]: booking.date }
+                }
+            });
+
+            for (const b of bookingsToDelete) {
+                await this._internalDeleteSingleBooking(b, user);
+            }
+            return true;
+        }
+
+        return await this._internalDeleteSingleBooking(booking, user);
+    }
+
+    async _internalDeleteSingleBooking(booking, user) {
         // Store details for waitlist check before deletion
         const { venueId, date, startTime, endTime } = booking;
 
@@ -359,7 +488,7 @@ class BookingService {
 
         // Add user to the match
         const updatedPlayers = [...booking.openMatchPlayers, userId];
-        
+
         await booking.update({
             openMatchPlayers: updatedPlayers
         });
@@ -384,7 +513,7 @@ class BookingService {
 
         // Remove user from the match
         const updatedPlayers = booking.openMatchPlayers.filter(playerId => playerId !== userId);
-        
+
         await booking.update({
             openMatchPlayers: updatedPlayers
         });
@@ -403,9 +532,10 @@ class BookingService {
                 ...where,
                 isOpenMatch: true
             },
+            attributes: { exclude: ['status'] },
             include: [
                 { model: Venue, attributes: ['name', 'location'] },
-                { model: User, attributes: ['name'] },
+                { model: User, attributes: ['name', 'phone'] },
                 { model: BookingStatus, attributes: ['name', 'color'] }
             ]
         });

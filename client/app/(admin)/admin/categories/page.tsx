@@ -35,6 +35,7 @@ import * as z from "zod"
 import { adminCategoryService, Category } from "@/lib/services/admin/categories.service"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 const categorySchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -50,6 +51,8 @@ export default function CategoriesPage() {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editingCategory, setEditingCategory] = useState<Category | null>(null)
     const [submitting, setSubmitting] = useState(false)
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+    const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null)
 
     const form = useForm<CategoryFormValues>({
         resolver: zodResolver(categorySchema),
@@ -96,14 +99,22 @@ export default function CategoriesPage() {
         setDialogOpen(true)
     }
 
-    const onDelete = async (id: number) => {
-        if (!confirm("Are you sure you want to delete this category?")) return
+    const onDelete = (id: number) => {
+        setCategoryToDelete(id)
+        setShowDeleteConfirm(true)
+    }
+
+    const confirmDelete = async () => {
+        if (!categoryToDelete) return
         try {
-            await adminCategoryService.delete(id)
+            await adminCategoryService.delete(categoryToDelete)
             toast.success("Category deleted")
             fetchCategories()
         } catch (error) {
             toast.error("Failed to delete category")
+        } finally {
+            setShowDeleteConfirm(false)
+            setCategoryToDelete(null)
         }
     }
 
@@ -272,6 +283,15 @@ export default function CategoriesPage() {
                     </Form>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDialog
+                open={showDeleteConfirm}
+                onOpenChange={setShowDeleteConfirm}
+                title="Delete Category"
+                description="Are you sure you want to delete this category? This action cannot be undone."
+                onConfirm={confirmDelete}
+                variant="destructive"
+            />
         </div>
     )
 }

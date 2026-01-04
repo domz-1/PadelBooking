@@ -61,7 +61,7 @@ class MetricsService {
                 [literal('SUM(EXTRACT(EPOCH FROM (CAST("endTime" AS TIME) - CAST("startTime" AS TIME))) / 3600)'), 'totalHours']
             ],
             where: { status: 'confirmed' },
-            include: [{ model: User, attributes: ['firstName', 'lastName'] }],
+            include: [{ model: User, attributes: ['name'] }],
             group: ['userId', 'User.id'],
             order: [[literal('"bookingsCount"'), 'DESC']],
             limit: 10,
@@ -107,7 +107,7 @@ class MetricsService {
                 utilizationByTimeOfWeek: dayStats.utilizationByTimeOfDay,
                 durationBreakdown: dayStats.durationBreakdown,
                 topUsers: topUsers.map(u => ({
-                    name: `${u.User.firstName} ${u.User.lastName}`,
+                    name: u.User.name || 'Unknown',
                     bookings: u.bookingsCount,
                     paidBookings: u.totalPaid,
                     hours: parseFloat(u.totalHours || 0).toFixed(1),

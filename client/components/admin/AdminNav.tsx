@@ -80,4 +80,14 @@ export const adminNavItems: NavItem[] = [
         href: "/admin/categories",
         icon: Palette,
     },
+    {
+        title: "Booking Statuses",
+        href: "/admin/booking-statuses",
+        icon: CalendarDays,
+    },
+    {
+        title: "Branding",
+        href: "/admin/settings/branding",
+        icon: Palette,
+    },
 ];

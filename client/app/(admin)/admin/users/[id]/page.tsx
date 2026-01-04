@@ -169,28 +169,29 @@ function BookingsTable({ userId }: { userId: number }) {
     })
     const [totalBookings, setTotalBookings] = useState(0)
 
-    useEffect(() => {
-        const fetchBookings = async () => {
-            setLoading(true)
-            try {
-                const response = await adminBookingService.getAll({
-                    page: pagination.pageIndex + 1,
-                    limit: pagination.pageSize,
-                    userId: userId
-                });
-                setData(response.data)
-                setTotalBookings(response.count)
-            } catch (error) {
-                console.error("Failed to fetch user bookings", error)
-                toast.error("Failed to fetch user bookings")
-            } finally {
-                setLoading(false)
-            }
+    const fetchBookings = async () => {
+        setLoading(true)
+        try {
+            const response = await adminBookingService.getAll({
+                page: pagination.pageIndex + 1,
+                limit: pagination.pageSize,
+                userId: userId
+            });
+            setData(response.data)
+            setTotalBookings(response.count)
+        } catch (error) {
+            console.error("Failed to fetch user bookings", error)
+            toast.error("Failed to fetch user bookings")
+        } finally {
+            setLoading(false)
         }
+    }
+
+    useEffect(() => {
         fetchBookings()
     }, [userId, pagination])
 
-    const userColumns = columns.filter((col: any) => col.id !== "user");
+    const userColumns = columns(fetchBookings).filter((col: any) => col.id !== "user");
 
     if (loading) return <div>Loading bookings...</div>
 

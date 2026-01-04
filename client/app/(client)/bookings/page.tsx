@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { Label } from "@/components/ui/label";
+import { BookingSkeleton } from "@/components/ui/booking-skeleton";
 import { ClientPage } from "@/components/wrapper/ClientPage";
 
 export default function BookingsPage() {
@@ -191,15 +192,11 @@ export default function BookingsPage() {
     };
 
     return (
-        <ClientPage
-            title="Court Schedule"
-            description="View availability and book your slot."
-            className="space-y-6"
+        <div
+         className="container py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
         >
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    {/* Header moved to ClientPage props */}
-                </div>
+            
 
                 <Popover>
                     <PopoverTrigger asChild>
@@ -234,9 +231,7 @@ export default function BookingsPage() {
             </div>
 
             {loading ? (
-                <div className="flex justify-center py-20">
-                    <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
-                </div>
+                <BookingSkeleton />
             ) : (
                 <BookingGrid
                     venues={venues}
@@ -293,6 +288,6 @@ export default function BookingsPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </ClientPage>
+        </div>
     );
 }

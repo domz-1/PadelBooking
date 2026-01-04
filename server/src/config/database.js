@@ -18,10 +18,31 @@ const connectDB = async () => {
     try {
         await sequelize.authenticate();
         console.log('✅ PostgreSQL Connected');
-        // Sync models (in development, alter: true is okay, but be careful in production)
-        await sequelize.sync({ alter: true });
-        // await sequelize.sync(); // Just sync, don't alter for now to avoid constraint errors
-        console.log('✅ Database Synced');
+        
+        // Check if we're in development mode
+        const isDevelopment = process.env.NODE_ENV === 'development';
+        
+        if (isDevelopment) {
+            // In development, use a safer sync approach
+            // First sync without alterations to ensure all tables exist
+            await sequelize.sync();
+            console.log('✅ Database tables ensured');
+            
+            // Then try to apply alterations if needed
+            // This two-step approach helps avoid foreign key constraint issues
+            try {
+                await sequelize.sync({ alter: true });
+                console.log('✅ Database alterations applied');
+            } catch (alterError) {
+                console.warn('⚠️  Some database alterations failed (this may be normal):', alterError.message);
+                // Continue even if alterations fail - the database is still usable
+            }
+        } else {
+            // In production, just sync without alterations
+            await sequelize.sync();
+            console.log('✅ Database Synced');
+        }
+        
     } catch (error) {
         console.error('❌ Database Connection Error:', error);
         process.exit(1);

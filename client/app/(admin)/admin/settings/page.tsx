@@ -61,7 +61,10 @@ export default function AdminSettingsPage() {
                         </div>
                         {/* Add more config fields as needed based on backend model */}
                     </div>
-                    <div className="flex justify-end pt-4">
+                    <div className="flex justify-between items-center pt-4">
+                        <Button variant="outline" onClick={() => window.location.href = '/admin/settings/branding'}>
+                            Customize Branding & Colors
+                        </Button>
                         <Button onClick={handleSave}>Save Changes</Button>
                     </div>
                 </CardContent>

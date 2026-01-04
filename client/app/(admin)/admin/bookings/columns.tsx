@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal } from "lucide-react"
+import { MoreHorizontal, RefreshCw } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -15,12 +15,27 @@ import {
 import { type Booking } from "@/lib/schemas" // Fixed import
 import { adminBookingService } from "@/lib/services/admin/bookings.service"
 import { Badge } from "@/components/ui/badge"
+import { useBookingOperations } from "@/hooks/useBookingOperations"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { useState } from "react"
+import { EditBookingDialog } from "@/components/admin/bookings/EditBookingDialog"
+import { BookingDetailsModal } from "@/components/admin/bookings/BookingDetailsModal"
+import { toast } from "sonner"
 
-export const columns: ColumnDef<Booking>[] = [
+export const columns = (onRefresh: () => void): ColumnDef<Booking>[] => [
     {
-        accessorKey: "id",
+        id: "id",
         header: "ID",
-        cell: ({ row }) => <span className="text-muted-foreground">#{row.getValue("id")}</span>
+        cell: ({ row }) => (
+            <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">#{row.original.id}</span>
+                {row.original.recurrenceId && (
+                    <div title="Recurring Booking">
+                        <RefreshCw className="w-3 h-3 text-primary animate-spin-slow" />
+                    </div>
+                )}
+            </div>
+        )
     },
     {
         accessorKey: "date",
@@ -65,14 +80,30 @@ export const columns: ColumnDef<Booking>[] = [
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) => {
-            const status = row.getValue("status") as string;
-            const variant =
-                status === 'confirmed' ? 'default' : // green (default usually primary color, need custom for green maybe)
-                    status === 'cancelled' ? 'destructive' :
-                        status === 'pending' ? 'secondary' : 'outline';
+            const booking = row.original;
+            const status = booking.BookingStatus;
+
+            if (status) {
+                return (
+                    <div
+                        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize border"
+                        style={{
+                            backgroundColor: `${status.color}15`,
+                            color: status.color,
+                            borderColor: `${status.color}30`
+                        }}
+                    >
+                        <span
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: status.color }}
+                        />
+                        {status.name}
+                    </div>
+                );
+            }
 
             return (
-                <Badge variant={variant} className="capitalize">{status}</Badge>
+                <Badge variant="outline" className="capitalize">No Status</Badge>
             )
         }
     },
@@ -87,28 +118,22 @@ export const columns: ColumnDef<Booking>[] = [
     },
     {
         id: "actions",
-        cell: ({ row }) => <BookingActions booking={row.original} />
+        cell: ({ row }) => <BookingActions booking={row.original} onRefresh={onRefresh} />
     },
 ]
 
-import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { useState } from "react"
-import { EditBookingDialog } from "@/components/admin/bookings/EditBookingDialog"
-import { toast } from "sonner"
-
-function BookingActions({ booking }: { booking: Booking }) {
+function BookingActions({ booking, onRefresh }: { booking: Booking; onRefresh: () => void }) {
     const [showDelete, setShowDelete] = useState(false)
     const [showEdit, setShowEdit] = useState(false)
+    const [showDetails, setShowDetails] = useState(false)
+
+    const { deleteBooking, loading } = useBookingOperations()
 
     const handleDelete = async () => {
         if (!booking.id) return;
-        try {
-            await adminBookingService.deleteBooking(booking.id);
-            toast.success("Booking deleted successfully")
-            window.location.reload();
-        } catch (e) {
-            toast.error("Failed to delete booking")
-        }
+        await deleteBooking(booking.id as number, 'single', () => {
+            onRefresh();
+        })
     }
 
     return (
@@ -121,11 +146,18 @@ function BookingActions({ booking }: { booking: Booking }) {
                 onConfirm={handleDelete}
             />
 
+            <BookingDetailsModal
+                booking={booking}
+                open={showDetails}
+                onOpenChange={setShowDetails}
+                onSuccess={onRefresh}
+            />
+
             <EditBookingDialog
                 booking={booking}
                 open={showEdit}
                 onOpenChange={setShowEdit}
-                onSuccess={() => window.location.reload()}
+                onSuccess={onRefresh}
             />
 
             <DropdownMenu>
@@ -138,7 +170,7 @@ function BookingActions({ booking }: { booking: Booking }) {
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => window.location.href = `/admin/bookings/${booking.id}`}>View details</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowDetails(true)}>View details</DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => setShowEdit(true)}>Edit Booking</DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onSelect={() => setShowDelete(true)} className="text-destructive">Delete Booking</DropdownMenuItem>

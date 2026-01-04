@@ -30,6 +30,9 @@ export default function BookingsPage() {
         pageSize: 10,
     })
     const [totalBookings, setTotalBookings] = useState(0)
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+    const refresh = () => setRefreshTrigger(prev => prev + 1)
 
     // Fetch Bookings
     useEffect(() => {
@@ -54,7 +57,7 @@ export default function BookingsPage() {
         }
 
         fetchBookings()
-    }, [pagination, date]) // Re-fetch when date changes
+    }, [pagination, date, refreshTrigger]) // Re-fetch when date or refreshTrigger changes
 
     // Real-time updates listener
     useEffect(() => {
@@ -161,7 +164,7 @@ export default function BookingsPage() {
                 {viewMode === 'list' ? (
                     <div className="h-full p-4 overflow-auto">
                         <DataTable
-                            columns={columns}
+                            columns={columns(refresh)}
                             data={data}
                             pageCount={Math.ceil(totalBookings / pagination.pageSize)}
                             pagination={pagination}

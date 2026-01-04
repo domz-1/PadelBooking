@@ -9,11 +9,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useState } from "react";
+import { useBranding } from "@/components/providers/BrandingProvider";
 
 export function Sidebar() {
     const pathname = usePathname();
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
+    const { brandName, logo } = useBranding();
 
     const toggleCollapse = () => setIsCollapsed(!isCollapsed);
 
@@ -54,8 +56,12 @@ export function Sidebar() {
                         </Button>
                     </SheetTrigger>
                     <SheetContent side="left" className="w-[240px] p-0 bg-sidebar text-sidebar-foreground border-sidebar-border">
-                        <div className="flex h-14 items-center border-b px-4 border-sidebar-border">
-                            <span className="font-bold">Admin Panel</span>
+                        <div className="flex h-14 items-center gap-2 border-b px-4 border-sidebar-border">
+                            {logo ? (
+                                <img src={logo} alt={brandName} className="h-8 w-auto" />
+                            ) : (
+                                <span className="font-bold">{brandName}</span>
+                            )}
                         </div>
                         <ScrollArea className="h-[calc(100vh-64px)] px-2">
                             <NavContent />
@@ -72,7 +78,15 @@ export function Sidebar() {
                 )}
             >
                 <div className="flex h-14 items-center justify-between border-b px-3 border-sidebar-border">
-                    {!isCollapsed && <span className="font-bold truncate">Admin Panel</span>}
+                    {!isCollapsed && (
+                        <div className="flex items-center gap-2 overflow-hidden">
+                            {logo ? (
+                                <img src={logo} alt={brandName} className="h-8 w-auto" />
+                            ) : (
+                                <span className="font-bold truncate">{brandName}</span>
+                            )}
+                        </div>
+                    )}
                     <Button
                         variant="ghost"
                         size="icon"

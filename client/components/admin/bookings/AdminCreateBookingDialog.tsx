@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -12,14 +12,17 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog"
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form"
+import { Form } from "@/components/ui/form"
+import { Button } from "@/components/ui/button"
+import { Loader2, RefreshCw } from "lucide-react"
+
+import { useBookingData } from "@/hooks/useBookingData"
+import { useBookingOperations } from "@/hooks/useBookingOperations"
+import { VenueSelectField } from "./fields/VenueSelectField"
+import { UserSelectField } from "./fields/UserSelectField"
+import { StatusFields } from "./fields/StatusFields"
+import { PriceOfferFields } from "./fields/PriceOfferFields"
+import { BookingTypeField } from "./fields/BookingTypeField"
 import {
     Select,
     SelectContent,
@@ -27,24 +30,28 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
+import {
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form"
+import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
-import { Loader2, Search } from "lucide-react"
-import { toast } from "sonner"
-import { adminBookingService } from "@/lib/services/admin/bookings.service"
-import { adminUserService } from "@/lib/services/admin/users.service"
-import { adminBookingStatusService, BookingStatus } from "@/lib/services/admin/bookingStatus.service"
-import { adminVenueService } from "@/lib/services/admin/venues.service"
-import { User } from "@/lib/schemas"
 
 const bookingFormSchema = z.object({
     userId: z.number({ message: "User is required" }),
     statusId: z.number().optional(),
     venueId: z.number({ message: "Venue is required" }),
     duration: z.string(),
-    totalPrice: z.number().min(0),
-    status: z.string(),
-    type: z.enum(['standard', 'academy']).default('standard')
+    totalPrice: z.coerce.number().min(0),
+    type: z.enum(['standard', 'academy']),
+    hasOffer: z.boolean(),
+    offerValue: z.coerce.number().min(0),
+    isRecurring: z.boolean(),
+    repeatFrequency: z.enum(['weekly', 'daily']),
+    repeatCount: z.coerce.number().min(1).max(52),
 })
 
 type BookingFormValues = z.infer<typeof bookingFormSchema>
@@ -68,84 +75,63 @@ export function AdminCreateBookingDialog({
     startTime,
     onSuccess
 }: AdminCreateBookingDialogProps) {
-    const [loading, setLoading] = useState(false)
-    const [users, setUsers] = useState<User[]>([])
-    const [statuses, setStatuses] = useState<BookingStatus[]>([])
     const [userSearch, setUserSearch] = useState("")
+    const { users, venues, statuses } = useBookingData(open, userSearch)
+    const { createBooking, loading } = useBookingOperations()
 
     const form = useForm<BookingFormValues>({
+        // @ts-expect-error - Generic mismatch with coerced types
         resolver: zodResolver(bookingFormSchema),
         defaultValues: {
             duration: "1",
             totalPrice: 0,
-            status: "confirmed",
             venueId: venueId,
-            type: "standard"
+            type: "standard",
+            hasOffer: false,
+            offerValue: 0,
+            isRecurring: false,
+            repeatFrequency: "weekly",
+            repeatCount: 1
         }
     })
 
-    const [venues, setVenues] = useState<any[]>([])
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [usersRes, categoriesRes, venuesRes] = await Promise.all([
-                    adminUserService.getAll({ limit: 50, search: userSearch }),
-                    adminBookingStatusService.getAll(),
-                    adminVenueService.getAll({ limit: 100 })
-                ])
-                const userMap = new Map();
-                usersRes.data.forEach((u: any) => {
-                    if (u && u.id !== undefined && u.id !== null) {
-                        userMap.set(Number(u.id), u);
-                    }
-                });
-                setUsers(Array.from(userMap.values()));
-                setCategories(categoriesRes.data)
-                setVenues(venuesRes.data)
-            } catch (error) {
-                console.error("Failed to fetch grid creation data", error)
-            }
-        }
-        if (open) {
-            fetchData()
-        }
-    }, [open, userSearch])
-
     async function onSubmit(values: BookingFormValues) {
-        setLoading(true)
-        try {
-            const startStr = `${date}T${startTime}`
-            const startDate = parse(startStr, "yyyy-MM-dd'T'HH:mm", new Date())
-            const endDate = addHours(startDate, Number(values.duration))
-            const endTimeStr = format(endDate, "HH:mm")
+        const startStr = `${date}T${startTime}`
+        const startDate = parse(startStr, "yyyy-MM-dd'T'HH:mm", new Date())
+        const endDate = addHours(startDate, Number(values.duration))
+        const endTimeStr = format(endDate, "HH:mm")
 
-            await adminBookingService.create({
-                userId: values.userId,
-                venueId: values.venueId,
-                date,
-                startTime: startTime.substring(0, 5),
-                endTime: endTimeStr,
-                statusId: values.statusId,
-                totalPrice: values.totalPrice,
-                status: values.status as any,
-                type: values.type
-            })
+        const payload = {
+            userId: values.userId,
+            venueId: values.venueId,
+            date,
+            startTime: startTime.substring(0, 5),
+            endTime: endTimeStr,
+            statusId: values.statusId,
+            totalPrice: values.totalPrice,
+            type: values.type,
+            hasOffer: values.hasOffer,
+            offerValue: values.offerValue,
+            ...(values.isRecurring && values.repeatCount > 1 ? {
+                repeat: {
+                    frequency: values.repeatFrequency,
+                    count: values.repeatCount
+                }
+            } : {})
+        }
 
-            toast.success("Booking created successfully")
+        await createBooking(payload as any, () => {
             onOpenChange(false)
             form.reset()
             onSuccess?.()
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Failed to create booking")
-        } finally {
-            setLoading(false)
-        }
+        })
     }
+
+    const isRecurring = form.watch("isRecurring")
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[450px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Create Booking for {venueName}</DialogTitle>
                     <div className="text-sm text-muted-foreground">
@@ -154,80 +140,22 @@ export function AdminCreateBookingDialog({
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                        <FormField
-                            control={form.control}
-                            name="venueId"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Venue (Court)</FormLabel>
-                                    <Select
-                                        onValueChange={(val) => field.onChange(Number(val))}
-                                        value={String(field.value)}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select venue" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {venues.map((v) => (
-                                                <SelectItem key={v.id} value={String(v.id)}>
-                                                    {v.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="userId"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Customer</FormLabel>
-                                    <Select
-                                        onValueChange={(v) => field.onChange(Number(v))}
-                                        value={field.value ? String(field.value) : undefined}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select user" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <div className="flex items-center px-3 pb-2 pt-1">
-                                                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                                <Input
-                                                    placeholder="Search user..."
-                                                    className="h-8 w-full bg-transparent p-0 focus-visible:ring-0"
-                                                    value={userSearch}
-                                                    onChange={(e) => setUserSearch(e.target.value)}
-                                                />
-                                            </div>
-                                            {users.map((user) => (
-                                                <SelectItem key={`create-user-${user.id}`} value={String(user.id)}>
-                                                    {user.name} ({user.email})
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
+                    <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-4 py-4">
+                        <VenueSelectField form={form} venues={venues} />
+                        <UserSelectField
+                            form={form}
+                            users={users}
+                            setUserSearch={setUserSearch}
                         />
 
                         <div className="grid grid-cols-2 gap-4">
                             <FormField
-                                control={form.control}
+                                control={form.control as any}
                                 name="duration"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Duration</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select duration" />
@@ -244,113 +172,83 @@ export function AdminCreateBookingDialog({
                                     </FormItem>
                                 )}
                             />
-
-                            <FormField
-                                control={form.control}
-                                name="statusId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Status</FormLabel>
-                                        <Select
-                                            onValueChange={(v) => field.onChange(v === "none" ? undefined : Number(v))}
-                                            value={field.value ? String(field.value) : "none"}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Type" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="none">Standard / None</SelectItem>
-                                                {statuses.map((status) => (
-                                                    <SelectItem key={status.id} value={String(status.id)}>
-                                                        <div className="flex items-center gap-2">
-                                                            <div
-                                                                className="w-3 h-3 rounded-full"
-                                                                style={{ backgroundColor: status.color }}
-                                                            />
-                                                            {status.name}
-                                                        </div>
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                            <BookingTypeField form={form} />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <StatusFields form={form} statuses={statuses} />
+                        <PriceOfferFields form={form} />
+
+                        {/* Recurrence Fields */}
+                        <div className="space-y-4 border-t pt-4">
                             <FormField
-                                control={form.control}
-                                name="totalPrice"
+                                control={form.control as any}
+                                name="isRecurring"
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Total Price (EGP)</FormLabel>
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                        <div className="space-y-0.5">
+                                            <FormLabel>Repeat Booking</FormLabel>
+                                            <div className="text-[0.7rem] text-muted-foreground">
+                                                Automatically create weekly reservations
+                                            </div>
+                                        </div>
                                         <FormControl>
-                                            <Input
-                                                type="number"
-                                                {...field}
-                                                onChange={(e) => field.onChange(Number(e.target.value))}
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
                                             />
                                         </FormControl>
-                                        <FormMessage />
                                     </FormItem>
                                 )}
                             />
 
-                            <FormField
-                                control={form.control}
-                                name="type"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Booking Type</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Type" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="standard">Standard</SelectItem>
-                                                <SelectItem value="academy">Academy</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="status"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Status</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Status" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="pending">Pending</SelectItem>
-                                                <SelectItem value="confirmed">Confirmed</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                            {isRecurring && (
+                                <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+                                    <FormField
+                                        control={form.control as any}
+                                        name="repeatFrequency"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Frequency</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="daily">Daily</SelectItem>
+                                                        <SelectItem value="weekly">Weekly</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control as any}
+                                        name="repeatCount"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Weeks/Days</FormLabel>
+                                                <FormControl>
+                                                    <Input type="number" {...field} min={1} max={52} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         <DialogFooter>
                             <Button type="submit" disabled={loading} className="w-full">
-                                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Create Booking
+                                {loading ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    isRecurring && <RefreshCw className="mr-2 h-4 w-4 animate-in spin-in-180" />
+                                )}
+                                {isRecurring ? "Create Recurring Series" : "Create Booking"}
                             </Button>
                         </DialogFooter>
                     </form>

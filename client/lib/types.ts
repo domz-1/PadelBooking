@@ -103,6 +103,8 @@ export interface Sponsor {
     image: string;
     link: string;
     isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface Sport {

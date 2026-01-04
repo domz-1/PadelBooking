@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuthStore } from "@/hooks/use-auth-store";
 import { Button } from "@/components/ui/button";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, User, Menu } from "lucide-react";
+import { LogOut, User, Menu, ShieldPlus} from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -14,11 +14,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner"
+import { useBranding } from "@/components/providers/BrandingProvider";
 
 export default function Navbar() {
     const { isAuthenticated, logout } = useAuthStore();
     const router = useRouter();
     const pathname = usePathname();
+    const { brandName, logo } = useBranding();
 
     // Don't show navbar on auth pages
     if (pathname.startsWith("/auth")) return null;
@@ -32,19 +34,24 @@ export default function Navbar() {
         <nav className="border-b bg-white dark:bg-gray-950 sticky top-0 z-50">
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                 <Link href="/" className="font-bold text-xl flex items-center gap-2">
-                    PadelBooking
+                    {logo ? (
+                        <img src={logo} alt={brandName} className="h-8 w-auto" />
+                    ) : (
+                        brandName
+                    )}
                 </Link>
+              
 
-                <div className="hidden md:flex items-center gap-6">
+
+                <div className="flex items-center gap-4">
+                      <div className="hidden md:flex items-center gap-6">
                     <NavLinks />
                     {isAuthenticated && useAuthStore.getState().user?.role === 'admin' && (
                         <Link href="/admin/dashboard" className="text-sm font-medium text-brand-600 hover:text-brand-700 transition-colors">
-                            Admin Panel
+                            <ShieldPlus className="mr-2 h-4 w-4" />
                         </Link>
                     )}
                 </div>
-
-                <div className="flex items-center gap-4">
                     {isAuthenticated ? (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -88,7 +95,7 @@ export default function Navbar() {
                                 <NavLinks />
                                 {isAuthenticated && useAuthStore.getState().user?.role === 'admin' && (
                                     <Link href="/admin/dashboard" className="text-sm font-medium text-brand-600">
-                                        Admin Panel
+                                        <ShieldPlus className="mr-2 h-4 w-4" />
                                     </Link>
                                 )}
                                 {!isAuthenticated && (
@@ -113,7 +120,7 @@ export default function Navbar() {
 
 const NavLinks = () => (
     <>
-        <Link href="/bookings" className="text-sm font-medium hover:text-brand-600 transition-colors">
+        {/* <Link href="/bookings" className="text-sm font-medium hover:text-brand-600 transition-colors">
             Book Court
         </Link>
         <Link href="/matches" className="text-sm font-medium hover:text-brand-600 transition-colors">
@@ -130,6 +137,6 @@ const NavLinks = () => (
         </Link>
         <Link href="/chat" className="text-sm font-medium hover:text-brand-600 transition-colors">
             Chat
-        </Link>
+        </Link> */}
     </>
 );

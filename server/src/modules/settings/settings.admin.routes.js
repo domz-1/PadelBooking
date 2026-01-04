@@ -10,9 +10,11 @@ const {
     getBookingStatuses,
     createBookingStatus,
     updateBookingStatus,
-    deleteBookingStatus
+    deleteBookingStatus,
+    uploadLogo
 } = require('./settings.controller');
 const { protect, authorize } = require('../../middleware/auth');
+const { upload, convertImage } = require('../../middleware/upload');
 
 const router = express.Router();
 
@@ -50,6 +52,8 @@ router.use(authorize('admin'));
 router.route('/config')
     .get(getConfig)
     .put(updateConfig);
+
+router.post('/config/logo', upload.single('logo'), convertImage, uploadLogo);
 
 /**
  * @swagger

@@ -13,7 +13,8 @@ exports.getUsers = async (req, res, next) => {
         if (search) {
             where[Op.or] = [
                 { name: { [Op.iLike]: `%${search}%` } },
-                { email: { [Op.iLike]: `%${search}%` } }
+                { email: { [Op.iLike]: `%${search}%` } },
+                { phone: { [Op.iLike]: `%${search}%` } }
             ];
         }
 

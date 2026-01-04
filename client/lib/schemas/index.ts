@@ -12,6 +12,7 @@ export const UserSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
     email: z.string().email("Invalid email address"),
     role: z.string(),
+    phone: z.string().optional(),
 });
 
 export const LoginSchema = z.object({
@@ -64,7 +65,7 @@ export const BookingSchema = z.object({
     courtId: z.number().optional(),
     venueId: z.number().optional(),
     userId: z.number().optional(),
-    status: z.string(),
+    status: z.string().optional(),
     statusId: z.number().optional(),
     User: z.object({
         id: z.number(),
@@ -81,6 +82,7 @@ export const BookingSchema = z.object({
     }).optional(),
     totalPrice: z.number().optional(),
     type: z.string().optional(),
+    notes: z.string().optional(),
     hasOffer: z.boolean().optional(),
     offerValue: z.number().optional(),
     isOpenMatch: z.boolean().optional(),
@@ -91,6 +93,23 @@ export const BookingSchema = z.object({
         name: z.string(),
         color: z.string().optional(),
         description: z.string().optional()
+    }).optional(),
+    recurrenceId: z.string().optional()
+});
+
+export const WaitlistEntrySchema = z.object({
+    id: z.number(),
+    userId: z.number(),
+    venueId: z.number(),
+    date: z.string(),
+    startTime: z.string(),
+    endTime: z.string(),
+    status: z.string().optional(),
+    createdAt: z.string().optional(),
+    User: z.object({
+        name: z.string(),
+        email: z.string().email(),
+        phone: z.string().optional()
     }).optional()
 });
 
@@ -109,3 +128,4 @@ export type Venue = z.infer<typeof VenueSchema>;
 export type Booking = z.infer<typeof BookingSchema>;
 export type Branch = z.infer<typeof BranchSchema>;
 export type CreateBooking = z.infer<typeof CreateBookingSchema>;
+export type WaitlistEntry = z.infer<typeof WaitlistEntrySchema>;

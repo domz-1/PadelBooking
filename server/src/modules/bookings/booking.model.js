@@ -74,6 +74,10 @@ const Booking = sequelize.define('Booking', {
     openMatchMaxPlayers: {
         type: DataTypes.INTEGER,
         defaultValue: 4
+    },
+    recurrenceId: {
+        type: DataTypes.UUID,
+        allowNull: true
     }
 }, {
     timestamps: true

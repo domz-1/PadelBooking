@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { useBranding } from "@/components/providers/BrandingProvider";
 
 export default function AdminDashboardPage() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -97,12 +98,14 @@ export default function AdminDashboardPage() {
         }
     ];
 
+    const { brandName } = useBranding();
+
     return (
         <div className="flex flex-col min-h-screen">
             {/* Header Branding */}
             <header className="flex items-center justify-between px-6 py-4 bg-white border-b sticky top-0 z-10">
                 <div className="flex items-center gap-4">
-                    <h1 className="text-xl font-bold text-gray-900">Mansoura Padel Point</h1>
+                    <h1 className="text-xl font-bold text-gray-900">{brandName}</h1>
                     <Separator orientation="vertical" className="h-6" />
                     <span className="text-sm font-medium text-gray-500">System admin mode</span>
                 </div>

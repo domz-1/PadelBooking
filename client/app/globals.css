@@ -45,6 +45,19 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  /* Brand Colors */
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
 }
 
 :root {
@@ -81,6 +94,22 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
   --destructive-foreground: oklch(0.985 0 0);
+
+  /* Brand Color Base */
+  --brand-color: #4CAF50;
+
+  /* Brand Palette Generations */
+  --brand-50: color-mix(in srgb, var(--brand-color), white 95%);
+  --brand-100: color-mix(in srgb, var(--brand-color), white 90%);
+  --brand-200: color-mix(in srgb, var(--brand-color), white 70%);
+  --brand-300: color-mix(in srgb, var(--brand-color), white 50%);
+  --brand-400: color-mix(in srgb, var(--brand-color), white 30%);
+  --brand-500: var(--brand-color);
+  --brand-600: color-mix(in srgb, var(--brand-color), black 10%);
+  --brand-700: color-mix(in srgb, var(--brand-color), black 25%);
+  --brand-800: color-mix(in srgb, var(--brand-color), black 40%);
+  --brand-900: color-mix(in srgb, var(--brand-color), black 60%);
+  --brand-950: color-mix(in srgb, var(--brand-color), black 80%);
 }
 
 .dark {
@@ -121,6 +150,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { EditBookingDialog } from "@/components/admin/bookings/EditBookingDialog"
+import { BookingDetailsModal } from "@/components/admin/bookings/BookingDetailsModal"
 
 export default function ViewBookingPage() {
     const params = useParams()
@@ -27,6 +28,10 @@ export default function ViewBookingPage() {
     const [booking, setBooking] = useState<Booking | null>(null)
     const [loading, setLoading] = useState(true)
     const [showEdit, setShowEdit] = useState(false)
+    const [showDetails, setShowDetails] = useState(true)
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+    const refresh = () => setRefreshTrigger(prev => prev + 1)
 
     useEffect(() => {
         const fetchBooking = async () => {
@@ -44,7 +49,7 @@ export default function ViewBookingPage() {
         if (params.id) {
             fetchBooking()
         }
-    }, [params.id, router])
+    }, [params.id, router, refreshTrigger])
 
     const handleDelete = async () => {
         if (!booking) return
@@ -84,11 +89,20 @@ export default function ViewBookingPage() {
             </div>
 
             {booking && (
+                <BookingDetailsModal
+                    booking={booking}
+                    open={showDetails}
+                    onOpenChange={setShowDetails}
+                    onSuccess={refresh}
+                />
+            )}
+
+            {booking && (
                 <EditBookingDialog
                     booking={booking}
                     open={showEdit}
                     onOpenChange={setShowEdit}
-                    onSuccess={() => window.location.reload()}
+                    onSuccess={refresh}
                 />
             )}
 
