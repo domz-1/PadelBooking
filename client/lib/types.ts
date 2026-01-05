@@ -20,6 +20,19 @@ export interface Venue {
     bookings?: Booking[];
 }
 
+export interface WaitlistEntry {
+    id: number;
+    userId: number;
+    venueId: number;
+    date: string;
+    startTime: string;
+    endTime: string;
+    status: string;
+    createdAt: string;
+    User?: User;
+    Venue?: Venue;
+}
+
 export interface Booking {
     id: number;
     // userId is number or string depending on backend. Model says User belongsTo, usually integer ID in Postgres

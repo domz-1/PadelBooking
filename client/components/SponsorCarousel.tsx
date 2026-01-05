@@ -13,7 +13,7 @@ interface Sponsor {
 
 export function SponsorCarousel() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
   const { theme } = useTheme();
 
   useEffect(() => {

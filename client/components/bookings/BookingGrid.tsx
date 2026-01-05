@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import type { Venue, Booking, Branch } from "@/lib/schemas";
+import type { Venue, Booking, Branch, WaitlistEntry } from "@/lib/schemas";
 import { useAuthStore } from "@/hooks/use-auth-store";
 import { bookingService } from "@/lib/services/booking.service";
 import { toast } from "sonner";
@@ -64,7 +64,7 @@ interface BookingGridProps {
     onJoinOpenMatch?: (bookingId: number) => void;
     onLeaveOpenMatch?: (bookingId: number) => void;
     publicView?: boolean;
-    waitlistEntries?: any[];
+    waitlistEntries?: WaitlistEntry[];
     onWaitlistUpdate?: () => void;
     loading?: boolean; // New loading prop
     selectedBranchId?: string | number; // Added for branch filtering
@@ -101,7 +101,7 @@ export default function BookingGrid({
         if (selectedBranchId !== undefined) {
             setLocalSelectedBranchId(selectedBranchId === 'all' ? 'all' : Number(selectedBranchId));
         }
-    }); // No dependency array to avoid the linting error
+    });
 
     // Modals State
     const [showWaitlistModal, setShowWaitlistModal] = useState(false);
@@ -225,8 +225,9 @@ export default function BookingGrid({
             toast.success("Booking updated!");
             setShowManagementModal(false);
             setIsEditing(false);
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Failed to update booking");
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : "Failed to update booking";
+            toast.error(errorMessage);
         } finally {
             setIsLoadingInternal(false);
         }
@@ -248,8 +249,9 @@ export default function BookingGrid({
             toast.success("Joined waitlist! You will be notified if this slot becomes available.");
             setShowWaitlistModal(false);
             onWaitlistUpdate?.();
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Failed to join waitlist");
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : "Failed to join waitlist";
+            toast.error(errorMessage);
         } finally {
             setIsLoadingInternal(false);
         }
@@ -264,8 +266,9 @@ export default function BookingGrid({
             toast.success("Left waitlist!");
             setShowWaitlistModal(false);
             onWaitlistUpdate?.();
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Failed to leave waitlist");
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : "Failed to leave waitlist";
+            toast.error(errorMessage);
         } finally {
             setIsLoadingInternal(false);
         }
@@ -280,8 +283,9 @@ export default function BookingGrid({
             setShowDeleteConfirm(false);
             setShowManagementModal(false);
             // Optionally redirect or refresh via parent - but socket should handle update
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Failed to cancel booking");
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : "Failed to cancel booking";
+            toast.error(errorMessage);
         } finally {
             setIsLoadingInternal(false);
         }
@@ -946,8 +950,9 @@ export default function BookingGrid({
                                                 toast.success("Booking converted to Open Match!");
                                                 setShowConvertToOpenMatchModal(false);
                                                 setSelectedBooking(null);
-                                            } catch (error: any) {
-                                                toast.error(error.response?.data?.message || "Failed to convert to Open Match");
+                                            } catch (error: unknown) {
+                                                const errorMessage = error instanceof Error ? error.message : "Failed to convert to Open Match";
+                                                toast.error(errorMessage);
                                             } finally {
                                                 setIsLoadingInternal(false);
                                             }
