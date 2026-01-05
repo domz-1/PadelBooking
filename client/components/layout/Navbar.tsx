@@ -37,7 +37,14 @@ export default function Navbar() {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="font-bold text-xl flex items-center gap-2">
           {logo ? (
-            <Image src={logo} alt={brandName} className="h-8 w-auto" />
+            <Image
+              src={logo}
+              alt={brandName}
+              width={32}
+              height={32}
+              className="h-8 w-auto"
+              unoptimized
+            />
           ) : (
             brandName
           )}

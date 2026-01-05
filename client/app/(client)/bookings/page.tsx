@@ -29,7 +29,7 @@ import {
 
 import { Label } from "@/components/ui/label";
 import { BookingSkeleton } from "@/components/ui/booking-skeleton";
-import { ClientPage } from "@/components/wrapper/ClientPage";
+import { ClientPage, SponsorCarousel } from "@/components/wrapper/ClientPage";
 
 export default function BookingsPage() {
   const [date, setDate] = useState<Date>(new Date());
@@ -229,7 +229,7 @@ export default function BookingsPage() {
     <div className="container py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Sponsor Carousel */}
       <div className="mb-8">
-        <ClientPage.SponsorCarousel />
+        <SponsorCarousel />
       </div>
 
       {/* Date Picker and Branch Selector in one row */}
@@ -266,25 +266,6 @@ export default function BookingsPage() {
             </PopoverContent>
           </Popover>
 
-          {/* Branch Selector */}
-          <div className="w-full sm:w-auto">
-            <select
-              className="w-full h-10 px-3 py-2 border border-input bg-background rounded-md text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              value={selectedBranchId}
-              onChange={(e) =>
-                setSelectedBranchId(
-                  e.target.value === "all" ? "all" : Number(e.target.value),
-                )
-              }
-            >
-              <option value="all">All Branches</option>
-              {branches.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
       </div>
 

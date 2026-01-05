@@ -36,12 +36,18 @@ interface UserSelectFieldProps {
   }>;
   users: User[];
   setUserSearch: (search: string) => void;
+  loadMore?: () => void;
+  hasMore?: boolean;
+  loading?: boolean;
 }
 
 export function UserSelectField({
   form,
   users,
   setUserSearch,
+  loadMore,
+  hasMore,
+  loading,
 }: UserSelectFieldProps) {
   const [localSearch, setLocalSearch] = useState("");
 
@@ -53,6 +59,16 @@ export function UserSelectField({
 
     return () => clearTimeout(timer);
   }, [localSearch, setUserSearch]);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    // Load more when scrolled near the bottom (e.g., within 20px)
+    if (scrollHeight - scrollTop <= clientHeight + 20) {
+      if (hasMore && !loading && loadMore) {
+        loadMore();
+      }
+    }
+  };
 
   return (
     <FormField
@@ -80,33 +96,43 @@ export function UserSelectField({
                   onChange={(e) => setLocalSearch(e.target.value)}
                 />
               </div>
-              <div className="max-h-[250px] overflow-auto">
-                {users.length === 0 ? (
+              <div
+                className="max-h-[250px] overflow-auto"
+                onScroll={handleScroll}
+              >
+                {users.length === 0 && !loading ? (
                   <div className="p-4 text-center text-sm text-muted-foreground">
                     No users found
                   </div>
                 ) : (
-                  users.map((user) => (
-                    <SelectItem
-                      key={`user-select-${user.id}`}
-                      value={String(user.id)}
-                    >
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-semibold text-sm">
-                          {user.name}
-                        </span>
-                        <div className="flex flex-col gap-0 text-[10px] text-muted-foreground">
-                          <span>{user.email}</span>
-                          {user.phone && (
-                            <span className="flex items-center gap-1">
-                              <Phone className="w-2.5 h-2.5" />
-                              {user.phone}
-                            </span>
-                          )}
+                  <>
+                    {users.map((user) => (
+                      <SelectItem
+                        key={`user-select-${user.id}`}
+                        value={String(user.id)}
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-semibold text-sm">
+                            {user.name}
+                          </span>
+                          <div className="flex flex-col gap-0 text-[10px] text-muted-foreground">
+                            <span>{user.email}</span>
+                            {user.phone && (
+                              <span className="flex items-center gap-1">
+                                <Phone className="w-2.5 h-2.5" />
+                                {user.phone}
+                              </span>
+                            )}
+                          </div>
                         </div>
+                      </SelectItem>
+                    ))}
+                    {loading && (
+                      <div className="p-2 text-center text-xs text-muted-foreground">
+                        Loading more...
                       </div>
-                    </SelectItem>
-                  ))
+                    )}
+                  </>
                 )}
               </div>
             </SelectContent>

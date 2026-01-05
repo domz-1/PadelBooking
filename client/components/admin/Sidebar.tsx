@@ -98,7 +98,7 @@ export function Sidebar() {
       >
         <div className="flex h-14 items-center justify-between border-b px-3 border-sidebar-border">
           {!isCollapsed && (
-            <div className="flex items-center gap-2 overflow-hidden">
+            <Link href="/" className="flex items-center gap-2 overflow-hidden">
               {logo ? (
                 <Image
                   src={logo}
@@ -106,11 +106,13 @@ export function Sidebar() {
                   width={32}
                   height={32}
                   className="h-8 w-auto"
+              unoptimized
+
                 />
               ) : (
                 <span className="font-bold truncate">{brandName}</span>
               )}
-            </div>
+            </Link>
           )}
           <Button
             variant="ghost"

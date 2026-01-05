@@ -28,7 +28,11 @@ class UserService {
     async updateUser(id, data) {
         const user = await User.findByPk(id);
         if (!user) return null;
-        return await user.update(data);
+
+        // Prevent updating sensitive fields through this method
+        const { password, role, id: userId, ...updateData } = data;
+
+        return await user.update(updateData);
     }
 
     async findPartners(filters) {

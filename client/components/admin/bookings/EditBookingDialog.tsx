@@ -98,7 +98,11 @@ export function EditBookingDialog({
   onSuccess,
 }: EditBookingDialogProps) {
   const [userSearch, setUserSearch] = useState("");
-  const { users, venues, statuses } = useBookingData(open, userSearch);
+  const { users, venues, statuses, loading: dataLoading, loadMore, hasMore, usersLoading } = useBookingData(
+    open,
+    userSearch,
+    booking.userId ? Number(booking.userId) : undefined,
+  );
   const {
     loading,
     updateBooking,
@@ -263,306 +267,330 @@ export function EditBookingDialog({
           </div>
         </DialogHeader>
 
-        <Tabs defaultValue="info" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="info">Information</TabsTrigger>
-            <TabsTrigger value="waitlist">
-              Waitlist ({waitlist.length})
-            </TabsTrigger>
-          </TabsList>
+        {dataLoading ? (
+          <div className="space-y-6 py-4">
+            {/* Loading skeleton for form fields */}
+            <div className="space-y-4">
+              <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              </div>
+              <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="h-32 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="h-10 w-1/3 self-end ml-auto bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            </div>
+          </div>
+        ) : (
+          <Tabs defaultValue="info" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="info">Information</TabsTrigger>
+              <TabsTrigger value="waitlist">
+                Waitlist ({waitlist.length})
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="info" className="space-y-4 py-4">
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-4"
-              >
-                <FormField
-                  control={form.control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
+            <TabsContent value="info" className="space-y-4 py-4">
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-4"
+                >
+                  <FormField
+                    control={form.control}
+                    name="date"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground",
+                                )}
+                              >
+                                {field.value instanceof Date ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <UserSelectField
+                    form={form}
+                    users={users}
+                    setUserSearch={setUserSearch}
+                    loadMore={loadMore}
+                    hasMore={hasMore}
+                    loading={usersLoading}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="startTime"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Start Time</FormLabel>
                           <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground",
-                              )}
-                            >
-                              {field.value instanceof Date ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
+                            <TimePicker
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
                           </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <UserSelectField
-                  form={form}
-                  users={users}
-                  setUserSearch={setUserSearch}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="startTime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Start Time</FormLabel>
-                        <FormControl>
-                          <TimePicker
-                            value={field.value}
-                            onChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="endTime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>End Time</FormLabel>
-                        <FormControl>
-                          <TimePicker
-                            value={field.value}
-                            onChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <VenueSelectField form={form} venues={venues} />
-                  <BookingTypeField form={form} />
-                </div>
-
-                <StatusFields form={form} statuses={statuses} />
-                <PriceOfferFields form={form} />
-
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Notes</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Add any special notes or instructions..."
-                          className="min-h-[100px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {booking.recurrenceId && (
-                  <div className="bg-primary/5 border border-primary/10 rounded-lg p-4 mb-4">
-                    <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-primary">
-                      <RefreshCw className="w-4 h-4" />
-                      Update Options
-                    </div>
-                    <RadioGroup
-                      value={seriesOption}
-                      onValueChange={(v: "single" | "upcoming") =>
-                        setSeriesOption(v)
-                      }
-                      className="grid grid-cols-1 gap-2"
-                    >
-                      <div className="flex items-center space-x-2 bg-background p-2 rounded border cursor-pointer hover:bg-accent/50">
-                        <RadioGroupItem value="single" id="single" />
-                        <Label
-                          htmlFor="single"
-                          className="flex-1 cursor-pointer"
-                        >
-                          This booking only
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2 bg-background p-2 rounded border cursor-pointer hover:bg-accent/50">
-                        <RadioGroupItem value="upcoming" id="upcoming" />
-                        <Label
-                          htmlFor="upcoming"
-                          className="flex-1 cursor-pointer"
-                        >
-                          This and all upcoming bookings
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                    <p className="text-[10px] text-muted-foreground mt-2 px-1">
-                      Note: &ldquo;Upcoming&rdquo; will apply changes to all
-                      future instances in this series.
-                    </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="endTime"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>End Time</FormLabel>
+                          <FormControl>
+                            <TimePicker
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                )}
 
-                <DialogFooter className="flex flex-row justify-between pt-4 border-t gap-2">
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setShowDeleteConfirm(true)}
-                    disabled={loading}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    {loading ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    ) : (
-                      <Trash2 className="w-4 h-4 mr-2" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <VenueSelectField form={form} venues={venues} />
+                    <BookingTypeField form={form} />
+                  </div>
+
+                  <StatusFields form={form} statuses={statuses} />
+                  <PriceOfferFields form={form} />
+
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Notes</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Add any special notes or instructions..."
+                            className="min-h-[100px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                    Delete
-                  </Button>
-                  <div className="flex gap-2">
+                  />
+
+                  {booking.recurrenceId && (
+                    <div className="bg-primary/5 border border-primary/10 rounded-lg p-4 mb-4">
+                      <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-primary">
+                        <RefreshCw className="w-4 h-4" />
+                        Update Options
+                      </div>
+                      <RadioGroup
+                        value={seriesOption}
+                        onValueChange={(v: "single" | "upcoming") =>
+                          setSeriesOption(v)
+                        }
+                        className="grid grid-cols-1 gap-2"
+                      >
+                        <div className="flex items-center space-x-2 bg-background p-2 rounded border cursor-pointer hover:bg-accent/50">
+                          <RadioGroupItem value="single" id="single" />
+                          <Label
+                            htmlFor="single"
+                            className="flex-1 cursor-pointer"
+                          >
+                            This booking only
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2 bg-background p-2 rounded border cursor-pointer hover:bg-accent/50">
+                          <RadioGroupItem value="upcoming" id="upcoming" />
+                          <Label
+                            htmlFor="upcoming"
+                            className="flex-1 cursor-pointer"
+                          >
+                            This and all upcoming bookings
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                      <p className="text-[10px] text-muted-foreground mt-2 px-1">
+                        Note: &ldquo;Upcoming&rdquo; will apply changes to all
+                        future instances in this series.
+                      </p>
+                    </div>
+                  )}
+
+                  <DialogFooter className="flex flex-row justify-between pt-4 border-t gap-2">
                     <Button
                       type="button"
-                      variant="outline"
-                      onClick={() => onOpenChange(false)}
+                      variant="destructive"
                       size="sm"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      disabled={loading}
+                      className="bg-red-600 hover:bg-red-700"
                     >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={loading} size="sm">
-                      {loading && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {loading ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : (
+                        <Trash2 className="w-4 h-4 mr-2" />
                       )}
-                      {booking.recurrenceId && seriesOption === "upcoming"
-                        ? "Save Series"
-                        : "Save Changes"}
+                      Delete
+                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                        size="sm"
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit" disabled={loading} size="sm">
+                        {loading && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        {booking.recurrenceId && seriesOption === "upcoming"
+                          ? "Save Series"
+                          : "Save Changes"}
+                      </Button>
+                    </div>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </TabsContent>
+
+            <TabsContent value="waitlist" className="py-4 space-y-6">
+              <div className="space-y-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium leading-none">
+                    Add User to Waitlist
+                  </label>
+                  <div className="flex gap-2">
+                    <Select
+                      onValueChange={setSelectedWaitlistUser}
+                      value={selectedWaitlistUser || undefined}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Search user to add..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <div className="flex items-center px-3 pb-2 pt-1 border-b">
+                          <Search className="mr-2 h-4 w-4 opacity-50" />
+                          <Input
+                            placeholder="Type name or email..."
+                            value={waitlistSearch}
+                            onChange={(e) => setWaitlistSearch(e.target.value)}
+                            className="h-8 border-none focus-visible:ring-0 p-0"
+                          />
+                        </div>
+                        {waitlistUsers.map((u) => (
+                          <SelectItem key={u.id} value={String(u.id)}>
+                            <div className="flex flex-col">
+                              <span>{u.name}</span>
+                              <span className="text-[10px] text-muted-foreground">
+                                {u.email}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="icon"
+                      onClick={onAddWaitlist}
+                      disabled={loading || !selectedWaitlistUser}
+                    >
+                      <UserPlus className="h-4 w-4" />
                     </Button>
                   </div>
-                </DialogFooter>
-              </form>
-            </Form>
-          </TabsContent>
-
-          <TabsContent value="waitlist" className="py-4 space-y-6">
-            <div className="space-y-4">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium leading-none">
-                  Add User to Waitlist
-                </label>
-                <div className="flex gap-2">
-                  <Select
-                    onValueChange={setSelectedWaitlistUser}
-                    value={selectedWaitlistUser || undefined}
-                  >
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Search user to add..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <div className="flex items-center px-3 pb-2 pt-1 border-b">
-                        <Search className="mr-2 h-4 w-4 opacity-50" />
-                        <Input
-                          placeholder="Type name or email..."
-                          value={waitlistSearch}
-                          onChange={(e) => setWaitlistSearch(e.target.value)}
-                          className="h-8 border-none focus-visible:ring-0 p-0"
-                        />
-                      </div>
-                      {waitlistUsers.map((u) => (
-                        <SelectItem key={u.id} value={String(u.id)}>
-                          <div className="flex flex-col">
-                            <span>{u.name}</span>
-                            <span className="text-[10px] text-muted-foreground">
-                              {u.email}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    size="icon"
-                    onClick={onAddWaitlist}
-                    disabled={loading || !selectedWaitlistUser}
-                  >
-                    <UserPlus className="h-4 w-4" />
-                  </Button>
                 </div>
-              </div>
 
-              <div className="rounded-xl border bg-card">
-                <div className="p-3 border-b bg-muted/30">
-                  <h4 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                    <Clock className="w-3 h-3 text-primary" />
-                    Waitlist Queue
-                  </h4>
-                </div>
-                {waitlist.length === 0 ? (
-                  <div className="p-8 text-center text-sm text-muted-foreground italic">
-                    No users in waitlist
+                <div className="rounded-xl border bg-card">
+                  <div className="p-3 border-b bg-muted/30">
+                    <h4 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                      <Clock className="w-3 h-3 text-primary" />
+                      Waitlist Queue
+                    </h4>
                   </div>
-                ) : (
-                  <div className="bg-muted/20 border rounded-xl overflow-hidden divide-y">
-                    {waitlist.map((entry, idx) => (
-                      <div
-                        key={entry.id || `wait-${idx}`}
-                        className="flex items-center justify-between p-2.5 px-4 hover:bg-muted/40 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-[10px] font-bold text-primary border border-primary/20">
-                            {idx + 1}
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium">
-                              {entry.User?.name}
-                            </div>
-                            <div className="text-[10px] text-muted-foreground">
-                              {entry.User?.email}
-                            </div>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                          onClick={() =>
-                            deleteWaitlistEntry(entry.id, () => {
-                              fetchWaitlist({
-                                venueId: Number(booking.venueId),
-                                date: booking.date,
-                                startTime: booking.startTime,
-                                endTime: booking.endTime,
-                              });
-                            })
-                          }
+                  {waitlist.length === 0 ? (
+                    <div className="p-8 text-center text-sm text-muted-foreground italic">
+                      No users in waitlist
+                    </div>
+                  ) : (
+                    <div className="bg-muted/20 border rounded-xl overflow-hidden divide-y">
+                      {waitlist.map((entry, idx) => (
+                        <div
+                          key={entry.id || `wait-${idx}`}
+                          className="flex items-center justify-between p-2.5 px-4 hover:bg-muted/40 transition-colors"
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-[10px] font-bold text-primary border border-primary/20">
+                              {idx + 1}
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium">
+                                {entry.User?.name}
+                              </div>
+                              <div className="text-[10px] text-muted-foreground">
+                                {entry.User?.email}
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                            onClick={() =>
+                              deleteWaitlistEntry(entry.id, () => {
+                                fetchWaitlist({
+                                  venueId: Number(booking.venueId),
+                                  date: booking.date,
+                                  startTime: booking.startTime,
+                                  endTime: booking.endTime,
+                                });
+                              })
+                            }
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
+          </Tabs>
+        )}
       </DialogContent>
 
       <ConfirmDialog

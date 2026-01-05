@@ -130,6 +130,7 @@ export default function BookingGrid({
     time: string;
   } | null>(null);
   const [openMatchMaxPlayers, setOpenMatchMaxPlayers] = useState<number>(4);
+  const [isLoadingInternal, setIsLoadingInternal] = useState(false);
 
   // Filter venues by branch if branches exist
   const filteredVenues = useMemo(() => {
@@ -283,9 +284,9 @@ export default function BookingGrid({
   const handleLeaveWaitlist = async () => {
     const entry = slotInfo
       ? getWaitlistEntry(
-          slotInfo.venueId,
-          parseInt(slotInfo.time.split(":")[0]),
-        )
+        slotInfo.venueId,
+        parseInt(slotInfo.time.split(":")[0]),
+      )
       : null;
     if (!entry?.id) return;
     setIsLoadingInternal(true);
@@ -359,13 +360,13 @@ export default function BookingGrid({
             </Button>
           </div>
 
-          <div className="w-full bg-white dark:bg-gray-900 rounded-lg shadow-sm border p-4">
+          <div className="w-full bg-card rounded-lg shadow-sm border p-4">
             <ScrollArea className="w-full">
               {/* Make grid full width of container, but minimum width to prevent squishing */}
               <div className="min-w-[1000px] w-full">
                 {/* Header Row: Venues */}
                 <div
-                  className="grid gap-2 mb-2 sticky top-0 z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur py-2"
+                  className="grid gap-2 mb-2 sticky top-0 z-30 bg-background/95 backdrop-blur py-2"
                   style={{
                     gridTemplateColumns: `80px repeat(${filteredVenues.length}, 1fr)`,
                   }}
@@ -378,16 +379,16 @@ export default function BookingGrid({
                     <div
                       key={venue.id}
                       onClick={() => setSelectedVenue(venue)}
-                      className="h-14 flex flex-col items-center justify-center font-semibold text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer gap-0.5 px-2 border border-transparent hover:border-gray-200 transition-all text-center"
+                      className="h-14 flex flex-col items-center justify-center font-semibold text-sm bg-muted/50 hover:bg-muted rounded cursor-pointer gap-0.5 px-2 border border-transparent hover:border-border transition-all text-center"
                     >
                       {venue.Branch && (
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-wide truncate max-w-full">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wide whitespace-normal text-wrap break-words max-w-full">
                           {venue.Branch.name}
                         </span>
                       )}
                       <div className="flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-brand-500" />
-                        <span className="truncate">{venue.name}</span>
+                        <span className="whitespace-normal text-wrap break-words text-center max-w-full">{venue.name}</span>
                       </div>
                     </div>
                   ))}
@@ -421,10 +422,10 @@ export default function BookingGrid({
                           className={cn(
                             "h-24 relative rounded-lg border transition-all duration-200",
                             !isBooked &&
-                              "bg-background hover:bg-secondary/40 cursor-pointer border-dashed border-border/60 hover:border-primary/50 group flex flex-col items-center justify-center",
+                            "bg-background hover:bg-accent/40 cursor-pointer border-dashed border-border/60 hover:border-primary/50 group flex flex-col items-center justify-center",
                             isBooked && "border-none bg-transparent",
                             waitlisted &&
-                              "border-orange-400 border-2 bg-orange-50/30",
+                            "border-orange-400 border-2 bg-orange-50/10",
                           )}
                           onClick={() => {
                             if (!isBooked) {
@@ -496,7 +497,7 @@ export default function BookingGrid({
                                   </Badge>
                                 </div>
                               )}
-                              <div className="font-bold truncate flex items-center justify-between gap-1.5">
+                              <div className="font-bold whitespace-normal text-wrap break-words flex items-center justify-between gap-1.5">
                                 <div className="flex items-center gap-1">
                                   {isOwn ? (
                                     <User className="w-3.5 h-3.5" />
@@ -505,7 +506,7 @@ export default function BookingGrid({
                                   )}
                                   {/* User name always visible for admin or owner */}
                                   {(isOwn || isAdmin) && (
-                                    <span className="truncate">
+                                    <span className="whitespace-normal text-wrap break-words text-center max-w-full">
                                       {booking.User?.name || "Booked"}
                                     </span>
                                   )}
@@ -515,7 +516,7 @@ export default function BookingGrid({
 
                               {(isOwn || isAdmin) && (
                                 <div className="flex justify-between items-center opacity-90 mt-auto">
-                                  <span className="truncate text-[9px] uppercase tracking-wider font-bold">
+                                  <span className="whitespace-normal text-wrap break-words text-[9px] uppercase tracking-wider font-bold">
                                     {booking.BookingStatus?.name ||
                                       booking.status ||
                                       (booking.type === "academy"
@@ -523,7 +524,7 @@ export default function BookingGrid({
                                         : "Standard")}
                                   </span>
                                   {booking.recurrenceId && (
-                                    <span className="truncate text-[9px] uppercase tracking-wider font-bold">
+                                    <span className="whitespace-normal text-wrap break-words text-[9px] uppercase tracking-wider font-bold">
                                       <Repeat />
                                     </span>
                                   )}
@@ -678,10 +679,10 @@ export default function BookingGrid({
                 <DialogHeader>
                   <DialogTitle>
                     {slotInfo &&
-                    getWaitlistEntry(
-                      slotInfo.venueId,
-                      parseInt(slotInfo.time.split(":")[0]),
-                    )
+                      getWaitlistEntry(
+                        slotInfo.venueId,
+                        parseInt(slotInfo.time.split(":")[0]),
+                      )
                       ? "Confirm Leave Waitlist"
                       : "Confirm Join Waitlist"}
                   </DialogTitle>
@@ -694,10 +695,10 @@ export default function BookingGrid({
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {slotInfo &&
-                    getWaitlistEntry(
-                      slotInfo.venueId,
-                      parseInt(slotInfo.time.split(":")[0]),
-                    )
+                      getWaitlistEntry(
+                        slotInfo.venueId,
+                        parseInt(slotInfo.time.split(":")[0]),
+                      )
                       ? "You are currently on the waitlist for this slot. Are you sure you want to leave the waitlist?"
                       : "This slot is currently fully booked. Would you like to join the waitlist? We will notify you immediately if it becomes available."}
                   </p>
@@ -727,10 +728,10 @@ export default function BookingGrid({
                     Cancel
                   </Button>
                   {slotInfo &&
-                  getWaitlistEntry(
-                    slotInfo.venueId,
-                    parseInt(slotInfo.time.split(":")[0]),
-                  ) ? (
+                    getWaitlistEntry(
+                      slotInfo.venueId,
+                      parseInt(slotInfo.time.split(":")[0]),
+                    ) ? (
                     <Button
                       variant="destructive"
                       onClick={handleLeaveWaitlist}

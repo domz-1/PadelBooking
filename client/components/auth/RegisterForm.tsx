@@ -30,6 +30,7 @@ import {
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { useBranding } from "@/components/providers/BrandingProvider";
+import Image from "next/image";
 
 export default function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -82,7 +83,14 @@ export default function RegisterForm() {
     <div className="space-y-6 w-full max-w-md mt-10">
       <div className="flex flex-col items-center gap-2">
         {logo ? (
-          <img src={logo} alt={brandName} className="h-12 w-auto mb-2" />
+           <Image
+                     src={logo}
+                     alt={brandName}
+                     unoptimized
+                     width={128}
+                     height={128}
+                     className="h-12 w-auto mb-2"
+                   />
         ) : (
           <h1 className="text-3xl font-bold text-primary">{brandName}</h1>
         )}
