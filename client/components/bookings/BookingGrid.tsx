@@ -78,7 +78,7 @@ interface BookingGridProps {
 const BRANCH_COLORS = [
   "bg-zinc-50",
   "bg-gray-100 dark:bg-gray-800",
-  "bg-slate-100/80 dark:bg-slate-800/80",
+  "bg-slate-100/80 dark:bg-gray-800/80",
   "bg-neutral-100 dark:bg-neutral-800/80",
   "bg-gray-50 dark:bg-gray-800/80",
   "bg-stone-100 dark:bg-stone-800/80",
