@@ -4,6 +4,8 @@ import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { getBookingStatusStyle } from "@/lib/booking-utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,31 +89,19 @@ export const columns = (onRefresh: () => void): ColumnDef<Booking>[] => [
     header: "Status",
     cell: ({ row }) => {
       const booking = row.original;
-      const status = booking.BookingStatus;
-
-      if (status) {
-        return (
-          <div
-            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize border"
-            style={{
-              backgroundColor: `${status.color}15`,
-              color: status.color,
-              borderColor: `${status.color}30`,
-            }}
-          >
-            <span
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ backgroundColor: status.color }}
-            />
-            {status.name}
-          </div>
-        );
-      }
+      const { style, className } = getBookingStatusStyle(booking, false, true);
 
       return (
-        <Badge variant="outline" className="capitalize">
-          No Status
-        </Badge>
+        <div
+          className={cn(
+            "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize border",
+            className
+          )}
+          style={style}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-75" />
+          {booking.BookingStatus?.name || booking.status || "Unknown"}
+        </div>
       );
     },
   },
