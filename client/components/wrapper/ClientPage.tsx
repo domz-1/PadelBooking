@@ -1,5 +1,6 @@
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
+import { SponsorCarousel } from "../SponsorCarousel";
 
 interface ClientPageProps {
     children: React.ReactNode
@@ -26,5 +27,7 @@ export function ClientPage({
             )}
             {children}
         </div>
-    )
+    );
 }
+
+export { SponsorCarousel } from "../SponsorCarousel";

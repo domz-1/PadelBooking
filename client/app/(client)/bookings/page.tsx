@@ -38,6 +38,7 @@ export default function BookingsPage() {
     const [branches, setBranches] = useState<any[]>([]);
     const [waitlistEntries, setWaitlistEntries] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedBranchId, setSelectedBranchId] = useState<string>('all');
 
     // Booking Modal State
     const [showBookingModal, setShowBookingModal] = useState(false);
@@ -195,39 +196,59 @@ export default function BookingsPage() {
         <div
          className="container py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
         >
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            
+            {/* Sponsor Carousel */}
+            <div className="mb-8">
+                <ClientPage.SponsorCarousel />
+            </div>
 
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button
-                            variant={"outline"}
-                            className={cn(
-                                "w-[240px] justify-start text-left font-normal",
-                                !date && "text-muted-foreground"
-                            )}
+            {/* Date Picker and Branch Selector in one row */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <div className="flex flex-col sm:flex-row gap-4 w-full">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full sm:w-[240px] justify-start text-left font-normal",
+                                    !date && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {date ? format(date, "PPP") : <span>Pick a date</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar
+                                mode="single"
+                                selected={date}
+                                onSelect={(d: Date | undefined) => {
+                                    if (d) {
+                                        // Adjust for timezone offset to ensure "YYYY-MM-DD" matches selected day
+                                        // Or simply set to noon to avoid midnight shifts
+                                        const newDate = new Date(d);
+                                        newDate.setHours(12, 0, 0, 0);
+                                        setDate(newDate);
+                                    }
+                                }}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+
+                    {/* Branch Selector */}
+                    <div className="w-full sm:w-auto">
+                        <select
+                            className="w-full h-10 px-3 py-2 border border-input bg-background rounded-md text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            value={selectedBranchId}
+                            onChange={(e) => setSelectedBranchId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
                         >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {date ? format(date, "PPP") : <span>Pick a date</span>}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="end">
-                        <Calendar
-                            mode="single"
-                            selected={date}
-                            onSelect={(d: Date | undefined) => {
-                                if (d) {
-                                    // Adjust for timezone offset to ensure "YYYY-MM-DD" matches selected day
-                                    // Or simply set to noon to avoid midnight shifts
-                                    const newDate = new Date(d);
-                                    newDate.setHours(12, 0, 0, 0);
-                                    setDate(newDate);
-                                }
-                            }}
-                            initialFocus
-                        />
-                    </PopoverContent>
-                </Popover>
+                            <option value="all">All Branches</option>
+                            {branches.map(branch => (
+                                <option key={branch.id} value={branch.id}>{branch.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
             </div>
 
             {loading ? (
@@ -246,6 +267,7 @@ export default function BookingsPage() {
                     onJoinOpenMatch={handleJoinOpenMatch}
                     onLeaveOpenMatch={handleLeaveOpenMatch}
                     publicView={!isAuthenticated}
+                    selectedBranchId={selectedBranchId}
                 />
             )}
 

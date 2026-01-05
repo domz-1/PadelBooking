@@ -67,6 +67,7 @@ interface BookingGridProps {
     waitlistEntries?: any[];
     onWaitlistUpdate?: () => void;
     loading?: boolean; // New loading prop
+    selectedBranchId?: string | number; // Added for branch filtering
 }
 
 export default function BookingGrid({
@@ -90,7 +91,17 @@ export default function BookingGrid({
     const { user, isAuthenticated } = useAuthStore();
     const router = useRouter();
     const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
-    const [selectedBranchId, setSelectedBranchId] = useState<number | 'all'>('all');
+    const [localSelectedBranchId, setLocalSelectedBranchId] = useState<number | 'all'>('all');
+
+    // Determine if user can book based on authentication status
+    const canBook = isAuthenticated && !publicView;
+
+    // Sync the selectedBranchId prop with local state
+    useEffect(() => {
+        if (selectedBranchId !== undefined) {
+            setLocalSelectedBranchId(selectedBranchId === 'all' ? 'all' : Number(selectedBranchId));
+        }
+    }, [selectedBranchId]);
 
     // Modals State
     const [showWaitlistModal, setShowWaitlistModal] = useState(false);
@@ -110,9 +121,9 @@ export default function BookingGrid({
 
     // Filter venues by branch if branches exist
     const filteredVenues = useMemo(() => {
-        if (selectedBranchId === 'all') return venues;
-        return venues.filter(v => v.branchId === selectedBranchId);
-    }, [venues, selectedBranchId]);
+        if (localSelectedBranchId === 'all') return venues;
+        return venues.filter(v => v.branchId === localSelectedBranchId);
+    }, [venues, localSelectedBranchId]);
 
     const hours = Array.from({ length: 24 }, (_, i) => i); // 12 AM to 11 PM (0-23)
 
@@ -377,9 +388,14 @@ export default function BookingGrid({
                                                                     time: formatTimeForValue(hour)
                                                                 });
                                                                 setShowAdminCreate(true);
-                                                            } else {
+                                                            } else if (canBook) {
+                                                                // Only allow booking if user is authenticated and not in public view
                                                                 onCreateBooking(venue.id, formatTimeForValue(hour));
+                                                            } else if (!isAuthenticated) {
+                                                                // Redirect to login if user is not authenticated
+                                                                router.push("/auth/login");
                                                             }
+                                                            // If publicView is true but user is authenticated, don't allow booking
                                                         }
                                                     }}
                                                 >
@@ -475,36 +491,48 @@ export default function BookingGrid({
                                                                     </Badge>
                                                                 </div>
                                                             )}
-                                                            <span className="text-xs text-primary font-bold flex items-center gap-1 mb-1">
-                                                                <Plus className="w-3 h-3" /> Book
-                                                            </span>
-                                                            <span className="text-[10px] text-muted-foreground">${venue.pricePerHour}</span>
+                                                            {canBook ? (
+                                                                <>
+                                                                    <span className="text-xs text-primary font-bold flex items-center gap-1 mb-1">
+                                                                        <Plus className="w-3 h-3" /> Book
+                                                                    </span>
+                                                                    <span className="text-[10px] text-muted-foreground">${venue.pricePerHour}</span>
+                                                                </>
+                                                            ) : (
+                                                                <span className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+                                                                    <Plus className="w-3 h-3" /> Available
+                                                                </span>
+                                                            )}
 
                                                             {/* Waitlist Option - Enhanced */}
-                                                            {getWaitlistEntry(venue.id, hour) ? (
-                                                                <button
-                                                                    className="mt-2 text-[10px] flex items-center gap-1 text-red-600 hover:underline font-medium"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setSlotInfo({ venueId: venue.id, time: formatTimeForValue(hour) });
-                                                                        setShowWaitlistModal(true);
-                                                                    }}
-                                                                >
-                                                                    <CalendarPlus className="w-3 h-3" />
-                                                                    Leave Waitlist
-                                                                </button>
-                                                            ) : (
-                                                                <button
-                                                                    className="mt-2 text-[10px] flex items-center gap-1 text-orange-600 hover:underline"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setSlotInfo({ venueId: venue.id, time: formatTimeForValue(hour) });
-                                                                        setShowWaitlistModal(true);
-                                                                    }}
-                                                                >
-                                                                    <CalendarPlus className="w-3 h-3" />
-                                                                    Join Waitlist
-                                                                </button>
+                                                            {canBook && (
+                                                                <>
+                                                                    {getWaitlistEntry(venue.id, hour) ? (
+                                                                        <button
+                                                                            className="mt-2 text-[10px] flex items-center gap-1 text-red-600 hover:underline font-medium"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setSlotInfo({ venueId: venue.id, time: formatTimeForValue(hour) });
+                                                                                setShowWaitlistModal(true);
+                                                                            }}
+                                                                        >
+                                                                            <CalendarPlus className="w-3 h-3" />
+                                                                            Leave Waitlist
+                                                                        </button>
+                                                                    ) : (
+                                                                        <button
+                                                                            className="mt-2 text-[10px] flex items-center gap-1 text-orange-600 hover:underline"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setSlotInfo({ venueId: venue.id, time: formatTimeForValue(hour) });
+                                                                                setShowWaitlistModal(true);
+                                                                            }}
+                                                                        >
+                                                                            <CalendarPlus className="w-3 h-3" />
+                                                                            Join Waitlist
+                                                                        </button>
+                                                                    )}
+                                                                </>
                                                             )}
                                                         </div>
                                                     )}

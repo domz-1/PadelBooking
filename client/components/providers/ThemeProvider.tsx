@@ -1,0 +1,235 @@
+"use client"
+
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react"
+import { settingsService } from "@/lib/services/settings.service"
+import { Loader2 } from "lucide-react"
+
+interface BrandingConfig {
+    businessName: string;
+    logo: string | null;
+    themeColor: string;
+    secondaryColor?: string;
+    accentColor?: string;
+    primaryForeground?: string;
+    sidebarColor?: string;
+}
+
+interface ThemeContextType {
+    brandName: string
+    logo: string | null
+    themeColor: string
+    config: BrandingConfig | null
+    loading: boolean
+    theme: 'light' | 'dark'
+    toggleTheme: () => void
+    setTheme: (theme: 'light' | 'dark') => void
+}
+
+const CACHE_KEY = "app_branding"
+const CACHE_TTL = 24 * 60 * 60 * 1000 // 24 hours
+
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+    const [config, setConfig] = useState<BrandingConfig | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [bootstrapped, setBootstrapped] = useState(false)
+    const [theme, setThemeState] = useState<'light' | 'dark'>('light')
+
+    // Load theme preference from localStorage
+    useEffect(() => {
+        const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
+        if (savedTheme) {
+            setThemeState(savedTheme)
+        } else {
+            // Use system preference
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+            setThemeState(systemPrefersDark ? 'dark' : 'light')
+        }
+    }, [])
+
+    // Apply theme to document
+    useEffect(() => {
+        if (theme) {
+            document.documentElement.classList.remove('light', 'dark')
+            document.documentElement.classList.add(theme)
+            localStorage.setItem('theme', theme)
+        }
+    }, [theme])
+
+    const applyBranding = useCallback((data: BrandingConfig | null) => {
+        if (!data) return
+
+        // Calculate enhanced color palette with better contrast
+        const themeColor = data.themeColor || "#4CAF50"
+        
+        // Function to calculate luminance for contrast
+        const getLuminance = (hex: string) => {
+            const r = parseInt(hex.slice(1, 3), 16) / 255
+            const g = parseInt(hex.slice(3, 5), 16) / 255
+            const b = parseInt(hex.slice(5, 7), 16) / 255
+            
+            const a = [r, g, b].map(v => v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4))
+            return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722
+        }
+
+        // Function to ensure better contrast
+        const ensureContrast = (hex: string, bgHex: string) => {
+            const bgLum = getLuminance(bgHex)
+            const fgLum = getLuminance(hex)
+            const contrastRatio = (Math.max(bgLum, fgLum) + 0.05) / (Math.min(bgLum, fgLum) + 0.05)
+            
+            if (contrastRatio < 4.5) {
+                // Adjust color for better contrast
+                const isDarkBg = bgLum < 0.5
+                return isDarkBg ? '#ffffff' : '#000000'
+            }
+            return hex
+        }
+
+        // Enhanced color palette with better contrast
+        document.documentElement.style.setProperty('--brand-color', themeColor)
+        document.documentElement.style.setProperty('--primary', themeColor)
+        
+        // Calculate enhanced palette with better contrast
+        const hexToRgb = (hex: string) => {
+            const r = parseInt(hex.slice(1, 3), 16)
+            const g = parseInt(hex.slice(3, 5), 16)
+            const b = parseInt(hex.slice(5, 7), 16)
+            return { r, g, b }
+        }
+
+        const rgbToHex = (r: number, g: number, b: number) => {
+            return "#" + [r, g, b].map(x => {
+                const hex = x.toString(16)
+                return hex.length === 1 ? "0" + hex : hex
+            }).join("")
+        }
+
+        const adjustBrightness = (hex: string, percent: number) => {
+            const { r, g, b } = hexToRgb(hex)
+            const newR = Math.min(255, Math.max(0, Math.round(r + (r * percent))))
+            const newG = Math.min(255, Math.max(0, Math.round(g + (g * percent))))
+            const newB = Math.min(255, Math.max(0, Math.round(b + (b * percent))))
+            return rgbToHex(newR, newG, newB)
+        }
+
+        // Generate enhanced color palette
+        document.documentElement.style.setProperty('--brand-50', adjustBrightness(themeColor, 0.9))
+        document.documentElement.style.setProperty('--brand-100', adjustBrightness(themeColor, 0.8))
+        document.documentElement.style.setProperty('--brand-200', adjustBrightness(themeColor, 0.6))
+        document.documentElement.style.setProperty('--brand-300', adjustBrightness(themeColor, 0.4))
+        document.documentElement.style.setProperty('--brand-400', adjustBrightness(themeColor, 0.2))
+        document.documentElement.style.setProperty('--brand-500', themeColor)
+        document.documentElement.style.setProperty('--brand-600', adjustBrightness(themeColor, -0.1))
+        document.documentElement.style.setProperty('--brand-700', adjustBrightness(themeColor, -0.2))
+        document.documentElement.style.setProperty('--brand-800', adjustBrightness(themeColor, -0.3))
+        document.documentElement.style.setProperty('--brand-900', adjustBrightness(themeColor, -0.4))
+        document.documentElement.style.setProperty('--brand-950', adjustBrightness(themeColor, -0.5))
+
+        // Apply secondary and accent colors if provided
+        if (data.secondaryColor) {
+            document.documentElement.style.setProperty('--secondary', data.secondaryColor)
+        }
+        if (data.accentColor) {
+            document.documentElement.style.setProperty('--accent', data.accentColor)
+        }
+        if (data.primaryForeground) {
+            document.documentElement.style.setProperty('--primary-foreground', data.primaryForeground)
+        }
+        if (data.sidebarColor) {
+            document.documentElement.style.setProperty('--sidebar', data.sidebarColor)
+        }
+    }, [])
+
+    useEffect(() => {
+        // 1. Try to load from cache first for immediate render
+        const cached = localStorage.getItem(CACHE_KEY)
+        let lastFetched = 0
+
+        if (cached) {
+            try {
+                const { data, timestamp } = JSON.parse(cached)
+                setConfig(data)
+                applyBranding(data)
+                setBootstrapped(true)
+                lastFetched = timestamp
+            } catch (e) {
+                console.warn("Failed to parse cached branding", e)
+            }
+        }
+
+        const fetchConfig = async () => {
+            try {
+                const res = await settingsService.getConfig()
+                const data = res.data
+                setConfig(data)
+                applyBranding(data)
+
+                // Update cache
+                localStorage.setItem(CACHE_KEY, JSON.stringify({
+                    data,
+                    timestamp: Date.now()
+                }))
+            } catch (error) {
+                console.error("Failed to fetch branding config", error)
+            } finally {
+                setLoading(false)
+                setBootstrapped(true)
+            }
+        }
+
+        // 2. Fetch fresh config if cache is missing or expired
+        const isExpired = Date.now() - lastFetched > CACHE_TTL
+        if (!cached || isExpired) {
+            fetchConfig()
+        } else {
+            // Background update even if not expired (revalidate)
+            fetchConfig()
+        }
+    }, [applyBranding])
+
+    const toggleTheme = useCallback(() => {
+        setThemeState(prev => prev === 'light' ? 'dark' : 'light')
+    }, [])
+
+    const setTheme = useCallback((newTheme: 'light' | 'dark') => {
+        setThemeState(newTheme)
+    }, [])
+
+    const value = {
+        brandName: config?.businessName || "PadelBooking",
+        logo: config?.logo || null,
+        themeColor: config?.themeColor || "#4CAF50",
+        config,
+        loading,
+        theme,
+        toggleTheme,
+        setTheme
+    }
+
+    if (!bootstrapped) {
+        return (
+            <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background">
+                <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+                <p className="text-muted-foreground font-medium animate-pulse">
+                    Loading {value.brandName}...
+                </p>
+            </div>
+        )
+    }
+
+    return (
+        <ThemeContext.Provider value={value}>
+            {children}
+        </ThemeContext.Provider>
+    )
+}
+
+export const useTheme = () => {
+    const context = useContext(ThemeContext)
+    if (context === undefined) {
+        throw new Error("useTheme must be used within a ThemeProvider")
+    }
+    return context
+}
