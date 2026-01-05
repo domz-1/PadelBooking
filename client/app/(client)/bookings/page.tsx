@@ -80,11 +80,15 @@ export default function BookingsPage() {
       }
 
       if (branchesRes.data) {
+        let branchData = [];
         if (Array.isArray(branchesRes.data)) {
-          setBranches(branchesRes.data);
+          branchData = branchesRes.data;
         } else if (branchesRes.data.success) {
-          setBranches(branchesRes.data.data);
+          branchData = branchesRes.data.data;
         }
+        setBranches([...branchData].sort((a, b) =>
+          a.name.trim().localeCompare(b.name.trim(), undefined, { sensitivity: 'base' })
+        ));
       }
     } catch (error) {
       console.error("Failed to fetch data", error);

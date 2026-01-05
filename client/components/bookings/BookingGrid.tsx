@@ -75,6 +75,15 @@ interface BookingGridProps {
   onDateChange?: (date: Date | undefined) => void;
 }
 
+const BRANCH_COLORS = [
+  "bg-zinc-50",
+  "bg-gray-100 dark:bg-gray-800",
+  "bg-slate-100/80 dark:bg-slate-800/80",
+  "bg-neutral-100 dark:bg-neutral-800/80",
+  "bg-gray-50 dark:bg-gray-800/80",
+  "bg-stone-100 dark:bg-stone-800/80",
+];
+
 export default function BookingGrid({
   bookings,
   venues,
@@ -127,8 +136,20 @@ export default function BookingGrid({
 
   // Filter venues by branch if branches exist
   const filteredVenues = useMemo(() => {
-    if (localSelectedBranchId === "all") return venues;
-    return venues.filter((v) => v.branchId === localSelectedBranchId);
+    let result = venues;
+    if (localSelectedBranchId !== "all") {
+      result = venues.filter((v) => v.branchId === localSelectedBranchId);
+    }
+    return [...result].sort((a, b) => {
+      // First sort by branchId (with fallback to 0 for safety)
+      const aBranch = a.branchId ?? 0;
+      const bBranch = b.branchId ?? 0;
+      if (aBranch !== bBranch) {
+        return aBranch - bBranch;
+      }
+      // Then sort by name
+      return a.name.trim().localeCompare(b.name.trim(), undefined, { sensitivity: 'base' });
+    });
   }, [venues, localSelectedBranchId]);
 
   const hours = Array.from({ length: 24 }, (_, i) => i); // 12 AM to 11 PM
@@ -227,23 +248,33 @@ export default function BookingGrid({
                     <Clock className="w-3 h-3" />
                     Time
                   </div>
-                  {filteredVenues.map((venue) => (
-                    <div
-                      key={venue.id}
-                      onClick={() => setSelectedVenue(venue)}
-                      className="h-14 flex flex-col items-center justify-center font-semibold text-sm bg-muted/50 hover:bg-muted rounded cursor-pointer gap-0.5 px-2 border border-transparent hover:border-border transition-all text-center"
-                    >
-                      {venue.Branch && (
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-wide whitespace-normal text-wrap break-words max-w-full">
-                          {venue.Branch.name}
-                        </span>
-                      )}
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-brand-500" />
-                        <span className="whitespace-normal text-wrap break-words text-center max-w-full">{venue.name}</span>
+                  {filteredVenues.map((venue) => {
+                    const branchColorClass = venue.branchId
+                      ? BRANCH_COLORS[venue.branchId % BRANCH_COLORS.length]
+                      : "bg-muted/50";
+
+                    return (
+                      <div
+                        key={venue.id}
+                        onClick={() => setSelectedVenue(venue)}
+                        className={cn(
+                          "h-14 flex flex-col items-center justify-center font-semibold text-sm rounded cursor-pointer gap-0.5 px-2 border border-transparent hover:border-border transition-all text-center",
+                          branchColorClass,
+                          "hover:bg-muted"
+                        )}
+                      >
+                        {venue.Branch && (
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wide whitespace-normal text-wrap break-words max-w-full">
+                            {venue.Branch.name}
+                          </span>
+                        )}
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-brand-500" />
+                          <span className="whitespace-normal text-wrap break-words text-center max-w-full">{venue.name}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Grid Rows */}

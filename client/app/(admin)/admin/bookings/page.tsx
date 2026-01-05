@@ -105,7 +105,10 @@ export default function BookingsPage() {
           adminBranchService.getAll(),
         ]);
         setVenues(venuesRes.data);
-        setBranches(branchesRes || []);
+        const sortedBranches = Array.isArray(branchesRes)
+          ? [...branchesRes].sort((a, b) => a.name.trim().localeCompare(b.name.trim(), undefined, { sensitivity: 'base' }))
+          : [];
+        setBranches(sortedBranches);
       } catch (e) {
         console.error(e);
       }
@@ -219,7 +222,7 @@ export default function BookingsPage() {
           </div>
           // </div>
         )}
-    </div>
+      </div>
     </div >
   );
 }
