@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 import type { Venue, Booking, Branch, WaitlistEntry } from "@/lib/schemas";
 import { useAuthStore } from "@/hooks/use-auth-store";
 import { bookingService } from "@/lib/services/booking.service";
@@ -67,6 +68,7 @@ interface BookingGridProps {
   onWaitlistUpdate?: () => void;
   loading?: boolean; // New loading prop
   selectedBranchId?: string | number; // Added for branch filtering
+  onDateChange?: (date: Date | undefined) => void;
 }
 
 export default function BookingGrid({
@@ -87,6 +89,7 @@ export default function BookingGrid({
   onWaitlistUpdate,
   loading = false,
   selectedBranchId,
+  onDateChange,
 }: BookingGridProps) {
   const { user, isAuthenticated } = useAuthStore();
   const router = useRouter();
@@ -105,7 +108,7 @@ export default function BookingGrid({
         selectedBranchId === "all" ? "all" : Number(selectedBranchId),
       );
     }
-  }); // No dependency array to avoid outer scope value linting error
+  }, [selectedBranchId]);
 
   // Modals State
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
@@ -328,29 +331,44 @@ export default function BookingGrid({
         <BookingSkeleton />
       ) : (
         <>
-          {/* Branch Selector */}
-          {branches.length > 0 && (
-            <div className="flex justify-center">
-              <Tabs
-                defaultValue="all"
-                onValueChange={(v) =>
-                  setLocalSelectedBranchId(v === "all" ? "all" : Number(v))
-                }
-              >
-                <TabsList>
-                  <TabsTrigger value="all">All Branches</TabsTrigger>
-                  {branches.map((b) => (
-                    <TabsTrigger key={b.id} value={String(b.id)}>
-                      {b.name}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            </div>
-          )}
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            {/* Branch Selector */}
+            {branches.length > 0 ? (
+              <div className="flex justify-center flex-1">
+                <Tabs
+                  defaultValue="all"
+                  onValueChange={(v) =>
+                    setLocalSelectedBranchId(v === "all" ? "all" : Number(v))
+                  }
+                >
+                  <TabsList>
+                    <TabsTrigger value="all">All Branches</TabsTrigger>
+                    {branches.map((b) => (
+                      <TabsTrigger key={b.id} value={String(b.id)}>
+                        {b.name}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
+              </div>
+            ) : (
+              <div className="flex-1" />
+            )}
+
+            {/* Date Picker */}
+            {onDateChange && (
+              <div className="flex items-center">
+                <DatePicker
+                  date={date ? new Date(date) : undefined}
+                  setDate={onDateChange}
+                  className="w-[200px]"
+                />
+              </div>
+            )}
+          </div>
 
           {/* Create Open Match Button */}
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-end mb-4 hidden ">
             <Button
               onClick={() => setShowOpenMatchModal(true)}
               className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
@@ -1158,7 +1176,8 @@ export default function BookingGrid({
             </Dialog>
           </div>
         </>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 }

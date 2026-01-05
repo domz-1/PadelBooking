@@ -232,42 +232,8 @@ export default function BookingsPage() {
         <SponsorCarousel />
       </div>
 
-      {/* Date Picker and Branch Selector in one row */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div className="flex flex-col sm:flex-row gap-4 w-full">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-full sm:w-[240px] justify-start text-left font-normal",
-                  !date && "text-muted-foreground",
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, "PPP") : <span>Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={(d: Date | undefined) => {
-                  if (d) {
-                    // Adjust for timezone offset to ensure "YYYY-MM-DD" matches selected day
-                    // Or simply set to noon to avoid midnight shifts
-                    const newDate = new Date(d);
-                    newDate.setHours(12, 0, 0, 0);
-                    setDate(newDate);
-                  }
-                }}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-
-        </div>
-      </div>
+      {/* Date Picker moved to BookingGrid */}
+      <div className="mb-6"></div>
 
       {loading ? (
         <BookingSkeleton />
@@ -286,6 +252,13 @@ export default function BookingsPage() {
           onLeaveOpenMatch={handleLeaveOpenMatch}
           publicView={!isAuthenticated}
           selectedBranchId={selectedBranchId}
+          onDateChange={(d) => {
+            if (d) {
+              const newDate = new Date(d);
+              newDate.setHours(12, 0, 0, 0);
+              setDate(newDate);
+            }
+          }}
         />
       )}
 

@@ -134,19 +134,21 @@ export default function BookingsPage() {
             onUpload={adminBookingService.importBookings}
             description="Upload a CSV or Excel file with columns: branchName, venueName, userEmail, date, startTime, endTime"
           />
-          <DatePicker
-            date={date}
-            setDate={(d) => {
-              if (d) {
-                const newDate = new Date(d);
-                newDate.setHours(12, 0, 0, 0); // Normalize to noon
-                setDate(newDate);
-              } else {
-                setDate(undefined);
-              }
-            }}
-            className="w-full sm:w-[200px]"
-          />
+          {/* Date Picker moved to BookingGrid */ (viewMode === "list") && (
+            <DatePicker
+              date={date}
+              setDate={(d) => {
+                if (d) {
+                  const newDate = new Date(d);
+                  newDate.setHours(12, 0, 0, 0); // Normalize to noon
+                  setDate(newDate);
+                } else {
+                  setDate(undefined);
+                }
+              }}
+              className="w-full sm:w-[200px]"
+            />
+          )}
 
           <div className="flex items-center space-x-1 bg-secondary p-1 rounded-md border">
             <Button
@@ -200,14 +202,24 @@ export default function BookingsPage() {
                     ? date.toISOString().split("T")[0]
                     : new Date().toISOString().split("T")[0]
                 }
-                onCreateBooking={() => {}}
+                onCreateBooking={() => { }}
                 onViewBooking={(b) => console.log(b)}
                 publicView={false}
+                onDateChange={(d) => {
+                  if (d) {
+                    const newDate = new Date(d);
+                    newDate.setHours(12, 0, 0, 0); // Normalize to noon
+                    setDate(newDate);
+                  } else {
+                    setDate(undefined);
+                  }
+                }}
               />
             </div>
           </div>
+          // </div>
         )}
-      </div>
     </div>
+    </div >
   );
 }
