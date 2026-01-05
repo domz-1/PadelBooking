@@ -1,9 +1,39 @@
 const authService = require('./auth.service');
 
+const normalizePhone = (phone) => {
+    if (!phone) return null;
+    // Remove all non-digit characters except +
+    let normalized = phone.replace(/[^\d+]/g, '');
+
+    // If it starts with 01 (Egypt local), change to +201
+    if (normalized.startsWith('01') && normalized.length === 11) {
+        normalized = '+2' + normalized;
+    }
+
+    // Ensure no spaces or extra formatting remains
+    return normalized;
+};
+
 exports.register = async (req, res, next) => {
     try {
-        const { name, email, password, role } = req.body;
-        const user = await authService.register({ name, email, password, role });
+        const { name, email, password, role, phone } = req.body;
+        const normalizedPhone = normalizePhone(phone);
+
+        // Check if email is already in use
+        const existingEmail = await require('../users/user.model').findOne({ where: { email } });
+        if (existingEmail) {
+            return res.status(400).json({ success: false, message: 'Email already in use' });
+        }
+
+        // Check if phone is already in use
+        if (normalizedPhone) {
+            const existingPhone = await require('../users/user.model').findOne({ where: { phone: normalizedPhone } });
+            if (existingPhone) {
+                return res.status(400).json({ success: false, message: 'Phone number already in use' });
+            }
+        }
+
+        const user = await authService.register({ name, email, password, role, phone: normalizedPhone });
         const token = authService.getSignedJwtToken(user.id);
 
         res.status(201).json({
@@ -13,7 +43,8 @@ exports.register = async (req, res, next) => {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                phone: user.phone
             }
         });
     } catch (error) {
@@ -39,7 +70,8 @@ exports.login = async (req, res, next) => {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                phone: user.phone
             }
         });
     } catch (error) {

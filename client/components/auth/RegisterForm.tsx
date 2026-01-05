@@ -28,7 +28,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useBranding } from "@/components/providers/BrandingProvider";
 import Image from "next/image";
 
@@ -43,10 +43,14 @@ export default function RegisterForm() {
     defaultValues: {
       name: "",
       email: "",
+      phone: "",
       password: "",
       confirmPassword: "",
     },
   });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   async function onSubmit(data: RegisterCredentials) {
     setIsLoading(true);
@@ -54,6 +58,7 @@ export default function RegisterForm() {
       const response = await api.post("/auth/register", {
         name: data.name,
         email: data.email,
+        phone: data.phone.startsWith('+') ? data.phone : `+2${data.phone}`,
         password: data.password,
       });
 
@@ -70,10 +75,15 @@ export default function RegisterForm() {
         }
       }
     } catch (error: unknown) {
-      toast.error(
-        (error as { response?: { data?: { message?: string } } })?.response
-          ?.data?.message || "Registration failed",
-      );
+      const serverMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+
+      if (serverMessage?.toLowerCase().includes("phone")) {
+        form.setError("phone", { type: "server", message: serverMessage });
+      } else if (serverMessage?.toLowerCase().includes("email")) {
+        form.setError("email", { type: "server", message: serverMessage });
+      }
+
+      toast.error(serverMessage || "Registration failed");
     } finally {
       setIsLoading(false);
     }
@@ -83,14 +93,14 @@ export default function RegisterForm() {
     <div className="space-y-6 w-full max-w-md mt-10">
       <div className="flex flex-col items-center gap-2">
         {logo ? (
-           <Image
-                     src={logo}
-                     alt={brandName}
-                     unoptimized
-                     width={128}
-                     height={128}
-                     className="h-12 w-auto mb-2"
-                   />
+          <Image
+            src={logo}
+            alt={brandName}
+            unoptimized
+            width={128}
+            height={128}
+            className="h-12 w-auto mb-2"
+          />
         ) : (
           <h1 className="text-3xl font-bold text-primary">{brandName}</h1>
         )}
@@ -134,16 +144,53 @@ export default function RegisterForm() {
               />
               <FormField
                 control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">
+                          +2
+                        </span>
+                        <Input
+                          placeholder="01xxxxxxxxx"
+                          className="pl-8"
+                          maxLength={11}
+                          {...field}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+                            field.onChange(value);
+                          }}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="••••••••"
-                        {...field}
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          className="pr-10"
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -156,11 +203,21 @@ export default function RegisterForm() {
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="••••••••"
-                        {...field}
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          className="pr-10"
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

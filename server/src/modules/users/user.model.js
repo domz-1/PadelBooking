@@ -2,6 +2,20 @@ const { DataTypes } = require('sequelize');
 const { sequelize } = require('../../config/database');
 const bcrypt = require('bcryptjs');
 
+const normalizePhone = (phone) => {
+    if (!phone) return null;
+    // Remove all non-digit characters except +
+    let normalized = phone.replace(/[^\d+]/g, '');
+
+    // If it starts with 01 (Egypt local), change to +201
+    if (normalized.startsWith('01') && normalized.length === 11) {
+        normalized = '+2' + normalized;
+    }
+
+    // Ensure no spaces or extra formatting remains
+    return normalized;
+};
+
 const User = sequelize.define('User', {
     id: {
         type: DataTypes.INTEGER,
@@ -67,11 +81,17 @@ const User = sequelize.define('User', {
                 const salt = await bcrypt.genSalt(10);
                 user.password = await bcrypt.hash(user.password, salt);
             }
+            if (user.phone) {
+                user.phone = normalizePhone(user.phone);
+            }
         },
         beforeUpdate: async (user) => {
             if (user.changed('password')) {
                 const salt = await bcrypt.genSalt(10);
                 user.password = await bcrypt.hash(user.password, salt);
+            }
+            if (user.changed('phone') && user.phone) {
+                user.phone = normalizePhone(user.phone);
             }
         }
     }

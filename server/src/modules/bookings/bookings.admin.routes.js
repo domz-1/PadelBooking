@@ -6,13 +6,15 @@ const {
     getBooking,
     updateBooking,
     deleteBooking,
-    createBooking
+    createBooking,
+    getFreeSlots
 } = require('./booking.controller');
 const { importExcel } = require('./import.controller');
 const {
     getWaitlistForSlot,
     adminJoinWaitlist,
-    adminDeleteWaitlist
+    adminDeleteWaitlist,
+    getDailyWaitlist
 } = require('./waitlist.controller');
 const { protect, authorize } = require('../../middleware/auth');
 const multer = require('multer');
@@ -114,6 +116,7 @@ router.get('/logs', getBookingLogs);
  *         description: List of waitlist entries
  */
 router.get('/waitlist/slot', getWaitlistForSlot);
+router.get('/waitlist/daily', getDailyWaitlist);
 router.post('/waitlist', adminJoinWaitlist);
 router.delete('/waitlist/:id', adminDeleteWaitlist);
 
@@ -130,6 +133,7 @@ router.delete('/waitlist/:id', adminDeleteWaitlist);
  *         description: Daily summary data
  */
 router.get('/daily-summary', getDailySummary);
+router.get('/free-slots', getFreeSlots);
 
 /**
  * @swagger

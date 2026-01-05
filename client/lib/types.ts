@@ -46,12 +46,12 @@ export interface Booking {
     winner?: number;
   };
   status:
-    | "pending"
-    | "confirmed"
-    | "cancelled"
-    | "completed"
-    | "no-show"
-    | "pending-coach";
+  | "pending"
+  | "confirmed"
+  | "cancelled"
+  | "completed"
+  | "no-show"
+  | "pending-coach";
   type: "standard" | "academy";
   totalPrice: number;
   participants: number[];
@@ -122,6 +122,7 @@ export interface Sponsor {
   image: string;
   link: string;
   isActive: boolean;
+  showInHome: boolean;
   createdAt: string;
   updatedAt: string;
 }

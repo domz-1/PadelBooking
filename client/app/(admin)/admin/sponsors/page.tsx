@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Loader2, Plus, Trash2, Eye, Edit } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import Image from "next/image";
+import { Switch } from "@/components/ui/switch";
 
 export default function AdminSponsorsPage() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
@@ -26,12 +27,14 @@ export default function AdminSponsorsPage() {
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
   const [link, setLink] = useState("");
+  const [showInHome, setShowInHome] = useState(true);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedSponsor, setSelectedSponsor] = useState<Sponsor | null>(null);
   const [editFile, setEditFile] = useState<File | null>(null);
   const [editName, setEditName] = useState("");
   const [editLink, setEditLink] = useState("");
+  const [editShowInHome, setEditShowInHome] = useState(true);
 
   useEffect(() => {
     loadSponsors();
@@ -59,6 +62,7 @@ export default function AdminSponsorsPage() {
       formData.append("name", name);
       formData.append("link", link);
       formData.append("image", file);
+      formData.append("showInHome", String(showInHome));
 
       await sponsorService.createSponsor(formData);
       toast.success("Sponsor added");
@@ -66,6 +70,7 @@ export default function AdminSponsorsPage() {
       setName("");
       setLink("");
       setFile(null);
+      setShowInHome(true);
       loadSponsors();
     } catch {
       toast.error("Failed to add sponsor");
@@ -96,6 +101,7 @@ export default function AdminSponsorsPage() {
     setSelectedSponsor(sponsor);
     setEditName(sponsor.name);
     setEditLink(sponsor.link);
+    setEditShowInHome(sponsor.showInHome ?? true);
     setEditFile(null);
     setEditDialogOpen(true);
   };
@@ -110,6 +116,7 @@ export default function AdminSponsorsPage() {
       const formData = new FormData();
       formData.append("name", editName);
       formData.append("link", editLink);
+      formData.append("showInHome", String(editShowInHome));
       if (editFile) {
         formData.append("image", editFile);
       }
@@ -151,6 +158,7 @@ export default function AdminSponsorsPage() {
                 src={sponsor.image}
                 alt={sponsor.name}
                 width={400}
+                unoptimized
                 height={225}
                 className="object-cover h-full w-full"
               />
@@ -222,6 +230,14 @@ export default function AdminSponsorsPage() {
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
               />
             </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="show-in-home"
+                checked={showInHome}
+                onCheckedChange={setShowInHome}
+              />
+              <Label htmlFor="show-in-home">Show in Home Carousel</Label>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -247,6 +263,7 @@ export default function AdminSponsorsPage() {
                     alt={selectedSponsor.name}
                     width={192}
                     height={192}
+                    unoptimized
                     className="object-contain h-full w-full max-w-full max-h-full"
                   />
                 </div>
@@ -337,6 +354,14 @@ export default function AdminSponsorsPage() {
                   New image selected: {editFile.name}
                 </p>
               )}
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="edit-show-in-home"
+                checked={editShowInHome}
+                onCheckedChange={setEditShowInHome}
+              />
+              <Label htmlFor="edit-show-in-home">Show in Home Carousel</Label>
             </div>
           </div>
           <DialogFooter>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { DatePicker } from "@/components/ui/date-picker";
 import type { Venue, Booking, Branch, WaitlistEntry } from "@/lib/schemas";
@@ -15,6 +15,8 @@ import {
   Users,
   Repeat,
   CalendarPlus,
+  ListOrdered,
+  ClipboardList,
 } from "lucide-react";
 
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -45,6 +47,8 @@ import { ManageBookingDialog } from "./dialogs/ManageBookingDialog";
 import { DeleteBookingDialog } from "./dialogs/DeleteBookingDialog";
 import { OpenMatchDialog } from "./dialogs/OpenMatchDialog";
 import { ConvertToOpenMatchDialog } from "./dialogs/ConvertToOpenMatchDialog";
+import { EmptySlotsBoard } from "@/components/admin/bookings/EmptySlotsBoard";
+import { WaitlistBoard } from "@/components/admin/bookings/WaitlistBoard";
 
 // Store
 import { useBookingStore } from "@/hooks/use-booking-store";
@@ -91,7 +95,6 @@ export default function BookingGrid({
   const router = useRouter();
 
   // Store Hooks
-  // Store Hooks
   const localSelectedBranchId = useBookingStore((state) => state.selectedBranchId);
   const modals = useBookingStore((state) => state.modals);
   const adminCreateSlot = useBookingStore((state) => state.adminCreateSlot);
@@ -130,6 +133,9 @@ export default function BookingGrid({
 
   const hours = Array.from({ length: 24 }, (_, i) => i); // 12 AM to 11 PM
 
+  const [showEmptySlots, setShowEmptySlots] = useState(false);
+  const [showWaitlistBoard, setShowWaitlistBoard] = useState(false);
+
   const isAdmin = user?.role === "admin";
 
   return (
@@ -162,16 +168,38 @@ export default function BookingGrid({
               <div className="flex-1" />
             )}
 
-            {/* Date Picker */}
-            {onDateChange && (
-              <div className="flex items-center">
+            {/* Date Picker & Tools */}
+            <div className="flex items-center gap-2">
+              {isAdmin && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2 border-primary/20 hover:bg-primary/5 hover:text-primary transition-all duration-300 rounded-full px-4"
+                    onClick={() => setShowWaitlistBoard(true)}
+                  >
+                    <ListOrdered className="w-4 h-4" />
+                    <span className="hidden sm:inline">Waitlist Board</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2 border-primary/20 hover:bg-primary/5 hover:text-primary transition-all duration-300 rounded-full px-4"
+                    onClick={() => setShowEmptySlots(true)}
+                  >
+                    <ClipboardList className="w-4 h-4" />
+                    <span className="hidden sm:inline">Empty Slots Board</span>
+                  </Button>
+                </div>
+              )}
+              {onDateChange && (
                 <DatePicker
                   date={date ? new Date(date) : undefined}
                   setDate={onDateChange}
                   className="w-[200px]"
                 />
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Create Open Match Button - Hidden mostly per original */}
@@ -481,6 +509,20 @@ export default function BookingGrid({
                 }}
               />
             )}
+
+            <EmptySlotsBoard
+              open={showEmptySlots}
+              onOpenChange={setShowEmptySlots}
+              venues={venues}
+              branches={branches}
+              initialDate={date}
+            />
+
+            <WaitlistBoard
+              open={showWaitlistBoard}
+              onOpenChange={setShowWaitlistBoard}
+              initialDate={date}
+            />
 
           </div >
         </>

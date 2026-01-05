@@ -42,17 +42,30 @@ class BookingService {
 
     // ...
 
-    async getBookings(options = {}, userId = null) {
-        const { limit, offset, date } = options;
+    async getBookings(options = {}, requester = null) {
+        const { limit, offset, date, startDate, endDate, userId } = options;
         const where = {};
-        if (userId) {
-            where.userId = userId;
-        }
+
+        // If a date is provided (grid view), we want to show ALL bookings for that day
+        // to maintain the grid structure, but we will mask non-owned data later.
         if (date) {
             where.date = date;
+        } else if (startDate && endDate) {
+            where.date = {
+                [Op.between]: [startDate, endDate]
+            };
         }
 
-        return await Booking.findAndCountAll({
+        // If an explicit userId filter is provided (e.g. Admin filtering or User history)
+        if (userId) {
+            where.userId = userId;
+        } else if (!date && !startDate && requester && requester.role !== 'admin') {
+            // Default to own bookings for non-admins if no other date/range filters are active
+            // and no explicit userId was requested
+            where.userId = requester.id;
+        }
+
+        const result = await Booking.findAndCountAll({
             where,
             limit,
             offset,
@@ -64,10 +77,32 @@ class BookingService {
                     attributes: ['name', 'location'],
                     include: [{ model: Branch, attributes: ['name', 'location'] }]
                 },
-                { model: User, attributes: ['name', 'email', 'phone'] },
+                { model: User, attributes: ['id', 'name', 'email', 'phone'] },
                 { model: BookingStatus, attributes: ['id', 'name', 'color', 'description'] }
             ]
         });
+
+        // Privacy Masking (Only for non-admins)
+        if (requester && requester.role !== 'admin') {
+            result.rows = result.rows.map(booking => {
+                const b = booking.get({ plain: true });
+                // If the booking doesn't belong to the requester and it's not an open match
+                if (b.userId !== requester.id && !b.isOpenMatch) {
+                    if (b.User) {
+                        b.User = {
+                            id: b.User.id, // Keep ID for potential "Own Booking" checks if needed (though it won't match)
+                            name: 'Reserved',
+                            email: '***',
+                            phone: '***'
+                        };
+                    }
+                    // Optional: mask other sensitive booking fields if any
+                }
+                return b;
+            });
+        }
+
+        return result;
     }
 
     async getBookingById(id) {
@@ -677,6 +712,86 @@ class BookingService {
         } catch (error) {
             console.error('Error checking waitlist:', error);
         }
+    }
+    async getFreeSlots(options) {
+        const { startDate, startTime, endDate, endTime, branchId } = options;
+
+        const venues = await Venue.findAll({
+            where: branchId !== 'all' ? { branchId } : {},
+            include: [{ model: Branch, attributes: ['name'] }]
+        });
+
+        const bookings = await Booking.findAll({
+            where: {
+                date: { [Op.between]: [startDate, endDate] }
+            }
+        });
+
+        const freeSlotsByVenue = {}; // { "Center Court": ["5pm to 12am", "2am to 3am"] }
+
+        // Local time parsing for range boundaries
+        const startTS = new Date(`${startDate}T${startTime}:00:00`).getTime();
+        const endTS = new Date(`${endDate}T${endTime}:00:00`).getTime();
+        const hourMS = 60 * 60 * 1000;
+
+        venues.forEach(venue => {
+            let currentTS = startTS;
+            let currentRangeStart = null;
+            const venueRanges = [];
+
+            while (currentTS < endTS) {
+                const dateObj = new Date(currentTS);
+                const dateStr = dateObj.toISOString().split('T')[0];
+                const hh = dateObj.getHours();
+                const hourStr = hh.toString().padStart(2, '0') + ':00:00';
+
+                // Check if this hour is booked
+                const isBooked = bookings.some(b =>
+                    b.venueId === venue.id &&
+                    b.date === dateStr &&
+                    b.startTime <= hourStr &&
+                    b.endTime > hourStr
+                );
+
+                if (!isBooked) {
+                    if (currentRangeStart === null) {
+                        currentRangeStart = currentTS;
+                    }
+                } else {
+                    if (currentRangeStart !== null) {
+                        venueRanges.push(this._formatFreeRange(currentRangeStart, currentTS));
+                        currentRangeStart = null;
+                    }
+                }
+
+                currentTS += hourMS;
+            }
+
+            if (currentRangeStart !== null) {
+                venueRanges.push(this._formatFreeRange(currentRangeStart, endTS));
+            }
+
+            if (venueRanges.length > 0) {
+                freeSlotsByVenue[venue.name] = venueRanges;
+            }
+        });
+
+        return freeSlotsByVenue;
+    }
+
+    _formatFreeRange(startTS, endTS) {
+        if (startTS >= endTS) return '';
+
+        const formatH = (ts) => {
+            const date = new Date(ts);
+            let h = date.getHours();
+            const ampm = (h >= 12 && h <= 23) ? 'pm' : 'am';
+            const h12 = h % 12 || 12;
+            if (h === 0 && ts > startTS) return "12am"; // Visual aid for midnight end if desired
+            return `${h12}${ampm}`;
+        };
+
+        return `${formatH(startTS)} to ${formatH(endTS)}`;
     }
 }
 

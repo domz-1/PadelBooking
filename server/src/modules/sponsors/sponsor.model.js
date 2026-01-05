@@ -29,6 +29,10 @@ const Sponsor = sequelize.define('Sponsor', {
     isActive: {
         type: DataTypes.BOOLEAN,
         defaultValue: true
+    },
+    showInHome: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
     }
 }, {
     timestamps: true

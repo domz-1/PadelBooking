@@ -109,3 +109,31 @@ exports.adminDeleteWaitlist = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.getDailyWaitlist = async (req, res, next) => {
+    try {
+        const { date } = req.query;
+        if (!date) {
+            return res.status(400).json({ success: false, message: 'Date is required' });
+        }
+
+        const entries = await Waitlist.findAll({
+            where: { date },
+            include: [
+                {
+                    model: require('../users/user.model'),
+                    attributes: ['id', 'name', 'email', 'phone']
+                },
+                {
+                    model: require('../venues/venue.model'),
+                    attributes: ['id', 'name']
+                }
+            ],
+            order: [['createdAt', 'ASC']]
+        });
+
+        res.status(200).json({ success: true, data: entries });
+    } catch (error) {
+        next(error);
+    }
+};

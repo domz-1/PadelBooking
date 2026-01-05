@@ -6,15 +6,15 @@ exports.getBookings = async (req, res, next) => {
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
 
-        // If admin, get all or filter by query. If user, get own.
-        let userId = req.user.id;
-        if (req.user.role === 'admin') {
-            userId = req.query.userId || null;
+        const { date, startDate, endDate, userId: userIdFromQuery } = req.query;
+        const options = { limit, offset, date, startDate, endDate };
+
+        // If query has userId and user is admin, pass it to options
+        if (req.user.role === 'admin' && userIdFromQuery) {
+            options.userId = userIdFromQuery;
         }
 
-        const { date } = req.query;
-
-        const { count, rows } = await bookingService.getBookings({ limit, offset, date }, userId);
+        const { count, rows } = await bookingService.getBookings(options, req.user);
 
         res.status(200).json({
             success: true,
@@ -73,7 +73,7 @@ exports.getMyBookings = async (req, res, next) => {
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
 
-        const { count, rows } = await bookingService.getBookings({ limit, offset }, req.user.id);
+        const { count, rows } = await bookingService.getBookings({ limit, offset }, req.user);
 
         res.status(200).json({
             success: true,
@@ -276,6 +276,26 @@ exports.getOpenMatches = async (req, res, next) => {
         const bookings = await bookingService.getOpenMatches(date);
 
         res.status(200).json({ success: true, data: bookings });
+    } catch (error) {
+        next(error);
+    }
+};
+exports.getFreeSlots = async (req, res, next) => {
+    try {
+        const { startDate, startTime, endDate, endTime, branchId } = req.query;
+        if (!startDate || !startTime || !endDate || !endTime) {
+            return res.status(400).json({ success: false, message: 'Missing required range parameters' });
+        }
+
+        const data = await bookingService.getFreeSlots({
+            startDate,
+            startTime,
+            endDate,
+            endTime,
+            branchId: branchId || 'all'
+        });
+
+        res.status(200).json({ success: true, data });
     } catch (error) {
         next(error);
     }

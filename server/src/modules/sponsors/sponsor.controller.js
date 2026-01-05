@@ -49,8 +49,14 @@ exports.createSponsor = async (req, res, next) => {
         // Add image path to body
         if (req.file) {
             req.body.image = req.file.path;
-        } else if (!req.body.image) {
+        }
+
+        if (!req.body.image && !req.file) {
             return next(new ErrorResponse(`Please upload an image`, 400));
+        }
+
+        if (req.body.showInHome !== undefined) {
+            req.body.showInHome = req.body.showInHome === 'true';
         }
 
         const sponsor = await Sponsor.create(req.body);
@@ -77,6 +83,10 @@ exports.updateSponsor = async (req, res, next) => {
 
         if (req.file) {
             req.body.image = req.file.path;
+        }
+
+        if (req.body.showInHome !== undefined) {
+            req.body.showInHome = req.body.showInHome === 'true';
         }
 
         sponsor = await sponsor.update(req.body);

@@ -9,11 +9,11 @@ interface Sponsor {
   image: string;
   link: string;
   isActive: boolean;
+  showInHome: boolean;
 }
 
 export function SponsorCarousel() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
-  const [currentIndex, setCurrentIndex] = useState<number>(0);
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -21,14 +21,14 @@ export function SponsorCarousel() {
       try {
         const response = await api.get("/sponsors");
         if (response.data.success) {
-          setSponsors(response.data.data.filter((sponsor: Sponsor) => sponsor.isActive));
+          setSponsors(response.data.data.filter((sponsor: Sponsor) => sponsor.isActive && sponsor.showInHome !== false));
         }
       } catch (error) {
         console.error("Failed to fetch sponsors:", error);
         // Fallback to sample sponsors
         setSponsors([
-          { id: 1, name: "Sample Sponsor", image: "/placeholder.svg", link: "#", isActive: true },
-          { id: 2, name: "Sample Sponsor 2", image: "/placeholder.svg", link: "#", isActive: true },
+          { id: 1, name: "Sample Sponsor", image: "/placeholder.svg", link: "#", isActive: true, showInHome: true },
+          { id: 2, name: "Sample Sponsor 2", image: "/placeholder.svg", link: "#", isActive: true, showInHome: true },
         ]);
       }
     };
@@ -36,66 +36,36 @@ export function SponsorCarousel() {
     fetchSponsors();
   }, []);
 
-  useEffect(() => {
-    if (sponsors.length <= 1) return;
-
-    const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % sponsors.length);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [sponsors]);
-
   if (sponsors.length === 0) return null;
 
+  // Duplicate sponsors multiple times for seamless marquee effect even on large screens
+  const marqueeSponsors = Array(10).fill(sponsors).flat();
+
   return (
-    <div className={`relative w-full overflow-hidden rounded-lg ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'} p-4`}>
-      <div className="flex items-center justify-center">
-        <div className="flex items-center space-x-8">
-          {sponsors.map((sponsor, index) => (
-            <div
-              key={sponsor.id}
-              className={`flex-shrink-0 transition-opacity duration-500 ${
-                index === currentIndex ? 'opacity-100 scale-100' : 'opacity-50 scale-95'
-              }`}
-              style={{ display: index === currentIndex ? 'block' : 'none' }}
+    <div className={`relative w-full overflow-hidden rounded-lg ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100/50'} py-2`}>
+      <div className="flex w-fit animate-marquee">
+        {marqueeSponsors.map((sponsor, index) => (
+          <div
+            key={`${sponsor.id}-${index}`}
+            className="flex-shrink-0 px-4"
+          >
+            <a
+              href={sponsor.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-40 h-24"
             >
-              <a
-                href={sponsor.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center"
-              >
+              <div className="relative w-full h-full overflow-hidden rounded-lg border border-border bg-card">
                 <Image
                   src={sponsor.image}
                   alt={sponsor.name}
-                  width={100}
-                  height={64}
-                  className="h-16 object-contain rounded-lg"
+                  fill
+                  unoptimized
+                  className="object-contain bg-transparent"
                 />
-              </a>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Indicators */}
-      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-2">
-        {sponsors.map((_, index) => (
-          <button
-            key={index}
-            className={`w-2 h-2 rounded-full ${
-              index === currentIndex
-                ? theme === 'dark'
-                  ? 'bg-white'
-                  : 'bg-gray-900'
-                : theme === 'dark'
-                  ? 'bg-gray-600'
-                  : 'bg-gray-300'
-            }`}
-            onClick={() => setCurrentIndex(index)}
-            aria-label={`Go to sponsor ${index + 1}`}
-          />
+              </div>
+            </a>
+          </div>
         ))}
       </div>
     </div>
