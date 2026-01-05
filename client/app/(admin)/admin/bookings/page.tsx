@@ -106,7 +106,7 @@ export default function BookingsPage() {
         ]);
         setVenues(venuesRes.data);
         const sortedBranches = Array.isArray(branchesRes)
-          ? [...branchesRes].sort((a, b) => a.name.trim().localeCompare(b.name.trim(), undefined, { sensitivity: 'base' }))
+          ? [...branchesRes].sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.name.trim().localeCompare(b.name.trim(), undefined, { sensitivity: 'base' }))
           : [];
         setBranches(sortedBranches);
       } catch (e) {

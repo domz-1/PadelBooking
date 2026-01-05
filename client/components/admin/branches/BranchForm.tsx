@@ -44,6 +44,7 @@ export function BranchForm({
       location: "",
       description: "",
       isActive: true,
+      order: 0,
     },
   });
 
@@ -117,6 +118,28 @@ export function BranchForm({
                   {...field}
                 />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="order"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Display Order</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
+              </FormControl>
+              <FormDescription>
+                Lower numbers appear first.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

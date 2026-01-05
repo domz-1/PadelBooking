@@ -39,6 +39,7 @@ const venueSchema = z.object({
     description: z.string().optional(),
     amenities: z.string().optional(),
     branchId: z.string().optional(), // Select value returns string usually, we'll coerce on submit
+    order: z.coerce.number().optional().default(0),
 })
 
 type VenueFormValues = z.infer<typeof venueSchema>
@@ -83,6 +84,7 @@ export function VenueForm({ initialData, isEditing = false }: VenueFormProps) {
             contactPhone: "",
             description: "",
             amenities: "",
+            order: 0,
         },
     })
 
@@ -242,6 +244,21 @@ export function VenueForm({ initialData, isEditing = false }: VenueFormProps) {
                             <FormControl>
                                 <Input placeholder="Wifi, Parking, Showers" {...field} />
                             </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                <FormField
+                    control={form.control}
+                    name="order"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Display Order</FormLabel>
+                            <FormControl>
+                                <Input type="number" placeholder="0" {...field} />
+                            </FormControl>
+                            <FormDescription>Lower numbers appear first.</FormDescription>
                             <FormMessage />
                         </FormItem>
                     )}

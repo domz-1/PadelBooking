@@ -44,6 +44,10 @@ const Branch = sequelize.define('Branch', {
     isActive: {
         type: DataTypes.BOOLEAN,
         defaultValue: true
+    },
+    order: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
     }
 }, {
     timestamps: true

@@ -1,4 +1,5 @@
 const Venue = require('./venue.model');
+const Branch = require('../branches/branch.model');
 const { Op } = require('sequelize');
 
 class VenueService {
@@ -7,7 +8,9 @@ class VenueService {
     }
 
     async getVenueById(id) {
-        return await Venue.findByPk(id);
+        return await Venue.findByPk(id, {
+            include: [{ model: Branch }]
+        });
     }
 
     async getAllVenues(options = {}) {
@@ -26,6 +29,7 @@ class VenueService {
 
         return await Venue.findAndCountAll({
             where,
+            include: [{ model: Branch }],
             limit,
             offset
         });

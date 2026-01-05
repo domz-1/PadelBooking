@@ -57,6 +57,10 @@ const Venue = sequelize.define('Venue', {
             model: 'Branches',
             key: 'id'
         }
+    },
+    order: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
     }
 }, {
     timestamps: true

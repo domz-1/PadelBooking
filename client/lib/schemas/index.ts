@@ -37,6 +37,7 @@ export const BranchSchema = z.object({
     location: z.string().optional(),
     description: z.string().optional(),
     isActive: z.boolean().optional(),
+    order: z.number().optional(),
     createdAt: z.string().optional(),
     Venues: z.array(z.any()).optional(),
 });
@@ -55,6 +56,7 @@ export const VenueSchema = z.object({
     images: z.array(z.string()).optional(),
     amenities: z.array(z.string()).optional(),
     branchId: z.number().optional(),
+    order: z.number().optional(),
     Branch: BranchSchema.optional(),
 });
 

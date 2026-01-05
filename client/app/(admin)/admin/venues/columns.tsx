@@ -52,13 +52,7 @@ export const columns: ColumnDef<Venue>[] = [
       return <span className="font-mono">{formatted}</span>;
     },
   },
-  {
-    accessorKey: "courts",
-    header: "Courts",
-    cell: ({ row }) => (
-      <Badge variant="outline">{row.getValue("courts") || 0} Courts</Badge>
-    ),
-  },
+
   {
     id: "actions",
     cell: ({ row }) => <VenueActions venue={row.original} />,

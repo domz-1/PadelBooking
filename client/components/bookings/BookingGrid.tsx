@@ -141,13 +141,29 @@ export default function BookingGrid({
       result = venues.filter((v) => v.branchId === localSelectedBranchId);
     }
     return [...result].sort((a, b) => {
-      // First sort by branchId (with fallback to 0 for safety)
-      const aBranch = a.branchId ?? 0;
-      const bBranch = b.branchId ?? 0;
-      if (aBranch !== bBranch) {
-        return aBranch - bBranch;
+      // First group by branch to ensure separators work correctly
+      // Use branch order if available, otherwise branchId
+      const aBranchOrder = a.Branch?.order ?? 0;
+      const bBranchOrder = b.Branch?.order ?? 0;
+      if (aBranchOrder !== bBranchOrder) {
+        return aBranchOrder - bBranchOrder;
       }
-      // Then sort by name
+
+      // If branch orders are same, use branchId as stable fallback
+      const aBranchId = a.branchId ?? 0;
+      const bBranchId = b.branchId ?? 0;
+      if (aBranchId !== bBranchId) {
+        return aBranchId - bBranchId;
+      }
+
+      // Then sort by venue order within the branch
+      const aOrder = a.order ?? 0;
+      const bOrder = b.order ?? 0;
+      if (aOrder !== bOrder) {
+        return aOrder - bOrder;
+      }
+
+      // Finally sort by name
       return a.name.trim().localeCompare(b.name.trim(), undefined, { sensitivity: 'base' });
     });
   }, [venues, localSelectedBranchId]);
@@ -415,7 +431,7 @@ export default function BookingGrid({
                                 }}
                               >
                                 {waitlisted && (
-                                  <div className="absolute top-1 right-1 z-30">
+                                  <div className="absolute bottom-1 right-1 z-30">
                                     <Badge className="bg-orange-500 hover:bg-orange-600 text-[9px] px-1.5 h-4.5 border-white shadow-sm animate-pulse">
                                       My Waitlist
                                     </Badge>
@@ -429,11 +445,10 @@ export default function BookingGrid({
                                       <Shield className="w-3.5 h-3.5" />
                                     )}
                                     {(isOwn || isAdmin) && (
-                                      <span className="whitespace-normal text-wrap wrap-break-word text-center max-w-full">
+                                      <span className="whitespace-normal text-wrap wrap-break-word text-start max-w-full">
                                         {booking.User?.name || "Booked"}
                                       </span>
                                     )}
-                                    {!isOwn && !isAdmin && <span>Reserved</span>}
                                   </div>
                                 </div>
 

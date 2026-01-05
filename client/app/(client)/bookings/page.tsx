@@ -87,7 +87,7 @@ export default function BookingsPage() {
           branchData = branchesRes.data.data;
         }
         setBranches([...branchData].sort((a, b) =>
-          a.name.trim().localeCompare(b.name.trim(), undefined, { sensitivity: 'base' })
+          (a.order ?? 0) - (b.order ?? 0) || a.name.trim().localeCompare(b.name.trim(), undefined, { sensitivity: 'base' })
         ));
       }
     } catch (error) {
