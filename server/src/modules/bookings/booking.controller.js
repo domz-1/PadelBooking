@@ -49,12 +49,18 @@ exports.getBooking = async (req, res, next) => {
 
 exports.createBooking = async (req, res, next) => {
     try {
-        const booking = await bookingService.createBooking(req.body, req.user);
+        const result = await bookingService.createBooking(req.body, req.user);
 
-        // Notify all clients about new booking
-        req.app.get('io').emit('bookingUpdate', { type: 'create', data: booking });
+        // Notify all clients about new booking(s)
+        if (Array.isArray(result)) {
+            result.forEach(b => {
+                req.app.get('io').emit('bookingUpdate', { type: 'create', data: b });
+            });
+        } else {
+            req.app.get('io').emit('bookingUpdate', { type: 'create', data: result });
+        }
 
-        res.status(201).json({ success: true, data: booking });
+        res.status(201).json({ success: true, data: result });
     } catch (error) {
         console.error('Create Booking Error:', error);
         next(error);

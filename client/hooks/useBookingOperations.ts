@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { adminBookingService } from "@/lib/services/admin/bookings.service";
 import { toast } from "sonner";
 import { type Booking, type WaitlistEntry } from "@/lib/schemas";
@@ -15,7 +15,7 @@ export type CreateBookingPayload = Partial<Booking> & {
 export function useBookingOperations() {
   const [loading, setLoading] = useState(false);
 
-  const createBooking = async (
+  const createBooking = useCallback(async (
     data: CreateBookingPayload,
     onSuccess?: () => void,
   ) => {
@@ -34,9 +34,9 @@ export function useBookingOperations() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const updateBooking = async (
+  const updateBooking = useCallback(async (
     id: number,
     data: Partial<Booking> & { seriesOption?: string },
     onSuccess?: () => void,
@@ -56,9 +56,9 @@ export function useBookingOperations() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const deleteBooking = async (
+  const deleteBooking = useCallback(async (
     id: number,
     seriesOption: string = "single",
     onSuccess?: () => void,
@@ -78,10 +78,10 @@ export function useBookingOperations() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
-  const fetchWaitlist = async (params: {
+  const fetchWaitlist = useCallback(async (params: {
     venueId: number;
     date: string;
     startTime: string;
@@ -93,9 +93,9 @@ export function useBookingOperations() {
     } catch (error) {
       console.error("Failed to fetch waitlist", error);
     }
-  };
+  }, []);
 
-  const joinWaitlist = async (
+  const joinWaitlist = useCallback(async (
     data: {
       userId: number;
       venueId: number;
@@ -120,9 +120,9 @@ export function useBookingOperations() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const deleteWaitlistEntry = async (id: number, onSuccess?: () => void) => {
+  const deleteWaitlistEntry = useCallback(async (id: number, onSuccess?: () => void) => {
     try {
       await adminBookingService.deleteWaitlistEntry(id);
       toast.success("User removed from waitlist");
@@ -131,7 +131,7 @@ export function useBookingOperations() {
     } catch {
       toast.error("Failed to remove user");
     }
-  };
+  }, []);
 
   return {
     loading,

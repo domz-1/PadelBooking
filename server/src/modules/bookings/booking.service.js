@@ -136,7 +136,7 @@ class BookingService {
                 results.push(booking);
             }
 
-            return results[0]; // Return the first booking as reference
+            return results; // Return all created bookings
         }
 
         return await this._internalCreateSingleBooking(bookingData, user);
@@ -178,7 +178,7 @@ class BookingService {
         }
 
         // Determine status string: if statusId is provided, get its name; otherwise use default
-        let status = bookingData.type === 'academy' ? 'pending-coach' : 'confirmed';
+        let status = bookingData.type === 'academy' ? 'pending-coach' : 'pending';
         let statusId = bookingData.statusId;
 
         if (statusId) {
@@ -242,7 +242,7 @@ class BookingService {
             console.error('Error preparing email', err);
         }
 
-        return booking;
+        return await this.getBookingById(booking.id);
     }
 
 
@@ -444,7 +444,7 @@ class BookingService {
             seriesOption: seriesOption
         }, user);
 
-        return booking;
+        return await this.getBookingById(id);
     }
 
     async deleteBooking(id, user, seriesOption = 'single') {
@@ -545,7 +545,7 @@ class BookingService {
             }
         });
 
-        return booking;
+        return await this.getBookingById(bookingId);
     }
 
     async joinOpenMatch(bookingId, userId) {
@@ -584,7 +584,7 @@ class BookingService {
             userId
         });
 
-        return booking;
+        return await this.getBookingById(bookingId);
     }
 
     async leaveOpenMatch(bookingId, userId) {
@@ -618,7 +618,7 @@ class BookingService {
             userId
         });
 
-        return booking;
+        return await this.getBookingById(bookingId);
     }
 
     async getOpenMatches(date) {

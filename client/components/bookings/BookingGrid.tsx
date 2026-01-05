@@ -411,41 +411,7 @@ export default function BookingGrid({
                                 </span>
                               )}
 
-                              {canBook && (
-                                <>
-                                  {getWaitlistEntry(waitlistEntries, venue.id, hour, date) ? (
-                                    <button
-                                      className="mt-2 text-[10px] flex items-center gap-1 text-red-600 hover:underline font-medium"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSlotInfo({
-                                          venueId: venue.id,
-                                          time: formatTimeForValue(hour),
-                                        });
-                                        setModalOpen("waitlist", true);
-                                      }}
-                                    >
-                                      <CalendarPlus className="w-3 h-3" />
-                                      Leave Waitlist
-                                    </button>
-                                  ) : (
-                                    <button
-                                      className="mt-2 text-[10px] flex items-center gap-1 text-orange-600 hover:underline"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSlotInfo({
-                                          venueId: venue.id,
-                                          time: formatTimeForValue(hour),
-                                        });
-                                        setModalOpen("waitlist", true);
-                                      }}
-                                    >
-                                      <CalendarPlus className="w-3 h-3" />
-                                      Join Waitlist
-                                    </button>
-                                  )}
-                                </>
-                              )}
+                              {/* Removed Join Waitlist from free slots as per requirement */}
                             </div>
                           )}
                         </div>
