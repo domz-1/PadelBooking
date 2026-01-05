@@ -63,30 +63,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         // Calculate enhanced color palette with better contrast
         const themeColor = data.themeColor || "#4CAF50"
         
-        // Function to calculate luminance for contrast
-        const getLuminance = (hex: string) => {
-            const r = parseInt(hex.slice(1, 3), 16) / 255
-            const g = parseInt(hex.slice(3, 5), 16) / 255
-            const b = parseInt(hex.slice(5, 7), 16) / 255
-            
-            const a = [r, g, b].map(v => v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4))
-            return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722
-        }
-
-        // Function to ensure better contrast
-        const ensureContrast = (hex: string, bgHex: string) => {
-            const bgLum = getLuminance(bgHex)
-            const fgLum = getLuminance(hex)
-            const contrastRatio = (Math.max(bgLum, fgLum) + 0.05) / (Math.min(bgLum, fgLum) + 0.05)
-            
-            if (contrastRatio < 4.5) {
-                // Adjust color for better contrast
-                const isDarkBg = bgLum < 0.5
-                return isDarkBg ? '#ffffff' : '#000000'
-            }
-            return hex
-        }
-
         // Enhanced color palette with better contrast
         document.documentElement.style.setProperty('--brand-color', themeColor)
         document.documentElement.style.setProperty('--primary', themeColor)

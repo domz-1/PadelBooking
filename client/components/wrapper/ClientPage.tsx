@@ -30,4 +30,4 @@ export function ClientPage({
     );
 }
 
-export { SponsorCarousel } from "../SponsorCarousel";
+export { SponsorCarousel };

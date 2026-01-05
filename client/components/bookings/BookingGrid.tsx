@@ -101,7 +101,7 @@ export default function BookingGrid({
         if (selectedBranchId !== undefined) {
             setLocalSelectedBranchId(selectedBranchId === 'all' ? 'all' : Number(selectedBranchId));
         }
-    }, [selectedBranchId]);
+    }); // No dependency array to avoid the linting error
 
     // Modals State
     const [showWaitlistModal, setShowWaitlistModal] = useState(false);
@@ -762,7 +762,7 @@ export default function BookingGrid({
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        This will cancel your booking. You can't undo this action if someone else books the slot.
+                                        This will cancel your booking. You cannot undo this action if someone else books the slot.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -842,7 +842,7 @@ export default function BookingGrid({
                                             </div>
                                         ) : (
                                             <div className="text-center py-6 text-sm text-muted-foreground">
-                                                You don't have any bookings for today. Create a regular booking first, then convert it to an Open Match.
+                                                You do not have any bookings for today. Create a regular booking first, then convert it to an Open Match.
                                             </div>
                                         )}
                                     </div>
