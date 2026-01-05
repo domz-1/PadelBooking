@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { DatePicker } from "@/components/ui/date-picker";
 import type { Venue, Booking, Branch, WaitlistEntry } from "@/lib/schemas";
@@ -154,6 +154,22 @@ export default function BookingGrid({
 
   const hours = Array.from({ length: 24 }, (_, i) => i); // 12 AM to 11 PM
 
+  const gridTemplate = useMemo(() => {
+    if (localSelectedBranchId !== "all") {
+      return `80px repeat(${filteredVenues.length}, 1fr)`;
+    }
+
+    const template = ["80px"];
+    filteredVenues.forEach((v, i) => {
+      template.push("1fr");
+      const next = filteredVenues[i + 1];
+      if (next && v.branchId !== next.branchId) {
+        template.push("16px"); // Gap size
+      }
+    });
+    return template.join(" ");
+  }, [filteredVenues, localSelectedBranchId]);
+
   const [showEmptySlots, setShowEmptySlots] = useState(false);
   const [showWaitlistBoard, setShowWaitlistBoard] = useState(false);
 
@@ -241,38 +257,42 @@ export default function BookingGrid({
                 <div
                   className="grid gap-2 mb-2 sticky top-0 z-30 bg-background/95 backdrop-blur py-2"
                   style={{
-                    gridTemplateColumns: `80px repeat(${filteredVenues.length}, 1fr)`,
+                    gridTemplateColumns: gridTemplate,
                   }}
                 >
                   <div className="h-10 flex items-center justify-center font-semibold text-gray-500 bg-gray-50 dark:bg-gray-800 rounded text-xs gap-1">
                     <Clock className="w-3 h-3" />
                     Time
                   </div>
-                  {filteredVenues.map((venue) => {
+                  {filteredVenues.map((venue, index) => {
                     const branchColorClass = venue.branchId
                       ? BRANCH_COLORS[venue.branchId % BRANCH_COLORS.length]
                       : "bg-muted/50";
+                    const nextVenue = filteredVenues[index + 1];
+                    const isLastInBranch = localSelectedBranchId === "all" && nextVenue && venue.branchId !== nextVenue.branchId;
 
                     return (
-                      <div
-                        key={venue.id}
-                        onClick={() => setSelectedVenue(venue)}
-                        className={cn(
-                          "h-14 flex flex-col items-center justify-center font-semibold text-sm rounded cursor-pointer gap-0.5 px-2 border border-transparent hover:border-border transition-all text-center",
-                          branchColorClass,
-                          "hover:bg-muted"
-                        )}
-                      >
-                        {venue.Branch && (
-                          <span className="text-[10px] text-muted-foreground uppercase tracking-wide whitespace-normal text-wrap break-words max-w-full">
-                            {venue.Branch.name}
-                          </span>
-                        )}
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-brand-500" />
-                          <span className="whitespace-normal text-wrap break-words text-center max-w-full">{venue.name}</span>
+                      <React.Fragment key={venue.id}>
+                        <div
+                          onClick={() => setSelectedVenue(venue)}
+                          className={cn(
+                            "h-14 flex flex-col items-center justify-center font-semibold text-sm rounded cursor-pointer gap-0.5 px-2 border border-transparent hover:border-border transition-all text-center",
+                            branchColorClass,
+                            "hover:bg-muted"
+                          )}
+                        >
+                          {venue.Branch && (
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wide whitespace-normal text-wrap break-words max-w-full">
+                              {venue.Branch.name}
+                            </span>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-brand-500" />
+                            <span className="whitespace-normal text-wrap break-words text-center max-w-full">{venue.name}</span>
+                          </div>
                         </div>
-                      </div>
+                        {isLastInBranch && <div className="h-14" />}
+                      </React.Fragment>
                     );
                   })}
                 </div>
@@ -283,7 +303,7 @@ export default function BookingGrid({
                     key={hour}
                     className="grid gap-2 mb-2"
                     style={{
-                      gridTemplateColumns: `80px repeat(${filteredVenues.length}, 1fr)`,
+                      gridTemplateColumns: gridTemplate,
                     }}
                   >
                     {/* Time Cell */}
@@ -291,8 +311,10 @@ export default function BookingGrid({
                       {formatHour(hour)}
                     </div>
 
-                    {/* Venue Cells */}
-                    {filteredVenues.map((venue) => {
+                    {filteredVenues.map((venue, index) => {
+                      const nextVenue = filteredVenues[index + 1];
+                      const isLastInBranch = localSelectedBranchId === "all" && nextVenue && venue.branchId !== nextVenue.branchId;
+
                       const booking = getBookingByVenueAndHour(
                         bookings,
                         venue.id,
@@ -310,170 +332,172 @@ export default function BookingGrid({
                       );
 
                       return (
-                        <div
-                          key={`${venue.id}-${hour}`}
-                          className={cn(
-                            "h-24 relative rounded-lg border transition-all duration-200",
-                            !isBooked &&
-                            "bg-background hover:bg-accent/40 cursor-pointer border-dashed border-border/60 hover:border-primary/50 group flex flex-col items-center justify-center",
-                            isBooked && "border-none bg-transparent",
-                            waitlisted &&
-                            "border-orange-400 border-2 bg-orange-50/10"
-                          )}
-                          onClick={() => {
-                            if (!isBooked) {
-                              if (isAdmin) {
-                                setAdminCreateSlot({
-                                  venueId: venue.id,
-                                  venueName: venue.name,
-                                  time: formatTimeForValue(hour),
-                                });
-                                setModalOpen("adminCreate", true);
-                              } else if (canBook) {
-                                onCreateBooking(
-                                  venue.id,
-                                  formatTimeForValue(hour)
-                                );
-                              } else if (!isAuthenticated) {
-                                router.push("/auth/login");
-                              }
-                            }
-                          }}
-                        >
-                          {/* Booking Slot */}
-                          {isBooked && isStart && (
-                            <div
-                              className={cn(
-                                "absolute inset-0 z-20 rounded-md p-2 text-xs flex flex-col gap-1 shadow-sm border animate-in fade-in zoom-in-95 overflow-hidden transition-transform active:scale-[0.98]",
-                                getBookingStatusStyle(booking, isOwn, isAdmin)
-                                  .className,
-                                "cursor-pointer ring-offset-1",
-                                isOwn && "ring-2 ring-primary"
-                              )}
-                              style={{
-                                ...getBookingStatusStyle(
-                                  booking,
-                                  isOwn,
-                                  isAdmin
-                                ).style,
-                                height: `calc(100% * ${parseInt(booking.endTime.split(":")[0]) -
-                                  parseInt(booking.startTime.split(":")[0])
-                                  } + ${(parseInt(booking.endTime.split(":")[0]) -
-                                    parseInt(booking.startTime.split(":")[0]) -
-                                    1) *
-                                  0.5
-                                  }rem)`,
-                              }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (!isAuthenticated) {
-                                  router.push("/auth/login");
-                                  return;
-                                }
-                                if (isOwn || isAdmin) {
-                                  setSelectedBooking(booking);
-                                  if (isAdmin) {
-                                    setModalOpen("management", true);
-                                  } else {
-                                    setModalOpen("management", true);
-                                  }
-                                } else if (booking.isOpenMatch) {
-                                  if (isUserInOpenMatch(booking, user)) {
-                                    onLeaveOpenMatch?.(booking.id as number);
-                                  } else {
-                                    onJoinOpenMatch?.(booking.id as number);
-                                  }
-                                } else {
-                                  setSlotInfo({
+                        <React.Fragment key={`${venue.id}-${hour}`}>
+                          <div
+                            className={cn(
+                              "h-24 relative rounded-lg border transition-all duration-200",
+                              !isBooked &&
+                              "bg-background hover:bg-accent/40 cursor-pointer border-dashed border-border/60 hover:border-primary/50 group flex flex-col items-center justify-center",
+                              isBooked && "border-none bg-transparent",
+                              waitlisted &&
+                              "border-orange-400 border-2 bg-orange-50/10"
+                            )}
+                            onClick={() => {
+                              if (!isBooked) {
+                                if (isAdmin) {
+                                  setAdminCreateSlot({
                                     venueId: venue.id,
+                                    venueName: venue.name,
                                     time: formatTimeForValue(hour),
                                   });
-                                  setModalOpen("waitlist", true);
+                                  setModalOpen("adminCreate", true);
+                                } else if (canBook) {
+                                  onCreateBooking(
+                                    venue.id,
+                                    formatTimeForValue(hour)
+                                  );
+                                } else if (!isAuthenticated) {
+                                  router.push("/auth/login");
                                 }
-                              }}
-                            >
-                              {waitlisted && (
-                                <div className="absolute top-1 right-1 z-30">
-                                  <Badge className="bg-orange-500 hover:bg-orange-600 text-[9px] px-1.5 h-4.5 border-white shadow-sm animate-pulse">
-                                    My Waitlist
-                                  </Badge>
+                              }
+                            }}
+                          >
+                            {/* Booking Slot */}
+                            {isBooked && isStart && (
+                              <div
+                                className={cn(
+                                  "absolute inset-0 z-20 rounded-md p-2 text-xs flex flex-col gap-1 shadow-sm border animate-in fade-in zoom-in-95 overflow-hidden transition-transform active:scale-[0.98]",
+                                  getBookingStatusStyle(booking, isOwn, isAdmin)
+                                    .className,
+                                  "cursor-pointer ring-offset-1",
+                                  isOwn && "ring-2 ring-primary"
+                                )}
+                                style={{
+                                  ...getBookingStatusStyle(
+                                    booking,
+                                    isOwn,
+                                    isAdmin
+                                  ).style,
+                                  height: `calc(100% * ${parseInt(booking.endTime.split(":")[0]) -
+                                    parseInt(booking.startTime.split(":")[0])
+                                    } + ${(parseInt(booking.endTime.split(":")[0]) -
+                                      parseInt(booking.startTime.split(":")[0]) -
+                                      1) *
+                                    0.5
+                                    }rem)`,
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!isAuthenticated) {
+                                    router.push("/auth/login");
+                                    return;
+                                  }
+                                  if (isOwn || isAdmin) {
+                                    setSelectedBooking(booking);
+                                    if (isAdmin) {
+                                      setModalOpen("management", true);
+                                    } else {
+                                      setModalOpen("management", true);
+                                    }
+                                  } else if (booking.isOpenMatch) {
+                                    if (isUserInOpenMatch(booking, user)) {
+                                      onLeaveOpenMatch?.(booking.id as number);
+                                    } else {
+                                      onJoinOpenMatch?.(booking.id as number);
+                                    }
+                                  } else {
+                                    setSlotInfo({
+                                      venueId: venue.id,
+                                      time: formatTimeForValue(hour),
+                                    });
+                                    setModalOpen("waitlist", true);
+                                  }
+                                }}
+                              >
+                                {waitlisted && (
+                                  <div className="absolute top-1 right-1 z-30">
+                                    <Badge className="bg-orange-500 hover:bg-orange-600 text-[9px] px-1.5 h-4.5 border-white shadow-sm animate-pulse">
+                                      My Waitlist
+                                    </Badge>
+                                  </div>
+                                )}
+                                <div className="font-bold whitespace-normal text-wrap wrap-break-word flex items-center justify-between gap-1.5">
+                                  <div className="flex items-center gap-1">
+                                    {isOwn ? (
+                                      <User className="w-3.5 h-3.5" />
+                                    ) : (
+                                      <Shield className="w-3.5 h-3.5" />
+                                    )}
+                                    {(isOwn || isAdmin) && (
+                                      <span className="whitespace-normal text-wrap wrap-break-word text-center max-w-full">
+                                        {booking.User?.name || "Booked"}
+                                      </span>
+                                    )}
+                                    {!isOwn && !isAdmin && <span>Reserved</span>}
+                                  </div>
                                 </div>
-                              )}
-                              <div className="font-bold whitespace-normal text-wrap wrap-break-word flex items-center justify-between gap-1.5">
-                                <div className="flex items-center gap-1">
-                                  {isOwn ? (
-                                    <User className="w-3.5 h-3.5" />
-                                  ) : (
-                                    <Shield className="w-3.5 h-3.5" />
-                                  )}
-                                  {(isOwn || isAdmin) && (
-                                    <span className="whitespace-normal text-wrap wrap-break-word text-center max-w-full">
-                                      {booking.User?.name || "Booked"}
-                                    </span>
-                                  )}
-                                  {!isOwn && !isAdmin && <span>Reserved</span>}
-                                </div>
-                              </div>
 
-                              {(isOwn || isAdmin) && (
-                                <div className="flex justify-between items-center opacity-90 mt-auto">
-                                  <span className="whitespace-normal text-wrap wrap-break-word text-[9px] uppercase tracking-wider font-bold">
-                                    {booking.BookingStatus?.name ||
-                                      booking.status ||
-                                      (booking.type === "academy"
-                                        ? "Academy"
-                                        : "Standard")}
-                                  </span>
-                                  {booking.recurrenceId && (
+                                {(isOwn || isAdmin) && (
+                                  <div className="flex justify-between items-center opacity-90 mt-auto">
                                     <span className="whitespace-normal text-wrap wrap-break-word text-[9px] uppercase tracking-wider font-bold">
-                                      <Repeat />
+                                      {booking.BookingStatus?.name ||
+                                        booking.status ||
+                                        (booking.type === "academy"
+                                          ? "Academy"
+                                          : "Standard")}
                                     </span>
-                                  )}
-                                </div>
-                              )}
-                              {booking.isOpenMatch && (
-                                <div className="absolute bottom-1 left-1 right-1 flex justify-between items-center text-[9px]">
-                                  <Badge className="bg-green-600 hover:bg-green-700 text-white h-4 px-1.5 flex items-center gap-1">
-                                    <Users className="w-2.5 h-2.5" />
-                                    Open Match
-                                  </Badge>
-                                  <span className="text-green-700 font-bold">
-                                    {getOpenMatchPlayerCount(booking)}/
-                                    {booking.openMatchMaxPlayers || 4}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          )}
+                                    {booking.recurrenceId && (
+                                      <span className="whitespace-normal text-wrap wrap-break-word text-[9px] uppercase tracking-wider font-bold">
+                                        <Repeat />
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                {booking.isOpenMatch && (
+                                  <div className="absolute bottom-1 left-1 right-1 flex justify-between items-center text-[9px]">
+                                    <Badge className="bg-green-600 hover:bg-green-700 text-white h-4 px-1.5 flex items-center gap-1">
+                                      <Users className="w-2.5 h-2.5" />
+                                      Open Match
+                                    </Badge>
+                                    <span className="text-green-700 font-bold">
+                                      {getOpenMatchPlayerCount(booking)}/
+                                      {booking.openMatchMaxPlayers || 4}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
 
-                          {!isBooked && (
-                            <div className="w-full h-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              {waitlisted && (
-                                <div className="absolute top-1 right-1 z-30 pointer-events-none">
-                                  <Badge className="bg-orange-500 text-[9px] px-1.5 h-4.5 border-white shadow-sm">
-                                    My Waitlist
-                                  </Badge>
-                                </div>
-                              )}
-                              {canBook ? (
-                                <>
-                                  <span className="text-xs text-primary font-bold flex items-center gap-1 mb-1">
-                                    <Plus className="w-3 h-3" /> Book
+                            {!isBooked && (
+                              <div className="w-full h-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                {waitlisted && (
+                                  <div className="absolute top-1 right-1 z-30 pointer-events-none">
+                                    <Badge className="bg-orange-500 text-[9px] px-1.5 h-4.5 border-white shadow-sm">
+                                      My Waitlist
+                                    </Badge>
+                                  </div>
+                                )}
+                                {canBook ? (
+                                  <>
+                                    <span className="text-xs text-primary font-bold flex items-center gap-1 mb-1">
+                                      <Plus className="w-3 h-3" /> Book
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground">
+                                      ${venue.pricePerHour}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+                                    <Plus className="w-3 h-3" /> Available
                                   </span>
-                                  <span className="text-[10px] text-muted-foreground">
-                                    ${venue.pricePerHour}
-                                  </span>
-                                </>
-                              ) : (
-                                <span className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
-                                  <Plus className="w-3 h-3" /> Available
-                                </span>
-                              )}
+                                )}
 
-                              {/* Removed Join Waitlist from free slots as per requirement */}
-                            </div>
-                          )}
-                        </div>
+                                {/* Removed Join Waitlist from free slots as per requirement */}
+                              </div>
+                            )}
+                          </div>
+                          {isLastInBranch && <div className="h-24" />}
+                        </React.Fragment>
                       );
                     })}
                   </div>
