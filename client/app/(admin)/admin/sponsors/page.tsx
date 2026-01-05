@@ -4,13 +4,7 @@ import { useEffect, useState } from "react";
 import { sponsorService } from "@/lib/services/sponsor.service";
 import { Sponsor } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -23,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, Eye, Edit } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import Image from "next/image";
 
 export default function AdminSponsorsPage() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
@@ -46,7 +41,7 @@ export default function AdminSponsorsPage() {
     try {
       const res = await sponsorService.getSponsors();
       setSponsors(res.data);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load sponsors");
     } finally {
       setLoading(false);
@@ -72,7 +67,7 @@ export default function AdminSponsorsPage() {
       setLink("");
       setFile(null);
       loadSponsors();
-    } catch (error) {
+    } catch {
       toast.error("Failed to add sponsor");
     }
   };
@@ -82,7 +77,7 @@ export default function AdminSponsorsPage() {
       await sponsorService.deleteSponsor(id);
       toast.success("Sponsor deleted");
       loadSponsors();
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete sponsor");
     }
   };
@@ -92,7 +87,7 @@ export default function AdminSponsorsPage() {
       const res = await sponsorService.getSponsor(sponsor.id);
       setSelectedSponsor(res.data);
       setViewDialogOpen(true);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load sponsor details");
     }
   };
@@ -127,7 +122,7 @@ export default function AdminSponsorsPage() {
       setEditLink("");
       setEditFile(null);
       loadSponsors();
-    } catch (error) {
+    } catch {
       toast.error("Failed to update sponsor");
     }
   };
@@ -152,9 +147,11 @@ export default function AdminSponsorsPage() {
         {sponsors.map((sponsor) => (
           <Card key={sponsor.id}>
             <div className="aspect-video w-full overflow-hidden bg-gray-100 flex items-center justify-center">
-              <img
+              <Image
                 src={sponsor.image}
                 alt={sponsor.name}
+                width={400}
+                height={225}
                 className="object-cover h-full w-full"
               />
             </div>
@@ -245,9 +242,11 @@ export default function AdminSponsorsPage() {
             <div className="space-y-6 py-4">
               <div className="flex justify-center">
                 <div className="w-48 h-48 overflow-hidden bg-gray-100 rounded-lg border flex items-center justify-center">
-                  <img
+                  <Image
                     src={selectedSponsor.image}
                     alt={selectedSponsor.name}
+                    width={192}
+                    height={192}
                     className="object-contain h-full w-full max-w-full max-h-full"
                   />
                 </div>

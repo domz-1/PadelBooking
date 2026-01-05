@@ -84,8 +84,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
         const adjustBrightness = (hex: string, percent: number) => {
             const { r, g, b } = hexToRgb(hex)
-            const newR = Math.min(255, Math.max(0, Math.round(r + (r * percent))))
-            const newG = Math.min(255, Math.max(0, Math.round(g + (g * percent))))
+            const newR = Math.min(255, Math.max(0, Math.round(r + (r * percent)))))
+            const newG = Math.min(255, Math.max(0, Math.round(g + (g * percent)))))
             const newB = Math.min(255, Math.max(0, Math.round(b + (b * percent))))
             return rgbToHex(newR, newG, newB)
         }
