@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { User, adminUserService } from "@/lib/services/admin/users.service";
 import {
@@ -204,7 +204,7 @@ function BookingsTable({ userId }: { userId: number }) {
   });
   const [totalBookings, setTotalBookings] = useState(0);
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     setLoading(true);
     try {
       const response = await adminBookingService.getAll({
@@ -220,11 +220,11 @@ function BookingsTable({ userId }: { userId: number }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId, pagination.pageIndex, pagination.pageSize]);
 
   useEffect(() => {
     fetchBookings();
-  }, [userId, pagination, fetchBookings]);
+  }, [fetchBookings]);
 
   const userColumns = columns(fetchBookings).filter((col) => col.id !== "user");
 

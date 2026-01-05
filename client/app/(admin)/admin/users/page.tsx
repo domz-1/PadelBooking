@@ -83,13 +83,8 @@ export default function UsersPage() {
           className="w-full sm:w-auto"
           onValueChange={setActiveTab}
         >
-          <TabsList>
-            <TabsTrigger value="all">All Users</TabsTrigger>
-            <TabsTrigger value="normal">Normal Users</TabsTrigger>
-            <TabsTrigger value="guest">Guest Users</TabsTrigger>
-          </TabsList>
         </Tabs>
-        <div className="w-full sm:w-72">
+        <div className="w-full sm:w-full mt-7">
           <Input
             placeholder="Search users..."
             value={searchInput}

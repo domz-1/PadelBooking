@@ -201,6 +201,7 @@ export default function BrandingSettingsPage() {
                     <Image
                       src={logoPreview}
                       alt="Logo preview"
+                      unoptimized
                       width={128}
                       height={128}
                       className="max-w-full max-h-full object-contain"

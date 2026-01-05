@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingSkeleton } from "@/components/ui/booking-skeleton";
 import { ClientPage, SponsorCarousel } from "@/components/wrapper/ClientPage";
 
@@ -39,6 +40,7 @@ export default function BookingsPage() {
   const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBranchId, setSelectedBranchId] = useState<string>("all");
+  const [variant, setVariant] = useState<"sm" | "md" | "lg">("lg");
 
   // Booking Modal State
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -232,11 +234,14 @@ export default function BookingsPage() {
   return (
     <div className="container py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Sponsor Carousel */}
-      <div className="mb-8">
-        <SponsorCarousel />
+      <div className="mb-4 flex flex-col sm:flex-row justify-between items-end gap-4">
+        <div className="w-full sm:w-auto flex-1">
+          <SponsorCarousel />
+        </div>
+
+    
       </div>
 
-      {/* Date Picker moved to BookingGrid */}
       <div className="mb-6"></div>
 
       {loading ? (
@@ -256,6 +261,7 @@ export default function BookingsPage() {
           onLeaveOpenMatch={handleLeaveOpenMatch}
           publicView={!isAuthenticated}
           selectedBranchId={selectedBranchId}
+          // variant={variant}
           onDateChange={(d) => {
             if (d) {
               const newDate = new Date(d);
