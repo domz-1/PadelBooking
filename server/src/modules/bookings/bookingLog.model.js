@@ -27,18 +27,37 @@ const BookingLog = sequelize.define('BookingLog', {
     },
     action: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        comment: 'The action performed on the booking (created, updated, cancelled, confirmed, etc.)'
+    },
+    description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        comment: 'Description of what happened in the booking log'
+    },
+    previousStatus: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Previous status of the booking before the action'
+    },
+    newStatus: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'New status of the booking after the action'
     },
     details: {
         type: DataTypes.JSONB,
-        allowNull: true
+        allowNull: true,
+        comment: 'Additional details about the booking action'
     },
     timestamp: {
         type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        defaultValue: DataTypes.NOW,
+        comment: 'When the booking action occurred'
     }
 }, {
-    timestamps: false // We use our own timestamp field
+    timestamps: false, // We use our own timestamp field
+    tableName: 'booking_logs'
 });
 
 // Associations

@@ -20,6 +20,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { TimePicker } from "@/components/ui/time-picker"
+import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -51,6 +52,7 @@ const bookingFormSchema = z.object({
     type: z.enum(['standard', 'academy']),
     hasOffer: z.boolean(),
     offerValue: z.number().min(0),
+    notes: z.string().optional(),
 })
 
 type BookingFormValues = z.infer<typeof bookingFormSchema>
@@ -99,6 +101,7 @@ export function EditBookingDialog({
             type: (booking.type as any) || "standard",
             hasOffer: !!booking.hasOffer,
             offerValue: Number(booking.offerValue || 0),
+            notes: booking.notes || '',
         },
     })
 
@@ -324,6 +327,24 @@ export function EditBookingDialog({
 
                                 <StatusFields form={form} statuses={statuses} />
                                 <PriceOfferFields form={form} />
+
+                                <FormField
+                                    control={form.control}
+                                    name="notes"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Notes</FormLabel>
+                                            <FormControl>
+                                                <Textarea
+                                                    placeholder="Add any special notes or instructions..."
+                                                    className="min-h-[100px]"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
                                 {booking.recurrenceId && (
                                     <div className="bg-primary/5 border border-primary/10 rounded-lg p-4 mb-4">

@@ -29,6 +29,7 @@ import {
     DialogFooter
 } from "@/components/ui/dialog"
 import { EditBookingDialog } from "@/components/admin/bookings/EditBookingDialog"
+import { BookingLogs } from "@/components/admin/bookings/BookingLogs"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
@@ -44,6 +45,7 @@ interface BookingDetailsModalProps {
 export function BookingDetailsModal({ booking, open, onOpenChange, onSuccess }: BookingDetailsModalProps) {
     const [showEdit, setShowEdit] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+    const [showLogs, setShowLogs] = useState(false)
 
     const {
         loading,
@@ -343,11 +345,31 @@ export function BookingDetailsModal({ booking, open, onOpenChange, onSuccess }: 
                             </div>
                         )}
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="h-8">
-                        Close
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8 flex items-center gap-1"
+                            onClick={() => setShowLogs(true)}
+                        >
+                            <FileText className="w-3 h-3" />
+                            View Logs
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="h-8">
+                            Close
+                        </Button>
+                    </div>
                 </DialogFooter>
             </DialogContent>
+
+            {/* Booking Logs Modal */}
+            {booking && (
+                <BookingLogs
+                    bookingId={booking.id}
+                    open={showLogs}
+                    onOpenChange={setShowLogs}
+                />
+            )}
 
             {/* Edit Booking Dialog */}
             {booking && (

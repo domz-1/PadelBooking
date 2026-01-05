@@ -10,6 +10,34 @@ const Branch = require('../branches/branch.model');
 const { Op } = require('sequelize');
 
 class BookingService {
+    // Helper method to create comprehensive booking logs
+    async _createBookingLog(bookingId, userId, action, details = {}, user = null) {
+        const logData = {
+            bookingId,
+            userId: userId || (user ? user.id : null),
+            action,
+            details: {
+                // Include timestamp in the details for easy reference
+                logTimestamp: new Date().toISOString(),
+                // Include user info if available
+                ...(user && {
+                    userName: user.name,
+                    userEmail: user.email,
+                    userRole: user.role
+                }),
+                // Include the main details
+                ...details
+            }
+        };
+
+        try {
+            await BookingLog.create(logData);
+        } catch (error) {
+            console.error(`Failed to create booking log for action ${action}:`, error);
+            // Don't fail the main operation if logging fails
+        }
+    }
+
     // ... existing methods ...
 
     // ...
@@ -182,17 +210,21 @@ class BookingService {
             openMatchPlayers: isOpenMatch ? [userId] : []
         });
 
-        // Create Log
-        await BookingLog.create({
-            bookingId: booking.id,
-            userId: user.id,
-            action: 'create',
-            details: {
-                status,
-                type: bookingData.type,
-                totalPrice: bookingData.totalPrice
-            }
-        });
+        // Create comprehensive log
+        await this._createBookingLog(booking.id, user.id, 'create', {
+            status,
+            type: bookingData.type,
+            totalPrice: bookingData.totalPrice,
+            date: bookingData.date,
+            startTime: bookingData.startTime,
+            endTime: bookingData.endTime,
+            venueId: bookingData.venueId,
+            isRecurring: !!bookingData.repeat,
+            recurrenceDetails: bookingData.repeat ? {
+                count: bookingData.repeat.count,
+                frequency: bookingData.repeat.frequency
+            } : null
+        }, user);
 
         // Send confirmation email
         try {
@@ -344,6 +376,8 @@ class BookingService {
                             id: { [Op.ne]: b.id },
                             venueId: checkVenueId,
                             date: checkDate,
+                            // Exclude other bookings in the same recurrence series to avoid self-conflicts
+                            recurrenceId: { [Op.ne]: booking.recurrenceId },
                             [Op.and]: [
                                 { startTime: { [Op.lt]: checkEndTime } },
                                 { endTime: { [Op.gt]: checkStartTime } }
@@ -352,30 +386,63 @@ class BookingService {
                     });
 
                     if (conflict) {
-                        throw new Error(`Conflict on ${checkDate}: This slot is already taken for one of the recurring bookings.`);
+                        throw new Error(`Conflict on ${checkDate}: This slot is already taken by another booking.`);
                     }
                 }
 
+                // Create comprehensive update log
+                const changes = Object.keys(updateData).reduce((acc, key) => {
+                    if (updateData[key] !== b[key]) {
+                        acc[key] = {
+                            from: b[key],
+                            to: updateData[key]
+                        };
+                    }
+                    return acc;
+                }, {});
+
                 await b.update(updateData);
-                await BookingLog.create({
-                    bookingId: b.id,
-                    userId: user.id,
-                    action: 'update',
-                    details: { ...updateData, seriesOption: 'upcoming' }
-                });
+                await this._createBookingLog(b.id, user.id, 'update', {
+                    originalData: {
+                        date: b.date,
+                        startTime: b.startTime,
+                        endTime: b.endTime,
+                        status: b.status,
+                        totalPrice: b.totalPrice
+                    },
+                    changes,
+                    updateData,
+                    seriesOption: 'upcoming'
+                }, user);
             }
             return bookingsToUpdate[0];
         }
 
+        // Create comprehensive update log
+        const changes = Object.keys(updateData).reduce((acc, key) => {
+            if (updateData[key] !== booking[key]) {
+                acc[key] = {
+                    from: booking[key],
+                    to: updateData[key]
+                };
+            }
+            return acc;
+        }, {});
+
         await booking.update(updateData);
 
-        // Create Log
-        await BookingLog.create({
-            bookingId: booking.id,
-            userId: user.id,
-            action: 'update',
-            details: updateData
-        });
+        await this._createBookingLog(booking.id, user.id, 'update', {
+            originalData: {
+                date: booking.date,
+                startTime: booking.startTime,
+                endTime: booking.endTime,
+                status: booking.status,
+                totalPrice: booking.totalPrice
+            },
+            changes,
+            updateData,
+            seriesOption: seriesOption
+        }, user);
 
         return booking;
     }
@@ -405,25 +472,24 @@ class BookingService {
             return true;
         }
 
-        return await this._internalDeleteSingleBooking(booking, user);
+        return await this._internalDeleteSingleBooking(booking, user, seriesOption);
     }
 
-    async _internalDeleteSingleBooking(booking, user) {
+    async _internalDeleteSingleBooking(booking, user, seriesOption = 'single') {
         // Store details for waitlist check before deletion
         const { venueId, date, startTime, endTime } = booking;
 
-        try {
-            await BookingLog.create({
-                bookingId: booking.id,
-                userId: user.id,
-                action: 'delete',
-                details: {
-                    venueId, date, startTime, endTime
-                }
-            });
-        } catch (logError) {
-            console.error('Failed to create delete log:', logError);
-        }
+        // Create comprehensive delete log
+        await this._createBookingLog(booking.id, user.id, 'delete', {
+            venueId: booking.venueId,
+            date: booking.date,
+            startTime: booking.startTime,
+            endTime: booking.endTime,
+            status: booking.status,
+            totalPrice: booking.totalPrice,
+            userId: booking.userId,
+            seriesOption: seriesOption
+        }, user);
 
         // 1. Nullify bookingId in Orders
         await Order.update({ bookingId: null }, {
@@ -457,10 +523,26 @@ class BookingService {
         }
 
         // Update booking to Open Match
+        const previousData = {
+            isOpenMatch: booking.isOpenMatch,
+            openMatchMaxPlayers: booking.openMatchMaxPlayers,
+            openMatchPlayers: booking.openMatchPlayers
+        };
+
         await booking.update({
             isOpenMatch: true,
             openMatchMaxPlayers: maxPlayers,
             openMatchPlayers: [booking.userId] // Add owner as first player
+        });
+
+        // Log the conversion
+        await this._createBookingLog(booking.id, userId, 'convert_to_open_match', {
+            previousData,
+            newData: {
+                isOpenMatch: true,
+                openMatchMaxPlayers: maxPlayers,
+                openMatchPlayers: [booking.userId]
+            }
         });
 
         return booking;
@@ -487,10 +569,19 @@ class BookingService {
         }
 
         // Add user to the match
+        const previousPlayers = [...booking.openMatchPlayers];
         const updatedPlayers = [...booking.openMatchPlayers, userId];
 
         await booking.update({
             openMatchPlayers: updatedPlayers
+        });
+
+        // Log the join
+        await this._createBookingLog(booking.id, userId, 'join_open_match', {
+            previousPlayers,
+            updatedPlayers,
+            action: 'added_user',
+            userId
         });
 
         return booking;
@@ -512,10 +603,19 @@ class BookingService {
         }
 
         // Remove user from the match
+        const previousPlayers = [...booking.openMatchPlayers];
         const updatedPlayers = booking.openMatchPlayers.filter(playerId => playerId !== userId);
 
         await booking.update({
             openMatchPlayers: updatedPlayers
+        });
+
+        // Log the leave
+        await this._createBookingLog(booking.id, userId, 'leave_open_match', {
+            previousPlayers,
+            updatedPlayers,
+            action: 'removed_user',
+            userId
         });
 
         return booking;

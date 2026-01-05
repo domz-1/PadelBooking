@@ -41,6 +41,11 @@ export const adminNavItems: NavItem[] = [
         icon: CalendarDays,
     },
     {
+        title: "Booking Logs",
+        href: "/admin/booking-logs",
+        icon: CalendarDays,
+    },
+    {
         title: "Venues",
         href: "/admin/venues",
         icon: MapPin,

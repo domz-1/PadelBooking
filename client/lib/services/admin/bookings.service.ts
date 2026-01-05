@@ -57,5 +57,24 @@ export const adminBookingService = {
     create: async (data: Partial<Booking>) => {
         const response = await adminApi.post<{ success: boolean; data: Booking }>('/bookings', data);
         return response.data;
+    },
+
+    getBookingLogs: async (params?: {
+        page?: string;
+        limit?: string;
+        bookingId?: string;
+        action?: string;
+        startDate?: string;
+        endDate?: string;
+        searchTerm?: string;
+    }) => {
+        const response = await adminApi.get<{
+            success: boolean;
+            data: BookingLog[];
+            count: number;
+            totalPages: number;
+            currentPage: number;
+        }>('/bookings/logs', { params });
+        return response.data;
     }
 };

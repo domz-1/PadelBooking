@@ -143,6 +143,19 @@ export interface ApiListResponse<T> {
     data: T[];
 }
 
+export interface BookingLog {
+    id: number;
+    bookingId: number;
+    userId?: number | null;
+    action: string;
+    description?: string | null;
+    previousStatus?: string | null;
+    newStatus?: string | null;
+    details?: Record<string, any> | null;
+    timestamp: string;
+    User?: User;
+}
+
 export interface ApiResponse<T> {
     success: boolean;
     data: T;

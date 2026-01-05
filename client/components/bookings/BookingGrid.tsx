@@ -448,7 +448,6 @@ export default function BookingGrid({
                                                                             <Repeat />
                                                                         </span>
                                                                     )}
-                                                                    {/* Status Badge */}
                                                                     
                                                                 </div>
                                                             )}

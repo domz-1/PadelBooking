@@ -120,6 +120,24 @@ export const CreateBookingSchema = z.object({
     endTime: z.string({ message: "End time is required" }), // HH:mm
 });
 
+export const BookingLogSchema = z.object({
+    id: z.number(),
+    bookingId: z.number(),
+    userId: z.number().optional().nullable(),
+    action: z.string(),
+    description: z.string().optional().nullable(),
+    previousStatus: z.string().optional().nullable(),
+    newStatus: z.string().optional().nullable(),
+    details: z.object({}).passthrough().optional().nullable(), // Flexible JSON object
+    timestamp: z.string(), // ISO date string
+    User: z.object({
+        id: z.number(),
+        name: z.string(),
+        email: z.string().email(),
+        role: z.string()
+    }).optional()
+});
+
 // --- Types ---
 export type LoginCredentials = z.infer<typeof LoginSchema>;
 export type RegisterCredentials = z.infer<typeof RegisterSchema>;
@@ -129,3 +147,4 @@ export type Booking = z.infer<typeof BookingSchema>;
 export type Branch = z.infer<typeof BranchSchema>;
 export type CreateBooking = z.infer<typeof CreateBookingSchema>;
 export type WaitlistEntry = z.infer<typeof WaitlistEntrySchema>;
+export type BookingLog = z.infer<typeof BookingLogSchema>;

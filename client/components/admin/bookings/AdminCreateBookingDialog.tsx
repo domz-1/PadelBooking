@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 
 const bookingFormSchema = z.object({
     userId: z.number({ message: "User is required" }),
@@ -52,6 +53,7 @@ const bookingFormSchema = z.object({
     isRecurring: z.boolean(),
     repeatFrequency: z.enum(['weekly', 'daily']),
     repeatCount: z.coerce.number().min(1).max(52),
+    notes: z.string().optional(),
 })
 
 type BookingFormValues = z.infer<typeof bookingFormSchema>
@@ -91,7 +93,8 @@ export function AdminCreateBookingDialog({
             offerValue: 0,
             isRecurring: false,
             repeatFrequency: "weekly",
-            repeatCount: 1
+            repeatCount: 1,
+            notes: ""
         }
     })
 
@@ -177,6 +180,25 @@ export function AdminCreateBookingDialog({
 
                         <StatusFields form={form} statuses={statuses} />
                         <PriceOfferFields form={form} />
+
+                        {/* Notes Field */}
+                        <FormField
+                            control={form.control}
+                            name="notes"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Notes</FormLabel>
+                                    <FormControl>
+                                        <Textarea
+                                            placeholder="Add any special notes or instructions..."
+                                            className="min-h-[100px]"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         {/* Recurrence Fields */}
                         <div className="space-y-4 border-t pt-4">
