@@ -78,6 +78,15 @@ const Booking = sequelize.define('Booking', {
     recurrenceId: {
         type: DataTypes.UUID,
         allowNull: true
+    },
+    skeddaId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true
+    },
+    skeddaData: {
+        type: DataTypes.JSONB,
+        allowNull: true
     }
 }, {
     timestamps: true

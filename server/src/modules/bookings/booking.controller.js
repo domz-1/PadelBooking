@@ -280,6 +280,8 @@ exports.getOpenMatches = async (req, res, next) => {
         next(error);
     }
 };
+const skeddaService = require('./skedda.service');
+
 exports.getFreeSlots = async (req, res, next) => {
     try {
         const { startDate, startTime, endDate, endTime, branchId } = req.query;
@@ -297,6 +299,31 @@ exports.getFreeSlots = async (req, res, next) => {
 
         res.status(200).json({ success: true, data });
     } catch (error) {
+        next(error);
+    }
+};
+
+exports.syncSkedda = async (req, res, next) => {
+    try {
+        const { start, end } = req.body;
+        const result = await skeddaService.syncBookings(start, end);
+
+        // Notify admins or logs if needed
+        res.status(200).json({
+            success: true,
+            message: `Skedda sync completed. Synced: ${result.synced}, Errors: ${result.errors}`,
+            data: result
+        });
+    } catch (error) {
+        console.error('Skedda Sync Error:', error);
+        if (error.response && error.response.data) {
+            return res.status(error.response.status || 500).json({
+                success: false,
+                message: 'Skedda API Error',
+                error: error.response.data,
+                headers: error.response.headers
+            });
+        }
         next(error);
     }
 };

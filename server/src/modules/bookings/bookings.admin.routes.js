@@ -7,7 +7,8 @@ const {
     updateBooking,
     deleteBooking,
     createBooking,
-    getFreeSlots
+    getFreeSlots,
+    syncSkedda
 } = require('./booking.controller');
 const { importExcel } = require('./import.controller');
 const {
@@ -134,6 +135,7 @@ router.delete('/waitlist/:id', adminDeleteWaitlist);
  */
 router.get('/daily-summary', getDailySummary);
 router.get('/free-slots', getFreeSlots);
+router.post('/sync-skedda', syncSkedda);
 
 /**
  * @swagger

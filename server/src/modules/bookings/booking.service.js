@@ -7,6 +7,7 @@ const Waitlist = require('./waitlist.model');
 const BookingStatus = require('../settings/bookingStatus.model');
 const sendEmail = require('../../utils/emailService');
 const Branch = require('../branches/branch.model');
+const skeddaService = require('./skedda.service');
 const { Op } = require('sequelize');
 
 class BookingService {
@@ -84,12 +85,44 @@ class BookingService {
             ]
         });
 
+        // Fetch and Merge Skedda Bookings (if date filtering is applied)
+        // We only fetch if specific dates are requested to avoid fetching huge datasets
+        if (date || (startDate && endDate)) {
+            try {
+                // Determine range
+                const sStart = date ? `${date}T00:00:00` : `${startDate}T00:00:00`;
+                const sEnd = date ? `${date}T23:59:59` : `${endDate}T23:59:59`;
+
+                const skeddaBookings = await skeddaService.getFormattedBookings(sStart, sEnd);
+
+                // Append to rows
+                result.rows = [...result.rows, ...skeddaBookings];
+                result.count += skeddaBookings.length;
+
+                // Re-sort if needed (by start time)
+                result.rows.sort((a, b) => {
+                    // Handle both Sequelize instances and plain objects
+                    const dateA = a.date || a.getDataValue('date');
+                    const timeA = a.startTime || a.getDataValue('startTime');
+                    const dateB = b.date || b.getDataValue('date');
+                    const timeB = b.startTime || b.getDataValue('startTime');
+
+                    return new Date(`${dateA}T${timeA}`) - new Date(`${dateB}T${timeB}`);
+                });
+
+            } catch (err) {
+                console.error('Failed to fetch Skedda bookings for list:', err.message);
+                // Don't fail the whole request, just log and continue with local bookings
+            }
+        }
+
         // Privacy Masking (Only for non-admins)
         if (requester && requester.role !== 'admin') {
             result.rows = result.rows.map(booking => {
-                const b = booking.get({ plain: true });
+                const b = booking instanceof Booking ? booking.get({ plain: true }) : booking;
                 // If the booking doesn't belong to the requester and it's not an open match
                 if (b.userId !== requester.id && !b.isOpenMatch) {
+                    // For Skedda bookings (userId 0) or others
                     if (b.User) {
                         b.User = {
                             id: b.User.id, // Keep ID for potential "Own Booking" checks if needed (though it won't match)
