@@ -12,7 +12,7 @@ export default function BookingLogsPage() {
                 </div>
             </div>
 
-            <div className="flex-1 min-h-0 border rounded-lg bg-card shadow-sm overflow-hidden p-4">
+            <div className="flex-1 min-h-0 border rounded-lg bg-card shadow-sm overflow-y-auto p-4">
                 <AllBookingLogs />
             </div>
         </div>

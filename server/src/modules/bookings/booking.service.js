@@ -19,6 +19,8 @@ class BookingService {
             details: {
                 // Include timestamp in the details for easy reference
                 logTimestamp: new Date().toISOString(),
+                // Store booking ID to preserve it even if the booking is deleted (orphaned log)
+                bookingSnapshotId: bookingId,
                 // Include user info if available
                 ...(user && {
                     userName: user.name,
@@ -514,7 +516,13 @@ class BookingService {
         // Store details for waitlist check before deletion
         const { venueId, date, startTime, endTime } = booking;
 
-        // Create comprehensive delete log
+        // 1. Nullify bookingId in Orders
+        await Order.update({ bookingId: null }, {
+            where: { bookingId: booking.id }
+        });
+
+        // 2. Unlink associated logs instead of destroying them
+        // First, create the delete log (linked initially so we have the record)
         await this._createBookingLog(booking.id, user.id, 'delete', {
             venueId: booking.venueId,
             date: booking.date,
@@ -522,17 +530,13 @@ class BookingService {
             endTime: booking.endTime,
             status: booking.status,
             totalPrice: booking.totalPrice,
+            bookingId: booking.id, // Explicitly store ID in details
             userId: booking.userId,
             seriesOption: seriesOption
         }, user);
 
-        // 1. Nullify bookingId in Orders
-        await Order.update({ bookingId: null }, {
-            where: { bookingId: booking.id }
-        });
-
-        // 2. Delete associated logs
-        await BookingLog.destroy({
+        // Then unlink ALL logs for this booking (including the new delete log)
+        await BookingLog.update({ bookingId: null }, {
             where: { bookingId: booking.id }
         });
 

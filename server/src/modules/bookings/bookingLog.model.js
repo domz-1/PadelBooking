@@ -11,7 +11,7 @@ const BookingLog = sequelize.define('BookingLog', {
     },
     bookingId: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true, // Allow null for logs of deleted bookings
         references: {
             model: Booking,
             key: 'id'

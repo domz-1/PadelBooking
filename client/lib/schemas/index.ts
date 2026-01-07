@@ -125,7 +125,7 @@ export const CreateBookingSchema = z.object({
 
 export const BookingLogSchema = z.object({
     id: z.number(),
-    bookingId: z.number(),
+    bookingId: z.number().nullable(),
     userId: z.number().optional().nullable(),
     action: z.string(),
     description: z.string().optional().nullable(),

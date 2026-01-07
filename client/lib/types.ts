@@ -4,7 +4,10 @@ export interface User {
   email: string;
   role: "user" | "admin" | "coach";
   avatar?: string;
+  image?: string;
   level?: "beginner" | "intermediate" | "advanced" | "pro";
+  phone?: string;
+  stats?: { played: number; won: number; lost: number };
   createdAt: string;
   updatedAt: string;
 }
@@ -18,6 +21,10 @@ export interface Venue {
   type: "indoor" | "outdoor";
   image?: string;
   bookings?: Booking[];
+  Branch?: {
+    id: number;
+    name: string;
+  };
 }
 
 export interface WaitlistEntry {

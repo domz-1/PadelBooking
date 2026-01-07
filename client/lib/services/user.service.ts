@@ -7,8 +7,9 @@ export const userService = {
         return response.data;
     },
 
-    updateProfile: async (data: Partial<User>) => {
-        const response = await api.put<ApiResponse<User>>('/users/profile', data);
+    updateProfile: async (data: Partial<User> | FormData) => {
+        const headers = data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : undefined;
+        const response = await api.put<ApiResponse<User>>('/users/profile', data, { headers });
         return response.data;
     },
 

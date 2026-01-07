@@ -1,17 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { adminBookingService } from "@/lib/services/admin/bookings.service";
 import { type BookingLog } from "@/lib/schemas";
 import { toast } from "sonner";
 import {
   Clock,
   User,
-  Shield,
-  Calendar,
-  RefreshCw,
   Search,
   Filter,
+  ArrowRight,
+  RefreshCw,
+  Calendar,
+  Shield,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,8 +28,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 
@@ -38,11 +37,12 @@ interface BookingLogsProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function BookingLogs({
-  bookingId,
-  open,
-  onOpenChange,
-}: BookingLogsProps) {
+export interface BookingLogsListProps {
+  bookingId: number;
+  className?: string;
+}
+
+export function BookingLogsList({ bookingId, className }: BookingLogsListProps) {
   const [logs, setLogs] = useState<BookingLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -50,7 +50,7 @@ export function BookingLogs({
   const [dateRange, setDateRange] = useState("all");
   const [expandedLog, setExpandedLog] = useState<BookingLog | null>(null);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
       const response = await adminBookingService.getBookingLogs({
@@ -64,13 +64,13 @@ export function BookingLogs({
     } finally {
       setLoading(false);
     }
-  };
+  }, [bookingId]);
 
   useEffect(() => {
-    if (open && bookingId) {
+    if (bookingId) {
       fetchLogs();
     }
-  }, [open, bookingId]);
+  }, [bookingId, fetchLogs]);
 
   const filteredLogs = logs.filter((log) => {
     // Filter by search term
@@ -140,6 +140,39 @@ export function BookingLogs({
     frequency: string;
     count: number;
   }
+
+  const formatFieldName = (field: string): string => {
+    const map: Record<string, string> = {
+      venueId: "Court",
+      startTime: "Start Time",
+      endTime: "End Time",
+      totalPrice: "Price",
+      date: "Date",
+      courtNumber: "Court Number",
+      status: "Status",
+      paymentStatus: "Payment Status",
+      type: "Booking Type",
+    };
+    return map[field] || field.replace(/([A-Z])/g, " $1").trim(); // Fallback to Title Case
+  };
+
+  const formatValue = (field: string, value: unknown): string => {
+    if (value === null || value === undefined) return "-";
+
+    if (field === "startTime" || field === "endTime") {
+      return String(value).slice(0, 5); // Remove seconds
+    }
+
+    if (field === "totalPrice" || field === "price") {
+      return `${Number(value).toFixed(2)} SAR`;
+    }
+
+    if (typeof value === "boolean") {
+      return value ? "Yes" : "No";
+    }
+
+    return String(value);
+  };
 
   const formatLogDetails = (
     details: Record<string, unknown> | null | undefined,
@@ -251,243 +284,358 @@ export function BookingLogs({
   const actionTypes = [...new Set(logs.map((log) => log.action))];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <Clock className="h-6 w-6 text-primary" />
-            Booking Activity Logs
-          </DialogTitle>
-        </DialogHeader>
+    <div className={className}>
+      {expandedLog ? (
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setExpandedLog(null)}
+              className="hover:bg-accent"
+            >
+              ← Back to Logs
+            </Button>
+          </div>
 
-        <div className="space-y-4">
-          {/* Filters */}
+          <div className="flex items-center gap-3 mb-6">
+            <Clock className="h-6 w-6 text-primary" />
+            <h2 className="text-xl font-semibold">Log Details</h2>
+          </div>
+
+          {/* Log Header */}
           <Card>
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-1">
-                    <Search className="w-4 h-4" />
-                    Search
-                  </label>
-                  <Input
-                    placeholder="Search logs..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold capitalize">
+                    {expandedLog.action}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {format(
+                      new Date(expandedLog.timestamp),
+                      "MMMM dd, yyyy • hh:mm:ss a",
+                    )}
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-1">
-                    <Filter className="w-4 h-4" />
-                    Action Type
-                  </label>
-                  <Select value={actionFilter} onValueChange={setActionFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All actions" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Actions</SelectItem>
-                      {actionTypes.map((action) => (
-                        <SelectItem key={action} value={action}>
-                          {action.charAt(0).toUpperCase() + action.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    Date Range
-                  </label>
-                  <Select value={dateRange} onValueChange={setDateRange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All time" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="today">Today</SelectItem>
-                      <SelectItem value="week">Last 7 Days</SelectItem>
-                      <SelectItem value="month">Last 30 Days</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Badge
+                  variant={
+                    getActionBadgeVariant(expandedLog.action).variant
+                  }
+                  className={
+                    getActionBadgeVariant(expandedLog.action).className +
+                    " capitalize"
+                  }
+                >
+                  {expandedLog.action}
+                </Badge>
               </div>
+            </CardHeader>
+            <CardContent>
+              {expandedLog.User && (
+                <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg mb-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{expandedLog.User.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {expandedLog.User.email}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {expandedLog.User.role || "User"}
+                    </p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Logs List */}
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading logs...</p>
-            </div>
-          ) : filteredLogs.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-8">
-                <p className="text-muted-foreground mb-4">
-                  {logs.length === 0
-                    ? "No activity logs found for this booking."
-                    : "No logs match the current filters."}
-                </p>
-                {logs.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSearchTerm("");
-                      setActionFilter("all");
-                      setDateRange("all");
-                    }}
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Reset Filters
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {filteredLogs.map((log) => {
-                const actionInfo = getActionBadgeVariant(log.action);
-                const logDate = new Date(log.timestamp);
-
-                return (
-                  <Card
-                    key={log.id}
-                    className="hover:shadow-md transition-shadow"
-                  >
-                    <CardContent className="pt-4">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0">
-                          <Badge
-                            variant={actionInfo.variant}
-                            className={actionInfo.className + " capitalize"}
-                          >
-                            {log.action}
+          {/* Log Details */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4 text-sm">
+                {expandedLog.action === 'create' && expandedLog.details ? (
+                  <div className="space-y-3">
+                    <div className="font-medium text-muted-foreground flex items-center gap-2">
+                      <Calendar className="h-4 w-4" /> Booking Created
+                    </div>
+                    <div className="grid gap-2">
+                      {Object.entries(expandedLog.details).map(([field, value]) => {
+                        if (['logTimestamp', 'bookingSnapshotId', 'userName', 'userEmail', 'userRole', 'recurrenceDetails'].includes(field)) return null;
+                        return (
+                          <div key={field} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm border">
+                            <span className="font-medium text-muted-foreground">{formatFieldName(field)}</span>
+                            <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
+                              {formatValue(field, value)}
+                            </Badge>
+                          </div>
+                        )
+                      })}
+                      {!!expandedLog.details.recurrenceDetails && (
+                        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm border">
+                          <span className="font-medium text-muted-foreground">Recurrence</span>
+                          <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
+                            {(expandedLog.details.recurrenceDetails as RecurrenceDetails).frequency} ({(expandedLog.details.recurrenceDetails as RecurrenceDetails).count} times)
                           </Badge>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm text-muted-foreground">
-                              {format(logDate, "MMM dd, yyyy • hh:mm a")}
-                            </span>
-                            {log.User && (
-                              <div className="flex items-center gap-1 text-xs bg-secondary px-2 py-0.5 rounded-full">
-                                <User className="w-3 h-3" />
-                                {log.User.name}
-                              </div>
-                            )}
-                          </div>
-                          <p className="text-sm mb-2">
-                            {log.action === "create" && "Booking created"}
-                            {log.action === "update" && "Booking updated"}
-                            {log.action === "delete" && "Booking deleted"}
-                          </p>
-                          <div className="text-xs text-muted-foreground line-clamp-2">
-                            {formatLogDetails(log.details).split("\n")[0]}
-                            {log.details &&
-                              Object.keys(log.details).length > 1 &&
-                              "..."}
-                          </div>
-                        </div>
-                        <div className="flex-shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => setExpandedLog(log)}
-                          >
-                            <Shield className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </DialogContent>
-
-      {/* Expanded Log Details Modal */}
-      <Dialog open={!!expandedLog} onOpenChange={() => setExpandedLog(null)}>
-        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <Clock className="h-6 w-6 text-primary" />
-              Log Details
-            </DialogTitle>
-          </DialogHeader>
-
-          {expandedLog && (
-            <div className="space-y-6 py-4">
-              {/* Log Header */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold capitalize">
-                        {expandedLog.action}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {format(
-                          new Date(expandedLog.timestamp),
-                          "MMMM dd, yyyy • hh:mm:ss a",
-                        )}
-                      </p>
+                      )}
                     </div>
-                    <Badge
-                      variant={
-                        getActionBadgeVariant(expandedLog.action).variant
-                      }
-                      className={
-                        getActionBadgeVariant(expandedLog.action).className +
-                        " capitalize"
-                      }
-                    >
-                      {expandedLog.action}
-                    </Badge>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {expandedLog.User && (
-                    <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg mb-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <User className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{expandedLog.User.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {expandedLog.User.email}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {expandedLog.User.role || "User"}
-                        </p>
-                      </div>
+                ) : expandedLog.action === 'delete' && expandedLog.details ? (
+                  <div className="space-y-3">
+                    <div className="font-medium text-muted-foreground flex items-center gap-2">
+                      <Shield className="h-4 w-4" /> Booking Deleted
                     </div>
+                    <div className="grid gap-2">
+                      {Object.entries(expandedLog.details).map(([field, value]) => {
+                        if (['logTimestamp', 'bookingSnapshotId', 'userName', 'userEmail', 'userRole', 'seriesOption'].includes(field)) return null;
+                        return (
+                          <div key={field} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm border">
+                            <span className="font-medium text-muted-foreground">{formatFieldName(field)}</span>
+                            <Badge variant="outline" className="bg-destructive/10 border-destructive/20 text-destructive line-through decoration-destructive/50">
+                              {formatValue(field, value)}
+                            </Badge>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ) : expandedLog.details?.changes ? (
+                  <div className="space-y-3">
+                    <div className="font-medium text-muted-foreground flex items-center gap-2">
+                      <RefreshCw className="h-4 w-4" /> Changes Made
+                    </div>
+                    <div className="grid gap-2">
+                      {Object.entries(expandedLog.details.changes as Record<string, LogChange>).map(([field, change]) => {
+                        const fromVal = formatValue(field, change.from);
+                        const toVal = formatValue(field, change.to);
+                        const isSame = fromVal === toVal || (change.from === null && change.to === null);
+                        const isDeleted = (change.to === null || change.to === undefined || change.to === "") && (change.from !== null && change.from !== undefined && change.from !== "");
+                        const isAdded = (change.from === null || change.from === undefined || change.from === "") && (change.to !== null && change.to !== undefined && change.to !== "");
+
+                        if (isSame) return null; // Skip if no visible change
+
+                        return (
+                          <div key={field} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm border">
+                            <span className="font-medium text-muted-foreground">{formatFieldName(field)}</span>
+                            <div className="flex items-center gap-2">
+                              {isDeleted ? (
+                                <>
+                                  <Badge variant="outline" className="bg-background font-normal border-destructive/20 text-destructive line-through decoration-destructive/50">
+                                    {fromVal}
+                                  </Badge>
+                                  <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                                  <Badge variant="outline" className="bg-destructive/10 border-destructive/20 text-destructive">
+                                    Deleted
+                                  </Badge>
+                                </>
+                              ) : isAdded ? (
+                                <>
+                                  <Badge variant="outline" className="bg-secondary text-muted-foreground">
+                                    None
+                                  </Badge>
+                                  <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                                  <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
+                                    {toVal}
+                                  </Badge>
+                                </>
+                              ) : (
+                                <>
+                                  <Badge variant="outline" className="bg-background font-normal border-destructive/20 text-destructive line-through decoration-destructive/50">
+                                    {fromVal}
+                                  </Badge>
+                                  <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                                  <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
+                                    {toVal}
+                                  </Badge>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <pre className="bg-secondary/50 p-4 rounded-lg text-xs overflow-x-auto whitespace-pre-wrap">
+                    {formatLogDetails(expandedLog.details)}
+                  </pre>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center gap-2 mb-6">
+            <Clock className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold text-lg">Booking Activity History</h3>
+          </div>
+
+          <div className="space-y-4">
+            {/* Filters */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-1">
+                      <Search className="w-4 h-4" />
+                      Search
+                    </label>
+                    <Input
+                      placeholder="Search logs..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-1">
+                      <Filter className="w-4 h-4" />
+                      Action Type
+                    </label>
+                    <Select value={actionFilter} onValueChange={setActionFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All actions" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Actions</SelectItem>
+                        {actionTypes.map((action) => (
+                          <SelectItem key={action} value={action}>
+                            {action.charAt(0).toUpperCase() + action.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      Date Range
+                    </label>
+                    <Select value={dateRange} onValueChange={setDateRange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All time" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Time</SelectItem>
+                        <SelectItem value="today">Today</SelectItem>
+                        <SelectItem value="week">Last 7 Days</SelectItem>
+                        <SelectItem value="month">Last 30 Days</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Logs List */}
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading logs...</p>
+              </div>
+            ) : filteredLogs.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">
+                    {logs.length === 0
+                      ? "No activity logs found for this booking."
+                      : "No logs match the current filters."}
+                  </p>
+                  {logs.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setActionFilter("all");
+                        setDateRange("all");
+                      }}
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Reset Filters
+                    </Button>
                   )}
                 </CardContent>
               </Card>
+            ) : (
+              <div className="space-y-3">
+                {filteredLogs.map((log) => {
+                  const actionInfo = getActionBadgeVariant(log.action);
+                  const logDate = new Date(log.timestamp);
 
-              {/* Log Details */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Details</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4 text-sm">
-                    <pre className="bg-secondary/50 p-4 rounded-lg text-xs overflow-x-auto whitespace-pre-wrap">
-                      {formatLogDetails(expandedLog.details)}
-                    </pre>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+                  return (
+                    <Card
+                      key={log.id}
+                      className="hover:shadow-md transition-shadow cursor-pointer border-l-4"
+                      style={{ borderLeftColor: actionInfo.className.includes("green") ? "#22c55e" : actionInfo.className.includes("blue") ? "#3b82f6" : actionInfo.className.includes("red") ? "#ef4444" : "#9ca3af" }}
+                      onClick={() => setExpandedLog(log)}
+                    >
+                      <CardContent className="pt-4">
+                        <div className="flex items-start gap-3">
+                          <div className="shrink-0">
+                            <Badge
+                              variant={actionInfo.variant}
+                              className={actionInfo.className + " capitalize"}
+                            >
+                              {log.action}
+                            </Badge>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm text-muted-foreground">
+                                {format(logDate, "MMM dd, yyyy • hh:mm a")}
+                              </span>
+                              {log.User && (
+                                <div className="flex items-center gap-1 text-xs bg-secondary px-2 py-0.5 rounded-full">
+                                  <User className="w-3 h-3" />
+                                  {log.User.name}
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-sm mb-2">
+                              {log.action === "create" && "Booking created"}
+                              {log.action === "update" && "Booking updated"}
+                              {log.action === "delete" && "Booking deleted"}
+                            </p>
+                            <div className="text-xs text-muted-foreground line-clamp-2">
+                              {formatLogDetails(log.details).split("\n")[0]}
+                              {log.details &&
+                                Object.keys(log.details).length > 1 &&
+                                "..."}
+                            </div>
+                          </div>
+                          <div className="shrink-0">
+                            <Shield className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+export function BookingLogs({
+  bookingId,
+  open,
+  onOpenChange,
+}: BookingLogsProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+        <BookingLogsList bookingId={bookingId} />
+      </DialogContent>
     </Dialog>
   );
 }

@@ -13,6 +13,8 @@ import {
   Filter,
   X,
   Download,
+  ArrowRight,
+  RefreshCw,
 } from "lucide-react";
 import {
   Card,
@@ -30,6 +32,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
@@ -142,6 +150,40 @@ export function AllBookingLogs() {
     };
     return variants[action] || variants.system;
   };
+
+  const formatFieldName = (field: string): string => {
+    const map: Record<string, string> = {
+      venueId: "Court",
+      startTime: "Start Time",
+      endTime: "End Time",
+      totalPrice: "Price",
+      date: "Date",
+      courtNumber: "Court Number",
+      status: "Status",
+      paymentStatus: "Payment Status",
+      type: "Booking Type",
+    };
+    return map[field] || field.replace(/([A-Z])/g, " $1").trim(); // Fallback to Title Case
+  };
+
+  const formatValue = (field: string, value: unknown): string => {
+    if (value === null || value === undefined) return "-";
+
+    if (field === "startTime" || field === "endTime") {
+      return String(value).slice(0, 5); // Remove seconds
+    }
+
+    if (field === "totalPrice" || field === "price") {
+      return `${Number(value).toFixed(2)} SAR`;
+    }
+
+    if (typeof value === "boolean") {
+      return value ? "Yes" : "No";
+    }
+
+    return String(value);
+  };
+
 
   const formatLogDetails = (details: Record<string, unknown> | null) => {
     if (!details) return "No details available";
@@ -382,7 +424,7 @@ export function AllBookingLogs() {
               <Card key={log.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="pt-4">
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0">
+                    <div className="shrink-0">
                       <Badge
                         variant={actionInfo.variant}
                         className={actionInfo.className + " capitalize"}
@@ -404,7 +446,7 @@ export function AllBookingLogs() {
                       </div>
                       <p className="text-sm mb-2">
                         <span className="font-medium">
-                          Booking #{log.bookingId}
+                          Booking #{String(log.bookingId ?? (log.details as Record<string, unknown>)?.bookingSnapshotId ?? (log.details as Record<string, unknown>)?.bookingId ?? "Deleted")}
                         </span>{" "}
                         -{log.action === "create" && " Booking created"}
                         {log.action === "update" && " Booking updated"}
@@ -417,7 +459,7 @@ export function AllBookingLogs() {
                           "..."}
                       </div>
                     </div>
-                    <div className="flex-shrink-0">
+                    <div className="shrink-0">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -468,91 +510,188 @@ export function AllBookingLogs() {
       )}
 
       {/* Expanded Log Details Modal */}
-      {expandedLog && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-background rounded-lg max-w-2xl max-h-[80vh] w-full overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold flex items-center gap-3">
-                  <Clock className="h-6 w-6 text-primary" />
-                  Log Details
-                </h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setExpandedLog(null)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
+      <Dialog open={!!expandedLog} onOpenChange={() => setExpandedLog(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <Clock className="h-6 w-6 text-primary" />
+              Log Details
+            </DialogTitle>
+          </DialogHeader>
 
-              <div className="space-y-6">
-                {/* Log Header */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
+          {expandedLog && (
+            <div className="space-y-6">
+              {/* Log Header */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold capitalize">
+                        {expandedLog.action}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {format(
+                          new Date(expandedLog.timestamp),
+                          "MMMM dd, yyyy • hh:mm:ss a",
+                        )}
+                      </p>
+                    </div>
+                    <Badge
+                      variant={
+                        getActionBadgeVariant(expandedLog.action).variant
+                      }
+                      className={
+                        getActionBadgeVariant(expandedLog.action).className +
+                        " capitalize"
+                      }
+                    >
+                      {expandedLog.action}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {expandedLog.User && (
+                    <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg mb-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="w-5 h-5 text-primary" />
+                      </div>
                       <div>
-                        <h3 className="text-lg font-semibold capitalize">
-                          {expandedLog.action}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {format(
-                            new Date(expandedLog.timestamp),
-                            "MMMM dd, yyyy • hh:mm:ss a",
-                          )}
+                        <p className="font-medium">{expandedLog.User.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {expandedLog.User.email}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {expandedLog.User.role || "User"}
                         </p>
                       </div>
-                      <Badge
-                        variant={
-                          getActionBadgeVariant(expandedLog.action).variant
-                        }
-                        className={
-                          getActionBadgeVariant(expandedLog.action).className +
-                          " capitalize"
-                        }
-                      >
-                        {expandedLog.action}
-                      </Badge>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    {expandedLog.User && (
-                      <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg mb-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <User className="w-5 h-5 text-primary" />
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Log Details */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Details</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4 text-sm">
+                    {expandedLog.action === 'create' && expandedLog.details ? (
+                      <div className="space-y-3">
+                        <div className="font-medium text-muted-foreground flex items-center gap-2">
+                          <Calendar className="h-4 w-4" /> Booking Created
                         </div>
-                        <div>
-                          <p className="font-medium">{expandedLog.User.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {expandedLog.User.email}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {expandedLog.User.role || "User"}
-                          </p>
+                        <div className="grid gap-2">
+                          {Object.entries(expandedLog.details).map(([field, value]) => {
+                            if (['logTimestamp', 'bookingSnapshotId', 'userName', 'userEmail', 'userRole', 'recurrenceDetails'].includes(field)) return null;
+                            return (
+                              <div key={field} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm border">
+                                <span className="font-medium text-muted-foreground">{formatFieldName(field)}</span>
+                                <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
+                                  {formatValue(field, value)}
+                                </Badge>
+                              </div>
+                            )
+                          })}
+                          {expandedLog.details.recurrenceDetails && (
+                            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm border">
+                              <span className="font-medium text-muted-foreground">Recurrence</span>
+                              <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
+                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                {(expandedLog.details.recurrenceDetails as any).frequency} ({(expandedLog.details.recurrenceDetails as any).count} times)
+                              </Badge>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
+                    ) : expandedLog.action === 'delete' && expandedLog.details ? (
+                      <div className="space-y-3">
+                        <div className="font-medium text-muted-foreground flex items-center gap-2">
+                          <Shield className="h-4 w-4" /> Booking Deleted
+                        </div>
+                        <div className="grid gap-2">
+                          {Object.entries(expandedLog.details).map(([field, value]) => {
+                            if (['logTimestamp', 'bookingSnapshotId', 'userName', 'userEmail', 'userRole', 'seriesOption'].includes(field)) return null;
+                            return (
+                              <div key={field} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm border">
+                                <span className="font-medium text-muted-foreground">{formatFieldName(field)}</span>
+                                <Badge variant="outline" className="bg-destructive/10 border-destructive/20 text-destructive line-through decoration-destructive/50">
+                                  {formatValue(field, value)}
+                                </Badge>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ) : expandedLog.details?.changes ? (
+                      <div className="space-y-3">
+                        <div className="font-medium text-muted-foreground flex items-center gap-2">
+                          <RefreshCw className="h-4 w-4" /> Changes Made
+                        </div>
+                        <div className="grid gap-2">
+                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                          {Object.entries(expandedLog.details.changes as Record<string, any>).map(([field, change]) => {
+                            const fromVal = formatValue(field, change?.from);
+                            const toVal = formatValue(field, change?.to);
+                            const isSame = fromVal === toVal || (change?.from === null && change?.to === null);
+                            const isDeleted = (change?.to === null || change?.to === undefined || change?.to === "") && (change?.from !== null && change?.from !== undefined && change?.from !== "");
+                            const isAdded = (change?.from === null || change?.from === undefined || change?.from === "") && (change?.to !== null && change?.to !== undefined && change?.to !== "");
 
-                {/* Log Details */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Details</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4 text-sm">
+                            if (isSame) return null;
+
+                            return (
+                              <div key={field} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm border">
+                                <span className="font-medium text-muted-foreground">{formatFieldName(field)}</span>
+                                <div className="flex items-center gap-2">
+                                  {isDeleted ? (
+                                    <>
+                                      <Badge variant="outline" className="bg-background font-normal border-destructive/20 text-destructive line-through decoration-destructive/50">
+                                        {fromVal}
+                                      </Badge>
+                                      <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                                      <Badge variant="outline" className="bg-destructive/10 border-destructive/20 text-destructive">
+                                        Deleted
+                                      </Badge>
+                                    </>
+                                  ) : isAdded ? (
+                                    <>
+                                      <Badge variant="outline" className="bg-secondary text-muted-foreground">
+                                        None
+                                      </Badge>
+                                      <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                                      <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
+                                        {toVal}
+                                      </Badge>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Badge variant="outline" className="bg-background font-normal border-destructive/20 text-destructive line-through decoration-destructive/50">
+                                        {fromVal}
+                                      </Badge>
+                                      <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                                      <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
+                                        {toVal}
+                                      </Badge>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ) : (
                       <pre className="bg-secondary/50 p-4 rounded-lg text-xs overflow-x-auto whitespace-pre-wrap">
                         {formatLogDetails(expandedLog.details || null)}
                       </pre>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

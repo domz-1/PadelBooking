@@ -12,6 +12,8 @@ import {
   UserPlus,
   Search,
   RefreshCw,
+  Phone,
+  MessageCircle,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -19,7 +21,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -63,6 +64,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BookingLogsList } from "./BookingLogs";
 
 const bookingFormSchema = z.object({
   date: z.date(),
@@ -238,7 +240,9 @@ export function EditBookingDialog({
   // eslint-disable-next-line react-hooks/incompatible-library
   const currentStatusId = form.watch("statusId");
   const currentStatus =
-    statuses.find((s) => s.id === currentStatusId) || booking.BookingStatus;
+    statuses.find((s) => s.id === Number(currentStatusId)) || booking.BookingStatus;
+
+  const bookedUser = users.find((u) => u.id === Number(booking.userId)) || booking.User;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -277,179 +281,270 @@ export function EditBookingDialog({
                 <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                 <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-              </div>
-              <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-              <div className="h-32 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-              <div className="h-10 w-1/3 self-end ml-auto bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
             </div>
           </div>
         ) : (
-          <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="info">Information</TabsTrigger>
-              <TabsTrigger value="waitlist">
-                Waitlist ({waitlist.length})
-              </TabsTrigger>
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="details">Info</TabsTrigger>
+              <TabsTrigger value="edit">Edit</TabsTrigger>
+              <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
+              <TabsTrigger value="history">History</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="info" className="space-y-4 py-4">
+            {/* DETAILS TAB */}
+            <TabsContent value="details" className="space-y-6 py-4">
+              <div className="grid gap-6">
+                {/* User Info Section */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Customer</h4>
+                  <div className="bg-muted/30 p-4 rounded-xl border">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                          {bookedUser?.name?.[0]?.toUpperCase() || "U"}
+                        </div>
+                        <div>
+                          <p className="font-semibold">{bookedUser?.name || "Unknown User"}</p>
+                          <p className="text-sm text-muted-foreground">{bookedUser?.email}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {bookedUser?.phone && (
+                        <>
+                          <Button variant="outline" className="w-full justify-start h-10 gap-2" asChild>
+                            <a href={`tel:${bookedUser.phone}`}>
+                              <Phone className="w-4 h-4 text-green-600" />
+                              Call
+                            </a>
+                          </Button>
+                          <Button variant="outline" className="w-full justify-start h-10 gap-2" asChild>
+                            <a href={`https://wa.me/${bookedUser.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer">
+                              <MessageCircle className="w-4 h-4 text-green-500" />
+                              WhatsApp
+                            </a>
+                          </Button>
+                        </>
+                      )}
+                      {!bookedUser?.phone && (
+                        <div className="col-span-2 text-sm text-muted-foreground italic px-2">No phone number available</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Booking Info Section */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Booking Info</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Date & Time</Label>
+                      <div className="font-medium flex items-center gap-2">
+                        <CalendarIcon className="w-4 h-4 text-primary" />
+                        {format(new Date(booking.date), "PPP")}
+                      </div>
+                      <div className="text-sm pl-6">
+                        {booking.startTime.slice(0, 5)} - {booking.endTime.slice(0, 5)}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Court</Label>
+                      <div className="font-medium">
+                        {(() => {
+                          const venue = venues.find(v => v.id === booking.venueId) || booking.Venue;
+                          const venueName = venue?.name || `Court #${booking.venueId}`;
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          const branchName = (venue as any)?.Branch?.name;
+                          return branchName ? `${venueName} (${branchName})` : venueName;
+                        })()}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Price</Label>
+                      <div className="font-medium text-lg text-primary">{Number(booking.totalPrice).toFixed(2)} SAR</div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Status</Label>
+                      <div className="font-medium capitalize">{booking.BookingStatus?.name || "Pending"}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notes Section */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Notes</h4>
+                  <div className="bg-muted/50 p-3 rounded-lg border min-h-[60px] text-sm whitespace-pre-wrap">
+                    {booking.notes || <span className="text-muted-foreground italic">No notes added.</span>}
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* EDIT TAB */}
+            <TabsContent value="edit" className="space-y-6 py-4">
               <Form {...form}>
                 <form
                   onSubmit={form.handleSubmit(onSubmit)}
-                  className="space-y-4"
+                  className="space-y-6"
                 >
-                  <FormField
-                    control={form.control}
-                    name="date"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Date</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
+                  <div className="space-y-4">
+                    {/* Edit Form Fields */}
+                    <FormField
+                      control={form.control}
+                      name="date"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Date</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground",
+                                  )}
+                                >
+                                  {field.value instanceof Date ? (
+                                    format(field.value, "PPP")
+                                  ) : (
+                                    <span>Pick a date</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <UserSelectField
+                      form={form}
+                      users={users}
+                      setUserSearch={setUserSearch}
+                      loadMore={loadMore}
+                      hasMore={hasMore}
+                      loading={usersLoading}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="startTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Start Time</FormLabel>
                             <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground",
-                                )}
-                              >
-                                {field.value instanceof Date ? (
-                                  format(field.value, "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
+                              <TimePicker
+                                value={field.value}
+                                onChange={field.onChange}
+                              />
                             </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <UserSelectField
-                    form={form}
-                    users={users}
-                    setUserSearch={setUserSearch}
-                    loadMore={loadMore}
-                    hasMore={hasMore}
-                    loading={usersLoading}
-                  />
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="startTime"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Start Time</FormLabel>
-                          <FormControl>
-                            <TimePicker
-                              value={field.value}
-                              onChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="endTime"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>End Time</FormLabel>
-                          <FormControl>
-                            <TimePicker
-                              value={field.value}
-                              onChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <VenueSelectField form={form} venues={venues} />
-                    <BookingTypeField form={form} />
-                  </div>
-
-                  <StatusFields form={form} statuses={statuses} />
-                  <PriceOfferFields form={form} />
-
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Notes</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Add any special notes or instructions..."
-                            className="min-h-[100px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {booking.recurrenceId && (
-                    <div className="bg-primary/5 border border-primary/10 rounded-lg p-4 mb-4">
-                      <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-primary">
-                        <RefreshCw className="w-4 h-4" />
-                        Update Options
-                      </div>
-                      <RadioGroup
-                        value={seriesOption}
-                        onValueChange={(v: "single" | "upcoming") =>
-                          setSeriesOption(v)
-                        }
-                        className="grid grid-cols-1 gap-2"
-                      >
-                        <div className="flex items-center space-x-2 bg-background p-2 rounded border cursor-pointer hover:bg-accent/50">
-                          <RadioGroupItem value="single" id="single" />
-                          <Label
-                            htmlFor="single"
-                            className="flex-1 cursor-pointer"
-                          >
-                            This booking only
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2 bg-background p-2 rounded border cursor-pointer hover:bg-accent/50">
-                          <RadioGroupItem value="upcoming" id="upcoming" />
-                          <Label
-                            htmlFor="upcoming"
-                            className="flex-1 cursor-pointer"
-                          >
-                            This and all upcoming bookings
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                      <p className="text-[10px] text-muted-foreground mt-2 px-1">
-                        Note: &ldquo;Upcoming&rdquo; will apply changes to all
-                        future instances in this series.
-                      </p>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="endTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>End Time</FormLabel>
+                            <FormControl>
+                              <TimePicker
+                                value={field.value}
+                                onChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
-                  )}
 
-                  <DialogFooter className="flex flex-row justify-between pt-4 border-t gap-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <VenueSelectField form={form} venues={venues} />
+                      <BookingTypeField form={form} />
+                    </div>
+
+                    <StatusFields form={form} statuses={statuses} />
+                    <PriceOfferFields form={form} />
+
+                    <FormField
+                      control={form.control}
+                      name="notes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Notes</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Add any special notes or instructions..."
+                              className="min-h-[100px]"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {booking.recurrenceId && (
+                      <div className="bg-primary/5 border border-primary/10 rounded-lg p-4 mb-4">
+                        <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-primary">
+                          <RefreshCw className="w-4 h-4" />
+                          Update Options
+                        </div>
+                        <RadioGroup
+                          value={seriesOption}
+                          onValueChange={(v: "single" | "upcoming") =>
+                            setSeriesOption(v)
+                          }
+                          className="grid grid-cols-1 gap-2"
+                        >
+                          <div className="flex items-center space-x-2 bg-background p-2 rounded border cursor-pointer hover:bg-accent/50">
+                            <RadioGroupItem value="single" id="single" />
+                            <Label
+                              htmlFor="single"
+                              className="flex-1 cursor-pointer"
+                            >
+                              This booking only
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2 bg-background p-2 rounded border cursor-pointer hover:bg-accent/50">
+                            <RadioGroupItem value="upcoming" id="upcoming" />
+                            <Label
+                              htmlFor="upcoming"
+                              className="flex-1 cursor-pointer"
+                            >
+                              This and all upcoming bookings
+                            </Label>
+                          </div>
+                        </RadioGroup>
+                        <p className="text-[10px] text-muted-foreground mt-2 px-1">
+                          Note: &ldquo;Upcoming&rdquo; will apply changes to all
+                          future instances in this series.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-col sm:flex-row justify-between pt-4 border-t gap-2">
                     <Button
                       type="button"
                       variant="destructive"
@@ -483,12 +578,15 @@ export function EditBookingDialog({
                           : "Save Changes"}
                       </Button>
                     </div>
-                  </DialogFooter>
+                  </div>
                 </form>
               </Form>
+
             </TabsContent>
 
-            <TabsContent value="waitlist" className="py-4 space-y-6">
+            {/* WAITLIST TAB */}
+            <TabsContent value="waitlist" className="space-y-6 py-4">
+              {/* Waitlist Section */}
               <div className="space-y-4">
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium leading-none">
@@ -538,7 +636,7 @@ export function EditBookingDialog({
                   <div className="p-3 border-b bg-muted/30">
                     <h4 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
                       <Clock className="w-3 h-3 text-primary" />
-                      Waitlist Queue
+                      Waitlist Queue ({waitlist.length})
                     </h4>
                   </div>
                   {waitlist.length === 0 ? (
@@ -588,6 +686,13 @@ export function EditBookingDialog({
                   )}
                 </div>
               </div>
+            </TabsContent>
+
+            {/* HISTORY TAB */}
+            <TabsContent value="history" className="space-y-4 py-4">
+              {booking.id && (
+                <BookingLogsList bookingId={Number(booking.id)} className="h-full" />
+              )}
             </TabsContent>
           </Tabs>
         )}
