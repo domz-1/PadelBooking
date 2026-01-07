@@ -394,9 +394,9 @@ export default function BookingGrid({
                                     isOwn,
                                     isAdmin
                                   ).style,
-                                  height: `calc(100% * ${parseInt(booking.endTime.split(":")[0]) -
+                                  height: `calc(100% * ${(parseInt(booking.endTime.split(":")[0]) === 0 && parseInt(booking.startTime.split(":")[0]) > 0 ? 24 : parseInt(booking.endTime.split(":")[0])) -
                                     parseInt(booking.startTime.split(":")[0])
-                                    } + ${(parseInt(booking.endTime.split(":")[0]) -
+                                    } + ${((parseInt(booking.endTime.split(":")[0]) === 0 && parseInt(booking.startTime.split(":")[0]) > 0 ? 24 : parseInt(booking.endTime.split(":")[0])) -
                                       parseInt(booking.startTime.split(":")[0]) -
                                       1) *
                                     0.5

@@ -20,7 +20,13 @@ export const getBookingByVenueAndHour = (
     return bookings.find((b) => {
         if (b.venueId !== venueId) return false;
         const [startHour] = b.startTime.split(":").map(Number);
-        const [endHour] = b.endTime.split(":").map(Number);
+        let [endHour] = b.endTime.split(":").map(Number);
+
+        // Handle midnight wraparound
+        if (endHour === 0 && startHour > endHour) {
+            endHour = 24;
+        }
+
         return hour >= startHour && hour < endHour;
     });
 };
