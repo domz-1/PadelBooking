@@ -98,13 +98,28 @@ export function UserSelectField({
                   role="combobox"
                   aria-expanded={open}
                   className={cn(
-                    "w-full justify-between pl-3 text-left font-normal",
+                    "w-full justify-between pl-3 text-left font-normal h-auto min-h-10",
                     !field.value && "text-muted-foreground"
                   )}
                 >
-                  {selectedUser
-                    ? (selectedUser as User).name.replace(/[^a-zA-Z\s]/g, "")
-                    : "Select customer"}
+                  {selectedUser ? (
+                    <div className="flex flex-col gap-0 py-1">
+                      <span className="font-semibold text-[14px] text-left">
+                        {(selectedUser as User).name.replace(/[^a-zA-Z\s]/g, "")}
+                      </span>
+                      <div className="flex flex-col gap-0 text-[10px] opacity-80">
+                        <span>{(selectedUser as User).email}</span>
+                        {(selectedUser as User).phone && (
+                          <span className="flex items-center gap-1">
+                            <Phone className="w-2.5 h-2.5" />
+                            {(selectedUser as User).phone}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    "Select customer"
+                  )}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </FormControl>

@@ -50,7 +50,7 @@ export function PriceOfferFields({ form }: PriceOfferFieldsProps) {
         )}
       />
 
-      <div className="space-y-4 p-4 bg-secondary/20 rounded-lg">
+      <div className="space-y-4 p-4 bg-background/20  shadow-sm rounded-lg">
         <FormField
           control={form.control}
           name="hasOffer"
