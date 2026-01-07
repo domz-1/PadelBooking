@@ -170,18 +170,15 @@ class SkeddaService {
                     // Use the Egypt time range for filtering occurrences
                     const occurrences = rule.between(startEgyptTime, endEgyptTime, true);
 
-                    // Helper to format date/time in Cairo (Venue Time)
-                    // We assume venue is Cairo. Ideally get from venue config.
-                    const formatInZone = (date, type) => {
-                        // Use Intl for reliable timezone conversion
-                        const options = { timeZone: 'Africa/Cairo', hour12: false };
+                    // Helper to format literal time (preserve "floating" values)
+                    // RRule produces dates with "floating" time values in UTC slots (e.g. 00:00 -> 00:00Z)
+                    // We must use UTC formatting to retrieve "00:00" without getting shifted by Egypt (+2)
+                    const formatLiteral = (date, type) => {
+                        const options = { timeZone: 'UTC', hour12: false };
                         if (type === 'date') {
-                            // YYYY-MM-DD
-                            // We can use 'en-CA' (Canadian) for YYYY-MM-DD short format
                             return new Intl.DateTimeFormat('en-CA', { ...options, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
                         }
                         if (type === 'time') {
-                            // HH:mm
                             return new Intl.DateTimeFormat('en-GB', { ...options, hour: '2-digit', minute: '2-digit' }).format(date);
                         }
                     };
@@ -195,9 +192,9 @@ class SkeddaService {
                         return {
                             start: occDate,
                             end: instanceEnd,
-                            dateStr: formatInZone(occDate, 'date'),
-                            startTimeStr: formatInZone(occDate, 'time'),
-                            endTimeStr: formatInZone(instanceEnd, 'time'),
+                            dateStr: formatLiteral(occDate, 'date'),
+                            startTimeStr: formatLiteral(occDate, 'time'),
+                            endTimeStr: formatLiteral(instanceEnd, 'time'),
                             originalId: sBooking.id
                         };
                     });
