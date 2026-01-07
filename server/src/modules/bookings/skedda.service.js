@@ -208,12 +208,17 @@ class SkeddaService {
             } else {
                 // Single booking
                 // Treat timestamps as local/floating (no 'Z' suffix)
-                const sDate = new Date(sBooking.start);
-                const eDate = new Date(sBooking.end);
+                // User requested to remove Z to prevent +2h shift.
+                const sDate = new Date(sBooking.start.replace(/Z/g, ''));
+                const eDate = new Date(sBooking.end.replace(/Z/g, ''));
 
                 // timezone format helper
-                const formatInZone = (date, type) => {
-                    const options = { timeZone: 'Africa/Cairo', hour12: false };
+                // CAUTION: Since we stripped 'Z', 'new Date' treats it as Local.
+                // If server is UTC, sDate is "Time@UTC".
+                // If we format to 'Africa/Cairo', it ADDS 2 hours.
+                // We want to PRESERVE the literal time. So we format as 'UTC' to match the input.
+                const formatLiteral = (date, type) => {
+                    const options = { timeZone: 'UTC', hour12: false };
                     if (type === 'date') {
                         return new Intl.DateTimeFormat('en-CA', { ...options, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
                     }
@@ -223,7 +228,7 @@ class SkeddaService {
                 };
 
                 // Convert booking start to Egypt date
-                const bookingEgyptDate = formatInZone(sDate, 'date');
+                const bookingEgyptDate = formatLiteral(sDate, 'date');
 
                 // Check if booking's Egypt date falls within the requested range
                 if (bookingEgyptDate >= requestedStartDate && bookingEgyptDate <= requestedEndDate) {
@@ -231,8 +236,8 @@ class SkeddaService {
                         start: sDate,
                         end: eDate,
                         dateStr: bookingEgyptDate,
-                        startTimeStr: formatInZone(sDate, 'time'),
-                        endTimeStr: formatInZone(eDate, 'time'),
+                        startTimeStr: formatLiteral(sDate, 'time'),
+                        endTimeStr: formatLiteral(eDate, 'time'),
                         originalId: sBooking.id
                     });
                 }
@@ -265,7 +270,7 @@ class SkeddaService {
                 // Calculate end date for overlap detection
                 const endDateObj = new Date(inst.end);
                 const endDateStr = new Intl.DateTimeFormat('en-CA', {
-                    timeZone: 'Africa/Cairo',
+                    timeZone: 'UTC', // Keep strict to literal time (no shift)
                     year: 'numeric',
                     month: '2-digit',
                     day: '2-digit'

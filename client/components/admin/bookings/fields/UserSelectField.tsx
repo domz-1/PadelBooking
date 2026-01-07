@@ -9,14 +9,21 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Search, Phone } from "lucide-react";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Button } from "@/components/ui/button";
+import { Search, Phone, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { UseFormReturn } from "react-hook-form";
 import { User } from "@/lib/schemas";
 
@@ -49,6 +56,7 @@ export function UserSelectField({
   hasMore,
   loading,
 }: UserSelectFieldProps) {
+  const [open, setOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState("");
 
   // Debounce the search term
@@ -70,52 +78,74 @@ export function UserSelectField({
     }
   };
 
+  // Helper to get selected user object for display
+  const selectedUserId = form.watch("userId");
+  const selectedUser = users.find((u) => u.id === selectedUserId) ||
+    (selectedUserId ? { id: selectedUserId, name: "Selected User" } : null); // Fallback if not in list
+
   return (
     <FormField
       control={form.control}
       name="userId"
       render={({ field }) => (
-        <FormItem>
+        <FormItem className="flex flex-col">
           <FormLabel>Customer</FormLabel>
-          <Select
-            onValueChange={(v) => field.onChange(Number(v))}
-            value={field.value ? String(field.value) : undefined}
-          >
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder="Select customer" />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              <div className="flex items-center px-3 pb-2 pt-1">
-                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                <Input
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <FormControl>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className={cn(
+                    "w-full justify-between pl-3 text-left font-normal",
+                    !field.value && "text-muted-foreground"
+                  )}
+                >
+                  {selectedUser
+                    ? (selectedUser as User).name.replace(/[^a-zA-Z\s]/g, "")
+                    : "Select customer"}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </FormControl>
+            </PopoverTrigger>
+            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+              <Command shouldFilter={false}>
+                <CommandInput
                   placeholder="Search by name, email or mobile..."
-                  className="h-8 w-full bg-transparent p-0 focus-visible:ring-0"
                   value={localSearch}
-                  onChange={(e) => setLocalSearch(e.target.value)}
+                  onValueChange={setLocalSearch}
+                  className="h-9"
                 />
-              </div>
-              <div
-                className="max-h-[250px] overflow-auto"
-                onScroll={handleScroll}
-              >
-                {users.length === 0 && !loading ? (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
-                    No users found
-                  </div>
-                ) : (
-                  <>
+                <CommandList
+                  className="max-h-[250px] overflow-auto"
+                  onScroll={handleScroll}
+                >
+                  {users.length === 0 && !loading && (
+                    <CommandEmpty>No users found.</CommandEmpty>
+                  )}
+                  <CommandGroup>
                     {users.map((user) => (
-                      <SelectItem
+                      <CommandItem
                         key={`user-select-${user.id}`}
                         value={String(user.id)}
+                        onSelect={() => {
+                          field.onChange(user.id);
+                          setOpen(false);
+                        }}
+                        className="cursor-pointer data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
                       >
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-semibold text-sm">
-                            {user.name}
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            user.id === field.value ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <div className="flex flex-col gap-0">
+                          <span className="font-semibold text-[14px] text-left">
+                            {user.name.replace(/[^a-zA-Z\s]/g, "")}
                           </span>
-                          <div className="flex flex-col gap-0 text-[10px] text-muted-foreground">
+                          <div className="flex flex-col gap-0 text-[10px] opacity-80">
                             <span>{user.email}</span>
                             {user.phone && (
                               <span className="flex items-center gap-1">
@@ -125,18 +155,18 @@ export function UserSelectField({
                             )}
                           </div>
                         </div>
-                      </SelectItem>
+                      </CommandItem>
                     ))}
                     {loading && (
                       <div className="p-2 text-center text-xs text-muted-foreground">
                         Loading more...
                       </div>
                     )}
-                  </>
-                )}
-              </div>
-            </SelectContent>
-          </Select>
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
           <FormMessage />
         </FormItem>
       )}
