@@ -17,6 +17,7 @@ import {
   CalendarPlus,
   ListOrdered,
   ClipboardList,
+  Info,
 } from "lucide-react";
 
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -197,61 +198,81 @@ export default function BookingGrid({
         <BookingSkeleton />
       ) : (
         <>
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            {/* Branch Selector */}
-            {branches.length > 0 ? (
-              <div className="flex justify-center flex-1">
-                <Tabs
-                  value={String(localSelectedBranchId)}
-                  onValueChange={(v) =>
-                    setStoreSelectedBranchId(v === "all" ? "all" : Number(v))
-                  }
-                >
-                  <TabsList>
-                    <TabsTrigger value="all">All Branches</TabsTrigger>
-                    {branches.map((b) => (
-                      <TabsTrigger key={b.id} value={String(b.id)}>
-                        {b.name}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </Tabs>
-              </div>
-            ) : (
-              <div className="flex-1" />
-            )}
-
-            {/* Date Picker & Tools */}
-            <div className="flex items-center gap-2">
-              {isAdmin && (
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2 border-primary/20 hover:bg-primary/5 hover:text-primary transition-all duration-300 rounded-full px-4"
-                    onClick={() => setShowWaitlistBoard(true)}
-                  >
-                    <ListOrdered className="w-4 h-4" />
-                    <span className="hidden sm:inline">Waitlist Board</span>
+          <div className="flex flex-col justify-between items-center gap-4">
+            {/* Public User Message */}
+            {publicView && !isAuthenticated && (
+              <div className="bg-background border rounded-lg p-4 flex flex-col items-center gap-3 text-center shadow-sm w-full">
+                <h3 className="font-semibold text-lg">Welcome to Our Court Schedule</h3>
+                <p className="text-sm text-muted-foreground">
+                  You are viewing the court schedule with real-time availability. Booked slots show masked user information for privacy.
+                </p>
+                <div className="flex gap-2 mt-2">
+                  <Button size="sm" onClick={() => router.push("/auth/login")}>
+                    Log in to Book
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2 border-primary/20 hover:bg-primary/5 hover:text-primary transition-all duration-300 rounded-full px-4"
-                    onClick={() => setShowEmptySlots(true)}
-                  >
-                    <ClipboardList className="w-4 h-4" />
-                    <span className="hidden sm:inline">Empty Slots Board</span>
+                  <Button size="sm" variant="outline" onClick={() => router.push("/auth/register")}>
+                    Create Account
                   </Button>
                 </div>
+              </div>
+            )}
+            
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 w-full">
+              {/* Branch Selector */}
+              {branches.length > 0 ? (
+                <div className="flex justify-center flex-1">
+                  <Tabs
+                    value={String(localSelectedBranchId)}
+                    onValueChange={(v) =>
+                      setStoreSelectedBranchId(v === "all" ? "all" : Number(v))
+                    }
+                  >
+                    <TabsList>
+                      <TabsTrigger value="all">All Branches</TabsTrigger>
+                      {branches.map((b) => (
+                        <TabsTrigger key={b.id} value={String(b.id)}>
+                          {b.name}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </Tabs>
+                </div>
+              ) : (
+                <div className="flex-1" />
               )}
-              {onDateChange && (
-                <DatePicker
-                  date={date ? new Date(date) : undefined}
-                  setDate={onDateChange}
-                  className="w-[200px]"
-                />
-              )}
+
+              {/* Date Picker & Tools */}
+              <div className="flex items-center gap-2">
+                {isAdmin && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2 border-primary/20 hover:bg-primary/5 hover:text-primary transition-all duration-300 rounded-full px-4"
+                      onClick={() => setShowWaitlistBoard(true)}
+                    >
+                      <ListOrdered className="w-4 h-4" />
+                      <span className="hidden sm:inline">Waitlist Board</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2 border-primary/20 hover:bg-primary/5 hover:text-primary transition-all duration-300 rounded-full px-4"
+                      onClick={() => setShowEmptySlots(true)}
+                    >
+                      <ClipboardList className="w-4 h-4" />
+                      <span className="hidden sm:inline">Empty Slots Board</span>
+                    </Button>
+                  </div>
+                )}
+                {onDateChange && (
+                  <DatePicker
+                    date={date ? new Date(date) : undefined}
+                    setDate={onDateChange}
+                    className="w-[200px]"
+                  />
+                )}
+              </div>
             </div>
           </div>
 

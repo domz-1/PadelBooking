@@ -122,14 +122,28 @@ class BookingService {
                 const b = booking instanceof Booking ? booking.get({ plain: true }) : booking;
                 // If the booking doesn't belong to the requester and it's not an open match
                 if (b.userId !== requester.id && !b.isOpenMatch) {
-                    // For Skedda bookings (userId 0) or others
-                    if (b.User) {
-                        b.User = {
-                            id: b.User.id, // Keep ID for potential "Own Booking" checks if needed (though it won't match)
-                            name: 'Reserved',
-                            email: '***',
-                            phone: '***'
-                        };
+                    // For public users, always show real names but mask contact info (for grid view)
+                    // For authenticated users, differentiate between grid and list views
+                    if (requester.role === 'public' || date) {
+                        // Grid view or public user: show real names but mask sensitive contact info
+                        if (b.User) {
+                            b.User = {
+                                id: b.User.id,
+                                name: b.User.name, // Show real name for grid view
+                                email: '***',
+                                phone: '***'
+                            };
+                        }
+                    } else {
+                        // List view for authenticated users: show "Reserved" for privacy
+                        if (b.User) {
+                            b.User = {
+                                id: b.User.id,
+                                name: 'Reserved',
+                                email: '***',
+                                phone: '***'
+                            };
+                        }
                     }
                     // Optional: mask other sensitive booking fields if any
                 }

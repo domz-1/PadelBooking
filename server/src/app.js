@@ -42,6 +42,9 @@ const clientStoreRoutes = require('./modules/store/store.client.routes');
 const clientSponsorRoutes = require('./modules/sponsors/sponsors.client.routes');
 const clientBranchRoutes = require('./modules/branches/branches.client.routes');
 
+// Public Route Imports
+const publicBookingRoutes = require('./modules/bookings/bookings.public.routes');
+
 const app = express();
 
 // Security Middleware
@@ -101,6 +104,9 @@ clientRouter.use('/sponsors', clientSponsorRoutes);
 clientRouter.use('/branches', clientBranchRoutes);
 
 app.use('/api', clientRouter);
+
+// Public Routes (no authentication required)
+app.use('/api/public/bookings', publicBookingRoutes);
 
 // Serve static files
 app.use(express.static(path.join(__dirname, '../public')));

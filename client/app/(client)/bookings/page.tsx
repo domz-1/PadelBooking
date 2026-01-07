@@ -58,28 +58,55 @@ export default function BookingsPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Parallel fetch
-      const [venuesRes, bookingsRes, branchesRes, waitlistRes] =
-        await Promise.all([
-          api.get("/venues"),
-          api.get(`/bookings?date=${formattedDate}&limit=100`),
-          api.get("/branches"),
-          isAuthenticated
-            ? api.get("/bookings/waitlist")
-            : Promise.resolve({ data: { success: true, data: [] } }),
-        ]);
+      // Fetch venues and branches
+      const [venuesRes, branchesRes] = await Promise.all([
+        api.get("/venues"),
+        api.get("/branches"),
+      ]);
 
+      // Fetch bookings - use public endpoint for non-authenticated users
+      let bookingsData = [];
+      let waitlistData = [];
+      
+      if (isAuthenticated) {
+        const [bookingsRes, waitlistRes] = await Promise.all([
+          api.get(`/bookings?date=${formattedDate}&limit=100`),
+          api.get("/bookings/waitlist"),
+        ]);
+        
+        if (bookingsRes.data.success) {
+          bookingsData = bookingsRes.data.data;
+        }
+        if (waitlistRes.data.success) {
+          waitlistData = waitlistRes.data.data;
+        }
+      } else {
+        // Public users use the public endpoint
+        try {
+          const bookingsRes = await api.get(`/public/bookings?date=${formattedDate}`);
+          if (bookingsRes.data.success) {
+            bookingsData = bookingsRes.data.data;
+          }
+        } catch (error) {
+          console.error("Public bookings endpoint failed:", error.message);
+          // Fallback to empty array if public endpoint fails
+          bookingsData = [];
+          
+          // Show toast only if it's a 404 (endpoint not found) to avoid spam
+          if (error.response && error.response.status === 404) {
+            console.warn("Public bookings endpoint not available on this server");
+            // Don't show error to user - they'll see the public message in the grid
+          }
+        }
+      }
+
+      // Set the fetched data
       if (venuesRes.data.success) {
         setVenues(venuesRes.data.data);
       }
 
-      if (waitlistRes.data.success) {
-        setWaitlistEntries(waitlistRes.data.data);
-      }
-
-      if (bookingsRes.data.success) {
-        setBookings(bookingsRes.data.data);
-      }
+      setWaitlistEntries(waitlistData);
+      setBookings(bookingsData);
 
       if (branchesRes.data) {
         let branchData = [];

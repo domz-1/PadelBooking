@@ -10,17 +10,64 @@ exports.getBookings = async (req, res, next) => {
         const options = { limit, offset, date, startDate, endDate };
 
         // If query has userId and user is admin, pass it to options
-        if (req.user.role === 'admin' && userIdFromQuery) {
+        if (req.user && req.user.role === 'admin' && userIdFromQuery) {
             options.userId = userIdFromQuery;
         }
 
         const { count, rows } = await bookingService.getBookings(options, req.user);
 
+        // For public requests, simplify the response format
+        if (req.user && req.user.role === 'public') {
+            res.status(200).json({
+                success: true,
+                count,
+                data: rows
+            });
+        } else {
+            res.status(200).json({
+                success: true,
+                count,
+                totalPages: Math.ceil(count / limit),
+                currentPage: page,
+                data: rows
+            });
+        }
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Public endpoint for non-authenticated users
+exports.getPublicBookings = async (req, res, next) => {
+    try {
+        const { date } = req.query;
+        
+        // Date is required for public access
+        if (!date) {
+            return res.status(400).json({
+                success: false,
+                message: 'Date parameter is required'
+            });
+        }
+        
+        // Create a mock public user
+        const publicUser = {
+            id: 0,
+            role: 'public',
+            name: 'Public User',
+            email: 'public@example.com'
+        };
+        
+        const options = {
+            date,
+            limit: 100
+        };
+        
+        const { count, rows } = await bookingService.getBookings(options, publicUser);
+        
         res.status(200).json({
             success: true,
             count,
-            totalPages: Math.ceil(count / limit),
-            currentPage: page,
             data: rows
         });
     } catch (error) {
