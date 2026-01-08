@@ -42,7 +42,7 @@ export function SponsorCarousel() {
   const marqueeSponsors = Array(10).fill(sponsors).flat();
 
   return (
-    <div className={`relative w-full overflow-hidden rounded-lg ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100/50'} py-2`}>
+    <div className={`relative w-full max-w-5xl mx-auto overflow-hidden rounded-lg ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100/50'} py-2`}>
       <div className="flex w-fit animate-marquee">
         {marqueeSponsors.map((sponsor, index) => (
           <div

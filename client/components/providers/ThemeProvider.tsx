@@ -188,7 +188,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         return (
             <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background">
                 <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-                <p className="text-muted-foreground font-medium animate-pulse">
+                <p className="hidden transition-all text-muted-foreground font-medium animate-pulse">
                     Loading {value.brandName}...
                 </p>
             </div>

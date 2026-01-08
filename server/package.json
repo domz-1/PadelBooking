@@ -4,14 +4,14 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "seed": "node scripts/seed-with-statuses.js && node scripts/seed-admin.js ",
+    "seed": "node scripts/unified-seeder.js",
     "migrate-statuses": "node scripts/migrate-bookings-to-statuses.js",
     "test-statuses": "node scripts/test-booking-statuses.js",
     "test-booking-update": "node scripts/test-booking-update.js",
     "test-admin-flow": "node scripts/test-admin-booking-flow.js",
     "test-all": "npm run test-statuses && npm run test-booking-update && npm run test-admin-flow",
     "reset-admin-password": "node scripts/reset-admin-password.js",
-    "seed-booking-statuses": "node scripts/seed-booking-statuses.js",
+
     "prepare": "husky"
   },
   "dependencies": {

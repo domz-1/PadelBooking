@@ -297,7 +297,7 @@ export default function BookingGrid({
                     gridTemplateColumns: gridTemplate,
                   }}
                 >
-                  <div className="h-10 flex items-center justify-center font-semibold text-gray-500 bg-gray-50 dark:bg-gray-800 rounded text-xs gap-1">
+                  <div className="h-full flex items-center justify-center font-semibold text-gray-500 bg-gray-50 dark:bg-gray-800 rounded text-xs gap-1">
                     <Clock className="w-3 h-3" />
                     Time
                   </div>
@@ -344,7 +344,7 @@ export default function BookingGrid({
                     }}
                   >
                     {/* Time Cell */}
-                    <div className="h-24 flex items-center justify-center text-xs font-semibold text-muted-foreground bg-secondary/30 rounded border border-transparent">
+                    <div className="h-24 flex items-center justify-center text-xs font-semibold text-muted-foreground bg-secondary/80 rounded border border-transparent">
                       {formatHour(hour)}
                     </div>
 

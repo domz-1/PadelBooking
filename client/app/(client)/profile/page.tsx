@@ -29,8 +29,8 @@ import { ClientEditBookingDialog } from "@/components/client-edit-booking-dialog
 import { isPast } from "date-fns";
 
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, History } from "lucide-react";
-import api from "@/lib/api";
+import { Calendar, Clock, History, Loader2 } from "lucide-react";
+import api, { API_BASE_URL } from "@/lib/api";
 import { Booking } from "@/lib/types";
 import { toast } from "sonner";
 import { format } from "date-fns"; // Added missing import for format
@@ -50,6 +50,7 @@ export default function ProfilePage() {
   // Data States
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Form States
   const [profileForm, setProfileForm] = useState(() => ({
@@ -104,7 +105,10 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
+  const { fetchUser } = useAuthStore();
+
   const handleUpdateProfile = async () => {
+    setIsSaving(true);
     try {
       const formData = new FormData();
       formData.append("name", profileForm.name);
@@ -115,11 +119,13 @@ export default function ProfilePage() {
       }
 
       await userService.updateProfile(formData);
+      await fetchUser(); // Refresh user data in Zustand store
       toast.success("Profile updated");
       setIsEditOpen(false);
-      window.location.reload();
     } catch {
       toast.error("Failed to update profile");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -160,7 +166,7 @@ export default function ProfilePage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <Avatar className="h-16 w-16">
                 <AvatarImage
-                  src={user.image ? `http://localhost:5000/${user.image}` : "/images/padel.png"}
+                  src={user.image ? (user.image.startsWith('http') ? user.image : `${API_BASE_URL}/${user.image}`) : "/images/padel.png"}
                   alt={user.name}
                   className="object-cover"
                 />
@@ -324,8 +330,17 @@ export default function ProfilePage() {
             </div>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleUpdateProfile}>Save Changes</AlertDialogAction>
+            <AlertDialogCancel disabled={isSaving}>Cancel</AlertDialogCancel>
+            <Button onClick={handleUpdateProfile} disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

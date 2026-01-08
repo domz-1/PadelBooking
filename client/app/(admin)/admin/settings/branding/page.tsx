@@ -26,6 +26,8 @@ import { Input } from "@/components/ui/input";
 import { settingsService } from "@/lib/services/settings.service";
 import { Loader2, Palette, Image as ImageIcon, Type, Save } from "lucide-react";
 import Image from "next/image";
+import { useBrandingStore } from "@/hooks/use-branding-store";
+import { API_BASE_URL } from "@/lib/api";
 
 const brandingSchema = z.object({
   businessName: z.string().min(1, "Business name is required"),
@@ -58,6 +60,7 @@ export default function BrandingSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const { fetchConfig } = useBrandingStore();
 
   const form = useForm<BrandingFormValues>({
     resolver: zodResolver(brandingSchema),
@@ -100,6 +103,7 @@ export default function BrandingSettingsPage() {
     setSaving(true);
     try {
       await settingsService.updateConfig(values);
+      await fetchConfig(true); // Force refresh global branding store
       toast.success("Branding settings updated");
     } catch {
       toast.error("Failed to update branding settings");
@@ -199,7 +203,7 @@ export default function BrandingSettingsPage() {
                 <div className="w-full md:w-32 h-32 border rounded-lg flex items-center justify-center bg-muted overflow-hidden relative group">
                   {logoPreview ? (
                     <Image
-                      src={logoPreview}
+                      src={logoPreview.startsWith('http') ? logoPreview : `${API_BASE_URL}/${logoPreview}`}
                       alt="Logo preview"
                       unoptimized
                       width={128}

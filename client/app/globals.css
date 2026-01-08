@@ -193,6 +193,66 @@
   }
 }
 
+@layer utilities {
+
+  /*
+     Base Brand Colors - Force white text ONLY when specifically used as a background.
+     Using [class~="..."] ensures we don't accidentally match hover: variants or other prefixes.
+  */
+  [class~="bg-brand-50"],
+  [class~="bg-brand-100"],
+  [class~="bg-brand-200"],
+  [class~="bg-brand-300"],
+  [class~="bg-brand-400"],
+  [class~="bg-brand-500"],
+  [class~="bg-brand-600"],
+  [class~="bg-brand-700"],
+  [class~="bg-brand-800"],
+  [class~="bg-brand-900"],
+  [class~="bg-brand-950"],
+  [class~="bg-foreground"] ,
+  [class~="bg-accent"],
+  [class~="bg-secondary"]{
+    @apply transition-colors;
+    color: white !important;
+  }
+  
+  /* 2. Target the specifically muted text within or on those same elements */
+[class*="bg-secondary"] [class*="text-muted-foreground"],
+[class*="bg-secondary"][class*="text-muted-foreground"],
+[class*="bg-brand-"] [class*="text-muted-foreground"],
+[class*="bg-brand-"][class*="text-muted-foreground"] {
+  color: white !important;
+  opacity: 0.9; /* Optional: Keep it slightly "muted" but still readable on dark */
+}
+  /*
+     Hover Variants - Force white text ONLY on hover.
+  */
+  [class*="hover:bg-brand-"]:hover,
+  [class*="hover:bg-foreground"]:hover,
+  [class*="hover:bg-accent"]:hover,
+  [class*="hover:bg-secondary"]:hover
+  {
+    color: white !important;
+  }
+
+  /*
+     Dark Mode & Focus Variants
+  */
+  .dark [class*="dark:bg-brand-"],
+  .dark [class*="dark:bg-foreground"],
+  .dark [class*="dark:bg-accent"],
+  .dark [class*="dark:bg-secondary"],
+  [class*="focus:bg-brand-"]:focus,
+  [class*="focus:bg-foreground"]:focus,
+  [class*="focus:bg-accent"]:focus,
+  [class*="focus:bg-secondary"]:focus
+    {
+      cursor: pointer;
+    color: white !important;
+  }
+}
+
 /* Modern, lightweight scrollbar styles - no buttons */
 ::-webkit-scrollbar {
   width: 8px;
@@ -242,6 +302,7 @@
 .dark * {
   scrollbar-color: color-mix(in srgb, var(--foreground) 30%, transparent) transparent;
 }
+
 button {
   cursor: pointer;
 }

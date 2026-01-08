@@ -188,3 +188,11 @@ export interface ApiResponse<T> {
   data: T;
   message?: string;
 }
+
+export interface BookingStatus {
+  id: number;
+  name: string;
+  color: string;
+  description?: string;
+  isDefault: boolean;
+}

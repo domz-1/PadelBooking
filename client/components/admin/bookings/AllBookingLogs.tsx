@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { adminBookingService } from "@/lib/services/admin/bookings.service";
-import { type BookingLog } from "@/lib/schemas";
+import { type BookingLog, type ApiResponse } from "@/lib/types";
 import { toast } from "sonner";
+import { settingsService } from "@/lib/services/settings.service";
+import { type BookingStatus } from "@/lib/types";
 import {
   Clock,
   User,
@@ -56,6 +58,7 @@ export function AllBookingLogs() {
   const [actionFilter, setActionFilter] = useState("all");
   const [dateRange, setDateRange] = useState("all");
   const [expandedLog, setExpandedLog] = useState<BookingLog | null>(null);
+  const [statuses, setStatuses] = useState<BookingStatus[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
@@ -91,16 +94,20 @@ export function AllBookingLogs() {
           }
         }
 
-        const response: BookingLogsResponse =
-          await adminBookingService.getBookingLogs({
-            page: page.toString(),
-            limit: pagination.limit.toString(),
-            action: actionFilter !== "all" ? actionFilter : undefined,
-            startDate,
-            endDate,
-            searchTerm,
-          });
+        const [response, statusesRes]: [BookingLogsResponse, ApiResponse<BookingStatus[]>] =
+          await Promise.all([
+            adminBookingService.getBookingLogs({
+              page: page.toString(),
+              limit: pagination.limit.toString(),
+              action: actionFilter !== "all" ? actionFilter : undefined,
+              startDate,
+              endDate,
+              searchTerm,
+            }),
+            settingsService.getBookingStatuses()
+          ]);
         setLogs(response.data);
+        setStatuses(statusesRes.data || []);
         setPagination({
           page: response.currentPage,
           limit: pagination.limit,
@@ -160,6 +167,7 @@ export function AllBookingLogs() {
       date: "Date",
       courtNumber: "Court Number",
       status: "Status",
+      statusId: "Status",
       paymentStatus: "Payment Status",
       type: "Booking Type",
     };
@@ -182,6 +190,25 @@ export function AllBookingLogs() {
     }
 
     return String(value);
+  };
+
+  const renderValue = (field: string, value: unknown) => {
+    if (field === "statusId") {
+      const statusId = Number(value);
+      const status = statuses.find(s => s.id === statusId);
+      if (status) {
+        return (
+          <div className="flex items-center gap-1.5">
+            <div
+              className="w-2.5 h-2.5 rounded-full"
+              style={{ backgroundColor: status.color || '#000' }}
+            />
+            <span>{status.name}</span>
+          </div>
+        );
+      }
+    }
+    return <span>{formatValue(field, value)}</span>;
   };
 
 
@@ -588,12 +615,12 @@ export function AllBookingLogs() {
                               <div key={field} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm border">
                                 <span className="font-medium text-muted-foreground">{formatFieldName(field)}</span>
                                 <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
-                                  {formatValue(field, value)}
+                                  {renderValue(field, value)}
                                 </Badge>
                               </div>
                             )
                           })}
-                          {expandedLog.details.recurrenceDetails && (
+                          {!!expandedLog.details.recurrenceDetails && (
                             <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm border">
                               <span className="font-medium text-muted-foreground">Recurrence</span>
                               <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
@@ -616,7 +643,7 @@ export function AllBookingLogs() {
                               <div key={field} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm border">
                                 <span className="font-medium text-muted-foreground">{formatFieldName(field)}</span>
                                 <Badge variant="outline" className="bg-destructive/10 border-destructive/20 text-destructive line-through decoration-destructive/50">
-                                  {formatValue(field, value)}
+                                  {renderValue(field, value)}
                                 </Badge>
                               </div>
                             )
@@ -646,7 +673,7 @@ export function AllBookingLogs() {
                                   {isDeleted ? (
                                     <>
                                       <Badge variant="outline" className="bg-background font-normal border-destructive/20 text-destructive line-through decoration-destructive/50">
-                                        {fromVal}
+                                        {renderValue(field, change?.from)}
                                       </Badge>
                                       <ArrowRight className="h-3 w-3 text-muted-foreground" />
                                       <Badge variant="outline" className="bg-destructive/10 border-destructive/20 text-destructive">
@@ -660,17 +687,17 @@ export function AllBookingLogs() {
                                       </Badge>
                                       <ArrowRight className="h-3 w-3 text-muted-foreground" />
                                       <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
-                                        {toVal}
+                                        {renderValue(field, change?.to)}
                                       </Badge>
                                     </>
                                   ) : (
                                     <>
                                       <Badge variant="outline" className="bg-background font-normal border-destructive/20 text-destructive line-through decoration-destructive/50">
-                                        {fromVal}
+                                        {renderValue(field, change?.from)}
                                       </Badge>
                                       <ArrowRight className="h-3 w-3 text-muted-foreground" />
                                       <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
-                                        {toVal}
+                                        {renderValue(field, change?.to)}
                                       </Badge>
                                     </>
                                   )}

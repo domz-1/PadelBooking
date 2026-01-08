@@ -98,13 +98,24 @@ exports.updateProfile = async (req, res, next) => {
 };
 
 exports.updatePassword = async (req, res, next) => {
-    // Logic for password update usually separate but keeping simple
-    // Currently using updateProfile for simplicity unless specific method needed
-    // As per previous file, no specific implementation logic kept here but we preserve structure
-    // We will just return not implemented or basic update
     try {
-        // ... (Usually requires old password check)
-        res.status(200).json({ success: true, message: 'Password update logic here' });
+        const { currentPassword, newPassword } = req.body;
+        const User = require('./user.model');
+
+        const user = await User.findByPk(req.user.id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        const isMatch = await user.matchPassword(currentPassword);
+        if (!isMatch) {
+            return res.status(400).json({ success: false, message: 'Invalid current password' });
+        }
+
+        user.password = newPassword;
+        await user.save(); // Model hook handles hashing
+
+        res.status(200).json({ success: true, message: 'Password updated successfully' });
     } catch (error) {
         next(error);
     }

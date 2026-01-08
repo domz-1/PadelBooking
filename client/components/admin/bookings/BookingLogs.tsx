@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { adminBookingService } from "@/lib/services/admin/bookings.service";
 import { type BookingLog } from "@/lib/schemas";
 import { toast } from "sonner";
+import { settingsService } from "@/lib/services/settings.service";
+import { type BookingStatus } from "@/lib/types";
 import {
   Clock,
   User,
@@ -49,15 +51,20 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
   const [actionFilter, setActionFilter] = useState("all");
   const [dateRange, setDateRange] = useState("all");
   const [expandedLog, setExpandedLog] = useState<BookingLog | null>(null);
+  const [statuses, setStatuses] = useState<BookingStatus[]>([]);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await adminBookingService.getBookingLogs({
-        bookingId: bookingId.toString(),
-        limit: "100",
-      });
-      setLogs(response.data);
+      const [logsRes, statusesRes] = await Promise.all([
+        adminBookingService.getBookingLogs({
+          bookingId: bookingId.toString(),
+          limit: "100",
+        }),
+        settingsService.getBookingStatuses()
+      ]);
+      setLogs(logsRes.data);
+      setStatuses(statusesRes.data || []);
     } catch (error) {
       console.error("Failed to fetch booking logs", error);
       toast.error("Failed to fetch booking logs");
@@ -150,6 +157,7 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
       date: "Date",
       courtNumber: "Court Number",
       status: "Status",
+      statusId: "Status",
       paymentStatus: "Payment Status",
       type: "Booking Type",
     };
@@ -172,6 +180,25 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
     }
 
     return String(value);
+  };
+
+  const renderValue = (field: string, value: unknown) => {
+    if (field === "statusId") {
+      const statusId = Number(value);
+      const status = statuses.find(s => s.id === statusId);
+      if (status) {
+        return (
+          <div className="flex items-center gap-1.5">
+            <div
+              className="w-2.5 h-2.5 rounded-full"
+              style={{ backgroundColor: status.color || '#000' }}
+            />
+            <span>{status.name}</span>
+          </div>
+        );
+      }
+    }
+    return <span>{formatValue(field, value)}</span>;
   };
 
   const formatLogDetails = (
@@ -370,7 +397,7 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
                           <div key={field} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm border">
                             <span className="font-medium text-muted-foreground">{formatFieldName(field)}</span>
                             <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
-                              {formatValue(field, value)}
+                              {renderValue(field, value)}
                             </Badge>
                           </div>
                         )
@@ -397,7 +424,7 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
                           <div key={field} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm border">
                             <span className="font-medium text-muted-foreground">{formatFieldName(field)}</span>
                             <Badge variant="outline" className="bg-destructive/10 border-destructive/20 text-destructive line-through decoration-destructive/50">
-                              {formatValue(field, value)}
+                              {renderValue(field, value)}
                             </Badge>
                           </div>
                         )
@@ -426,7 +453,7 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
                               {isDeleted ? (
                                 <>
                                   <Badge variant="outline" className="bg-background font-normal border-destructive/20 text-destructive line-through decoration-destructive/50">
-                                    {fromVal}
+                                    {renderValue(field, change.from)}
                                   </Badge>
                                   <ArrowRight className="h-3 w-3 text-muted-foreground" />
                                   <Badge variant="outline" className="bg-destructive/10 border-destructive/20 text-destructive">
@@ -440,17 +467,17 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
                                   </Badge>
                                   <ArrowRight className="h-3 w-3 text-muted-foreground" />
                                   <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
-                                    {toVal}
+                                    {renderValue(field, change.to)}
                                   </Badge>
                                 </>
                               ) : (
                                 <>
                                   <Badge variant="outline" className="bg-background font-normal border-destructive/20 text-destructive line-through decoration-destructive/50">
-                                    {fromVal}
+                                    {renderValue(field, change.from)}
                                   </Badge>
                                   <ArrowRight className="h-3 w-3 text-muted-foreground" />
                                   <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
-                                    {toVal}
+                                    {renderValue(field, change.to)}
                                   </Badge>
                                 </>
                               )}
