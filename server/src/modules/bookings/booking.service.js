@@ -823,7 +823,8 @@ class BookingService {
             }
 
             if (venueRanges.length > 0) {
-                freeSlotsByVenue[venue.name] = venueRanges;
+                const displayName = venue.Branch ? `${venue.name} (${venue.Branch.name})` : venue.name;
+                freeSlotsByVenue[displayName] = venueRanges;
             }
         });
 
@@ -833,16 +834,19 @@ class BookingService {
     _formatFreeRange(startTS, endTS) {
         if (startTS >= endTS) return '';
 
-        const formatH = (ts) => {
+        const formatH = (ts, isEnd = false) => {
             const date = new Date(ts);
             let h = date.getHours();
+
+            // If it's the end of a range and it's midnight, show "12am"
+            if (isEnd && h === 0) return "12am";
+
             const ampm = (h >= 12 && h <= 23) ? 'pm' : 'am';
             const h12 = h % 12 || 12;
-            if (h === 0 && ts > startTS) return "12am"; // Visual aid for midnight end if desired
             return `${h12}${ampm}`;
         };
 
-        return `${formatH(startTS)} to ${formatH(endTS)}`;
+        return `${formatH(startTS)} to ${formatH(endTS, true)}`;
     }
 }
 

@@ -2,8 +2,8 @@ const metricsService = require('./metrics.service');
 
 exports.getStats = async (req, res, next) => {
     try {
-        const { date } = req.query;
-        const stats = await metricsService.getDashboardStats(date);
+        const { startDate, endDate } = req.query;
+        const stats = await metricsService.getDashboardStats(startDate, endDate);
         res.status(200).json({ success: true, data: stats });
     } catch (error) {
         next(error);

@@ -6,13 +6,18 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import api from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
-import { Clock, MapPin, Loader2, Sparkles } from "lucide-react";
+import { Clock, MapPin, Loader2, Sparkles, Copy, ClipboardCheck } from "lucide-react";
 import { format, addDays } from "date-fns";
+import { toast } from "sonner";
+import { useBranding } from "@/components/providers/BrandingProvider";
 
 export function LandingHero() {
     const router = useRouter();
+    const { brandName } = useBranding();
     const [freeSlots, setFreeSlots] = useState<Record<string, string[]> | null>(null);
     const [loading, setLoading] = useState(true);
+    const [copied, setCopied] = useState(false);
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
     useEffect(() => {
         const fetchSlots = async () => {
@@ -32,6 +37,7 @@ export function LandingHero() {
 
                 if (response.data.success) {
                     setFreeSlots(response.data.data);
+                    setLastUpdated(new Date());
                 }
             } catch (error) {
                 console.error("Failed to fetch free slots", error);
@@ -42,6 +48,31 @@ export function LandingHero() {
 
         fetchSlots();
     }, []);
+
+    const handleCopy = () => {
+        if (!freeSlots || Object.keys(freeSlots).length === 0) {
+            toast.info("No empty slots found for tonight.");
+            return;
+        }
+
+        const bookingUrl = typeof window !== "undefined" ? `${window.location.origin}/bookings` : "";
+        const updateTime = lastUpdated ? format(lastUpdated, "h:mm a") : format(new Date(), "h:mm a");
+
+        let text = `*🎾 ${brandName} - Available Padel Slots*\n`;
+        text += `_Last update: ${updateTime}_\n\n`;
+
+        Object.entries(freeSlots).forEach(([venueName, ranges]) => {
+            text += `*📍 ${venueName}:*\n`;
+            text += `   ${ranges.join(", ")}\n\n`;
+        });
+
+        text += `*🔗 Book your slot now:*\n${bookingUrl}`;
+
+        navigator.clipboard.writeText(text.trim());
+        setCopied(true);
+        toast.success("Formatted slots copied to clipboard!");
+        setTimeout(() => setCopied(false), 2000);
+    };
 
     return (
         <div className="relative isolate overflow-hidden bg-background">
@@ -71,27 +102,27 @@ export function LandingHero() {
                     {/* Quick Metrics */}
                     <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 items-center text-muted-foreground">
                         <div className="flex items-center gap-2">
-                            <span className="font-bold text-foreground text-lg">15+</span>
+                            <span className="font-bold text-foreground text-md">6+</span>
                             <span className="text-xs font-semibold uppercase tracking-wider opacity-70">Premium Courts</span>
                         </div>
                         <div className="hidden sm:block h-3 w-px bg-border/60" />
                         <div className="flex items-center gap-2">
-                            <span className="font-bold text-foreground text-lg">24/7</span>
+                            <span className="font-bold text-foreground text-md">24/7</span>
                             <span className="text-xs font-semibold uppercase tracking-wider opacity-70">Online Booking</span>
                         </div>
                         <div className="hidden sm:block h-3 w-px bg-border/60" />
                         <div className="flex items-center gap-2">
-                            <span className="font-bold text-foreground text-lg">500+</span>
+                            <span className="font-bold text-foreground text-md">500+</span>
                             <span className="text-xs font-semibold uppercase tracking-wider opacity-70">Active Players</span>
                         </div>
                     </div>
                     <div className="mt-10 flex items-center gap-x-6">
-                        <Button size="lg" onClick={() => router.push("/bookings")} className="rounded-full px-10 py-7 text-lg shadow-lg hover:shadow-primary/20 transition-all">
+                        <Button size="lg" onClick={() => router.push("/bookings")} className="rounded-full shadow-lg hover:shadow-primary/20 transition-all">
                             Book a Slot Now
                         </Button>
-                        <Button variant="ghost" size="lg" onClick={() => router.push("/auth/login")} className="rounded-full text-lg">
+                        {/* <Button variant="ghost" size="lg" onClick={() => router.push("/auth/login")} className="rounded-full text-lg">
                             Login Member <span aria-hidden="true" className="ml-2">→</span>
-                        </Button>
+                        </Button> */}
                     </div>
 
                 </div>
@@ -121,36 +152,58 @@ export function LandingHero() {
                                     </span>
                                     Available Tonight
                                 </h3>
-                                <p className="text-xs text-muted-foreground">Real-time court availability</p>
+                                <p className="text-[10px] indent-4 text-muted-foreground uppercase tracking-tight">
+                                    Last update: {lastUpdated ? format(lastUpdated, "h:mm a") : "..."}
+                                </p>
                             </div>
-                            <Button variant="ghost" size="sm" className="text-xs text-primary h-8" onClick={() => router.push("/bookings")}>
-                                View All
-                            </Button>
+                            <div className="flex items-center gap-1">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground hover:text-primary transition-colors"
+                                    onClick={handleCopy}
+                                    title="Copy for WhatsApp/Sharing"
+                                >
+                                    {copied ? <ClipboardCheck className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
+                                </Button>
+                                <Button variant="ghost" size="sm" className="text-xs text-primary h-8" onClick={() => router.push("/bookings")}>
+                                    View All
+                                </Button>
+                            </div>
                         </div>
 
-                        <div className="space-y-4 max-h-[390px] overflow-y-auto pr-2 custom-scrollbar">
+                        <div className="space-y-4 max-h-[390px] overflow-y-auto pr-2 custom-scrollbar ">
                             {loading ? (
                                 <div className="flex flex-col items-center justify-center py-12 gap-2">
                                     <Loader2 className="w-6 h-6 animate-spin text-primary" />
                                     <p className="text-xs text-muted-foreground">Checking courts...</p>
                                 </div>
                             ) : freeSlots && Object.keys(freeSlots).length > 0 ? (
-                                Object.entries(freeSlots).slice(0, 5).map(([venueName, ranges]) => (
-                                    <div key={venueName} className="group cursor-pointer">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <MapPin className="w-3.5 h-3.5 text-primary" />
-                                            <span className="text-sm font-semibold group-hover:text-primary transition-colors">{venueName}</span>
+                                Object.entries(freeSlots).map(([fullVenueName, ranges]) => {
+                                    const [name, branch] = fullVenueName.includes('(')
+                                        ? fullVenueName.split(/[()]/).filter(Boolean).map(s => s.trim())
+                                        : [fullVenueName, ''];
+
+                                    return (
+                                        <div key={fullVenueName} className="group pointer-events-none">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <MapPin className="w-3.5 h-3.5 text-primary" />
+                                                <div className="flex flex-row items-center gap-2">
+                                                    <span className="text-sm font-semibold transition-colors">{name}</span>
+                                                    {branch && <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{branch}</span>}
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-wrap gap-1.5 pl-5">
+                                                {ranges.map((range, idx) => (
+                                                    <Badge key={idx} variant="outline" className="text-[10px] pointer-events-none font-medium py-0 h-5 px-2 bg-primary/5  border-primary/20 transition-colors">
+                                                        <Clock className="w-2.5 h-2.5 mr-1" />
+                                                        {range}
+                                                    </Badge>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <div className="flex flex-wrap gap-1.5 pl-5">
-                                            {ranges.map((range, idx) => (
-                                                <Badge key={idx} variant="outline" className="text-[10px] font-medium py-0 h-5 px-2 bg-primary/5 hover:bg-primary/10 border-primary/20 transition-colors">
-                                                    <Clock className="w-2.5 h-2.5 mr-1" />
-                                                    {range}
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             ) : (
                                 <p className="text-sm text-center py-8 text-muted-foreground italic">No slots available tonight. Try another day!</p>
                             )}

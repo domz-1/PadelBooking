@@ -33,6 +33,29 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         }
     }, [fetchConfig, hydrated]);
 
+    useEffect(() => {
+        if (config?.businessName) {
+            document.title = config.businessName;
+        }
+        if (config?.logo) {
+            // Remove existing icon links to prevent conflicts
+            const existingIcons = document.querySelectorAll("link[rel~='icon'], link[rel='apple-touch-icon']");
+            existingIcons.forEach(el => el.remove());
+
+            // Add new favicon
+            const link = document.createElement('link');
+            link.rel = 'icon';
+            link.href = `${config.logo}?v=${Date.now()}`;
+            document.head.appendChild(link);
+
+            // Add new Apple touch icon
+            const appleLink = document.createElement('link');
+            appleLink.rel = 'apple-touch-icon';
+            appleLink.href = `${config.logo}?v=${Date.now()}`;
+            document.head.appendChild(appleLink);
+        }
+    }, [config]);
+
     const value = {
         brandName: config?.businessName || "PadelBooking",
         logo: config?.logo || null,

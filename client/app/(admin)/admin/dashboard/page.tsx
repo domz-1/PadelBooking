@@ -10,7 +10,7 @@ import {
 } from "@/lib/services/admin/metrics.service";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import {
   Users,
   CalendarCheck,
@@ -32,7 +32,10 @@ export default function AdminDashboardPage() {
   const { brandName } = useBranding();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [revenueDate, setRevenueDate] = useState(
+  const [startDate, setStartDate] = useState(
+    format(subDays(new Date(), 30), "yyyy-MM-dd"),
+  );
+  const [endDate, setEndDate] = useState(
     format(new Date(), "yyyy-MM-dd"),
   );
 
@@ -40,7 +43,7 @@ export default function AdminDashboardPage() {
     const fetchStats = async () => {
       setLoading(true);
       try {
-        const res = await metricsService.getStats(revenueDate);
+        const res = await metricsService.getStats(startDate, endDate);
         setStats(res.data);
       } catch {
         toast.error("Failed to load dashboard statistics");
@@ -50,7 +53,7 @@ export default function AdminDashboardPage() {
     };
 
     fetchStats();
-  }, [revenueDate]);
+  }, [startDate, endDate]);
 
   if (loading && !stats) {
     return (
@@ -91,11 +94,11 @@ export default function AdminDashboardPage() {
       description: "Peak booking hour",
     },
     {
-      title: "Paid bookings",
+      title: "Period Revenue",
       value: `EGP ${(insights?.paidBookings || 0).toLocaleString()}`,
       trend: insights?.paidBookingsTrend || "0%",
       icon: DollarSign,
-      description: "Revenue from shift",
+      description: "Revenue in selected range",
     },
   ];
 
@@ -110,20 +113,35 @@ export default function AdminDashboardPage() {
             System admin mode
           </span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <Label
-              htmlFor="revenue-date"
-              className="text-xs font-semibold text-gray-500 uppercase"
+              htmlFor="start-date"
+              className="text-[10px] font-bold text-gray-400 uppercase tracking-wider"
             >
-              View Date
+              Start
             </Label>
             <Input
-              id="revenue-date"
+              id="start-date"
               type="date"
-              value={revenueDate}
-              onChange={(e) => setRevenueDate(e.target.value)}
-              className="h-8 w-[140px] text-xs"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="h-9 w-[140px] text-xs font-medium border-gray-200 focus:ring-primary/20"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label
+              htmlFor="end-date"
+              className="text-[10px] font-bold text-gray-400 uppercase tracking-wider"
+            >
+              End
+            </Label>
+            <Input
+              id="end-date"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="h-9 w-[140px] text-xs font-medium border-gray-200 focus:ring-primary/20"
             />
           </div>
         </div>
@@ -273,7 +291,7 @@ export default function AdminDashboardPage() {
 
           {/* Top Lists & Board */}
           <div className="lg:col-span-3 space-y-6">
-            <EmptySlotsBoard />
+            {/* <EmptySlotsBoard /> */}
 
             <Card className="border-none shadow-sm overflow-hidden">
               <CardHeader className="bg-white pb-4">

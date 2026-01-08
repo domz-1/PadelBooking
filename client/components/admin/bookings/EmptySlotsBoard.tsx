@@ -23,6 +23,7 @@ import { Copy, ClipboardCheck, Loader2 } from "lucide-react";
 import type { Venue, Branch } from "@/lib/schemas";
 import { addDays, format } from "date-fns";
 import { adminApi } from "@/lib/api";
+import { useBranding } from "@/components/providers/BrandingProvider";
 
 interface EmptySlotsBoardProps {
     open: boolean;
@@ -38,6 +39,7 @@ export function EmptySlotsBoard({
     branches,
     initialDate,
 }: EmptySlotsBoardProps) {
+    const { brandName } = useBranding();
     // Default values: Today 5 PM to Tomorrow 3 AM
     const [startDate, setStartDate] = useState<Date>(new Date());
     const [endDate, setEndDate] = useState<Date>(addDays(new Date(), 1));
@@ -48,6 +50,7 @@ export function EmptySlotsBoard({
     const [freeSlotsData, setFreeSlotsData] = useState<Record<string, string[]> | null>(null);
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
     // Sync initial date only if it's different from today (optional, but keeping it simple)
     useEffect(() => {
@@ -80,6 +83,7 @@ export function EmptySlotsBoard({
 
             if (response.data.success) {
                 setFreeSlotsData(response.data.data);
+                setLastUpdated(new Date());
             }
         } catch (error) {
             console.error("Failed to fetch free slots:", error);
@@ -115,13 +119,18 @@ export function EmptySlotsBoard({
             return;
         }
 
-        let text = `*🎾 Available Padel Slots*\n\n`;
+        const bookingUrl = typeof window !== "undefined" ? `${window.location.origin}/bookings` : "";
+        const updateTime = lastUpdated ? format(lastUpdated, "h:mm a") : format(new Date(), "h:mm a");
 
-        // The backend now returns { VenueName: [Ranges] }
+        let text = `*🎾 ${brandName} - Available Padel Slots*\n`;
+        text += `_Last update: ${updateTime}_\n\n`;
+
         Object.entries(freeSlotsData).forEach(([venueName, ranges]) => {
             text += `*📍 ${venueName}:*\n`;
             text += `   ${ranges.join(", ")}\n\n`;
         });
+
+        text += `*🔗 Book your slot now:*\n${bookingUrl}`;
 
         navigator.clipboard.writeText(text.trim());
         setCopied(true);
@@ -133,7 +142,14 @@ export function EmptySlotsBoard({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Empty Slots Board</DialogTitle>
+                    <div className="flex items-center justify-between">
+                        <DialogTitle>Empty Slots Board</DialogTitle>
+                        {lastUpdated && (
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-widest bg-muted px-2 py-0.5 rounded-full">
+                                Update: {format(lastUpdated, "h:mm a")}
+                            </span>
+                        )}
+                    </div>
                     <p className="text-sm text-muted-foreground mt-1">
                         Calculate available slots from backend with your custom range.
                     </p>

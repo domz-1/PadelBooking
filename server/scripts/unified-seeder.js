@@ -77,7 +77,8 @@ const seedDatabase = async () => {
         await sequelize.sync({ force: true });
         console.log("🔄 Database synced successfully");
 
-        const passwordHash = await bcrypt.hash("password123", 10);
+        const PLAIN_PASSWORD = "password123";
+        const passwordHash = await bcrypt.hash(PLAIN_PASSWORD, 10);
 
         // ============================================
         // 1. SEED BRANCHES (from code)
@@ -229,18 +230,18 @@ const seedDatabase = async () => {
             password: passwordHash,
             role: "admin",
             phone: "1234567890"
-        });
+        }, { hooks: false });
         usersMap["admin@padel.com"] = admin.id;
         console.log(`   ✅ Created admin user: ${admin.email}`);
 
         // Create coach user
         const coachUser = await User.create({
-            name: "Coach Ahmed",
+            name: "Ahmed Coach",
             email: "coach.ahmed@padel.com",
             password: passwordHash,
             role: "coach",
             phone: "01012345678"
-        });
+        }, { hooks: false });
         usersMap["coach.ahmed@padel.com"] = coachUser.id;
         console.log(`   ✅ Created coach user: ${coachUser.email}`);
 
@@ -253,7 +254,10 @@ const seedDatabase = async () => {
             phone: u.phone || "00000000"
         }));
 
-        await User.bulkCreate(userRecords, { ignoreDuplicates: true });
+        await User.bulkCreate(userRecords, {
+            ignoreDuplicates: true,
+            hooks: false
+        });
 
         // Refresh map with created users
         const allUsers = await User.findAll({ attributes: ['id', 'email'] });

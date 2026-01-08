@@ -45,8 +45,10 @@ export interface AvailableSlotsRequest {
 }
 
 export const metricsService = {
-    getStats: async (date?: string) => {
-        const response = await adminApi.get<{ success: boolean; data: DashboardStats }>('/metrics/stats', { params: { date } });
+    getStats: async (startDate?: string, endDate?: string) => {
+        const response = await adminApi.get<{ success: boolean; data: DashboardStats }>('/metrics/stats', {
+            params: { startDate, endDate }
+        });
         return response.data;
     },
 
