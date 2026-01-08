@@ -150,23 +150,23 @@ export default function Navbar() {
 
 const NavLinks = () => (
   <>
-    {/* <Link href="/bookings" className="text-sm font-medium hover:text-brand-600 transition-colors">
-            Book Court
-        </Link>
-        <Link href="/matches" className="text-sm font-medium hover:text-brand-600 transition-colors">
-            Matches
-        </Link>
-        <Link href="/partners" className="text-sm font-medium hover:text-brand-600 transition-colors">
-            Partners
-        </Link>
-        <Link href="/store" className="text-sm font-medium hover:text-brand-600 transition-colors">
-            Store
-        </Link>
-        <Link href="/coaches" className="text-sm font-medium hover:text-brand-600 transition-colors">
-            Coaches
-        </Link>
-        <Link href="/chat" className="text-sm font-medium hover:text-brand-600 transition-colors">
-            Chat
-        </Link> */}
+    <Link
+      href="/"
+      className="text-sm font-medium hover:text-brand-600 transition-colors"
+    >
+      Home
+    </Link>
+    <Link
+      href="/bookings"
+      className="text-sm font-medium hover:text-brand-600 transition-colors"
+    >
+      Schedule
+    </Link>
+    <Link
+      href="/matches"
+      className="text-sm font-medium hover:text-brand-600 transition-colors"
+    >
+      Matches
+    </Link>
   </>
 );

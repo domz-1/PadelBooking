@@ -1,5 +1,5 @@
 const express = require('express');
-const { getPublicBookings } = require('./booking.controller');
+const { getPublicBookings, getFreeSlots } = require('./booking.controller');
 
 const router = express.Router();
 
@@ -30,5 +30,6 @@ const router = express.Router();
  *         description: Date parameter is required
  */
 router.get('/', getPublicBookings);
+router.get('/free-slots', getFreeSlots);
 
 module.exports = router;

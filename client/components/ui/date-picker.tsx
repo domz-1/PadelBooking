@@ -35,13 +35,27 @@ export function DatePicker({ date, setDate, placeholder = "Pick a date", classNa
                     {date ? format(date, "PPP") : <span>{placeholder}</span>}
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 flex flex-col" align="end">
                 <Calendar
                     mode="single"
                     selected={date}
                     onSelect={setDate}
                     initialFocus
                 />
+                <div className="p-3 border-t">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-center text-xs font-semibold bg-primary/5 hover:bg-primary/10 text-primary transition-colors"
+                        onClick={() => {
+                            const today = new Date();
+                            today.setHours(12, 0, 0, 0);
+                            setDate(today);
+                        }}
+                    >
+                        Today
+                    </Button>
+                </div>
             </PopoverContent>
         </Popover>
     )

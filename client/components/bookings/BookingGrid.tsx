@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useMemo, useEffect, useState } from "react";
+import React, { useMemo, useEffect, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 import type { Venue, Booking, Branch, WaitlistEntry } from "@/lib/schemas";
 import { useAuthStore } from "@/hooks/use-auth-store";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
   Clock,
   MapPin,
@@ -74,6 +75,7 @@ interface BookingGridProps {
   loading?: boolean;
   selectedBranchId?: string | number;
   onDateChange?: (date: Date | undefined) => void;
+  onBranchChange?: (branchId: string | number) => void;
 }
 
 const BRANCH_COLORS = [
@@ -100,9 +102,12 @@ export default function BookingGrid({
   loading = false,
   selectedBranchId,
   onDateChange,
+  onBranchChange,
 }: BookingGridProps) {
   const { user, isAuthenticated } = useAuthStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   // Store Hooks
   const localSelectedBranchId = useBookingStore((state) => state.selectedBranchId);
@@ -122,6 +127,34 @@ export default function BookingGrid({
   useEffect(() => {
     return () => reset();
   }, [reset]);
+
+  // Sync with URL params & Store
+  useEffect(() => {
+    const branchParam = searchParams.get("branch");
+    if (branchParam) {
+      const bId = branchParam === "all" ? "all" : Number(branchParam);
+      setStoreSelectedBranchId(bId);
+    }
+  }, [searchParams, setStoreSelectedBranchId]);
+
+  // Update URL helper with equality checks
+  const updateUrl = useCallback((branchId?: string | number, newDate?: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    let changed = false;
+
+    if (branchId !== undefined && params.get("branch") !== String(branchId)) {
+      params.set("branch", String(branchId));
+      changed = true;
+    }
+    if (newDate !== undefined && params.get("date") !== newDate) {
+      params.set("date", newDate);
+      changed = true;
+    }
+
+    if (changed) {
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  }, [router, pathname, searchParams]);
 
   // Determine if user can book based on authentication status
   const canBook = isAuthenticated && !publicView;
@@ -216,16 +249,19 @@ export default function BookingGrid({
                 </div>
               </div>
             )}
-            
+
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 w-full">
               {/* Branch Selector */}
               {branches.length > 0 ? (
                 <div className="flex justify-center flex-1">
                   <Tabs
                     value={String(localSelectedBranchId)}
-                    onValueChange={(v) =>
-                      setStoreSelectedBranchId(v === "all" ? "all" : Number(v))
-                    }
+                    onValueChange={(v) => {
+                      const branchId = v === "all" ? "all" : Number(v);
+                      setStoreSelectedBranchId(branchId);
+                      onBranchChange?.(branchId);
+                      updateUrl(branchId);
+                    }}
                   >
                     <TabsList>
                       <TabsTrigger value="all">All Branches</TabsTrigger>
@@ -268,7 +304,10 @@ export default function BookingGrid({
                 {onDateChange && (
                   <DatePicker
                     date={date ? new Date(date) : undefined}
-                    setDate={onDateChange}
+                    setDate={(d) => {
+                      onDateChange(d);
+                      if (d) updateUrl(undefined, format(d, "yyyy-MM-dd"));
+                    }}
                     className="w-[200px]"
                   />
                 )}

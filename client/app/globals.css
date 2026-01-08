@@ -225,6 +225,10 @@
   color: white !important;
   opacity: 0.9; /* Optional: Keep it slightly "muted" but still readable on dark */
 }
+[data-day]{
+  @apply rounded-[16px];
+}
+
   /*
      Hover Variants - Force white text ONLY on hover.
   */

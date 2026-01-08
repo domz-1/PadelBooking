@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import BookingGrid from "@/components/bookings/BookingGrid";
 import api from "@/lib/api";
 import { format } from "date-fns";
-import type { Venue, Booking, Branch } from "@/lib/schemas";
-import type { WaitlistEntry } from "@/lib/schemas";
+import type { Venue, Booking, Branch, WaitlistEntry } from "@/lib/schemas";
 import { toast } from "sonner";
 import { useAuthStore } from "@/hooks/use-auth-store";
 import { socketService } from "@/lib/socket";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -26,21 +25,33 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingSkeleton } from "@/components/ui/booking-skeleton";
-import { ClientPage, SponsorCarousel } from "@/components/wrapper/ClientPage";
+import { SponsorCarousel } from "@/components/wrapper/ClientPage";
 
-export default function BookingsPage() {
-  const [date, setDate] = useState<Date>(new Date());
+function BookingsContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Initialize from URL or defaults
+  const [date, setDate] = useState<Date>(() => {
+    const dParam = searchParams.get("date");
+    if (dParam) {
+      const d = new Date(dParam);
+      return isNaN(d.getTime()) ? new Date() : d;
+    }
+    return new Date();
+  });
+
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(() => {
+    return searchParams.get("branch") || "all";
+  });
+
   const [venues, setVenues] = useState<Venue[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBranchId, setSelectedBranchId] = useState<string>("all");
-  const [variant, setVariant] = useState<"sm" | "md" | "lg">("lg");
 
   // Booking Modal State
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -51,29 +62,79 @@ export default function BookingsPage() {
   const [bookingDuration, setBookingDuration] = useState(1); // Hours
 
   const { isAuthenticated, user } = useAuthStore();
-  const router = useRouter();
-
   const formattedDate = format(date, "yyyy-MM-dd");
+
+  // Bidirectional sync: URL -> local state
+  useEffect(() => {
+    const dParam = searchParams.get("date");
+    if (dParam) {
+      const d = new Date(dParam);
+      if (!isNaN(d.getTime())) {
+        if (format(d, "yyyy-MM-dd") !== formattedDate) {
+          setDate(d);
+        }
+      }
+    }
+
+    const bParam = searchParams.get("branch");
+    if (bParam && bParam !== selectedBranchId) {
+      setSelectedBranchId(bParam);
+    }
+  }, [searchParams, formattedDate, selectedBranchId]);
+
+  // Ensure defaults in URL
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    let changed = false;
+    if (!params.get("date")) {
+      params.set("date", formattedDate);
+      changed = true;
+    }
+    if (!params.get("branch")) {
+      params.set("branch", "all");
+      changed = true;
+    }
+
+    if (changed) {
+      router.replace(`?${params.toString()}`, { scroll: false });
+    }
+  }, [searchParams, formattedDate, router]);
+
+  const updateUrl = useCallback((newDate?: string, newBranch?: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    let changed = false;
+
+    if (newDate && params.get("date") !== newDate) {
+      params.set("date", newDate);
+      changed = true;
+    }
+    if (newBranch && params.get("branch") !== newBranch) {
+      params.set("branch", newBranch);
+      changed = true;
+    }
+
+    if (changed) {
+      router.push(`?${params.toString()}`, { scroll: false });
+    }
+  }, [searchParams, router]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch venues and branches
       const [venuesRes, branchesRes] = await Promise.all([
         api.get("/venues"),
         api.get("/branches"),
       ]);
 
-      // Fetch bookings - use public endpoint for non-authenticated users
       let bookingsData = [];
       let waitlistData = [];
-      
+
       if (isAuthenticated) {
         const [bookingsRes, waitlistRes] = await Promise.all([
           api.get(`/bookings?date=${formattedDate}&limit=100`),
           api.get("/bookings/waitlist"),
         ]);
-        
+
         if (bookingsRes.data.success) {
           bookingsData = bookingsRes.data.data;
         }
@@ -81,26 +142,17 @@ export default function BookingsPage() {
           waitlistData = waitlistRes.data.data;
         }
       } else {
-        // Public users use the public endpoint
         try {
           const bookingsRes = await api.get(`/public/bookings?date=${formattedDate}`);
           if (bookingsRes.data.success) {
             bookingsData = bookingsRes.data.data;
           }
         } catch (error) {
-          console.error("Public bookings endpoint failed:", error.message);
-          // Fallback to empty array if public endpoint fails
+          console.error("Public bookings endpoint failed:", error);
           bookingsData = [];
-          
-          // Show toast only if it's a 404 (endpoint not found) to avoid spam
-          if (error.response && error.response.status === 404) {
-            console.warn("Public bookings endpoint not available on this server");
-            // Don't show error to user - they'll see the public message in the grid
-          }
         }
       }
 
-      // Set the fetched data
       if (venuesRes.data.success) {
         setVenues(venuesRes.data.data);
       }
@@ -131,7 +183,6 @@ export default function BookingsPage() {
     fetchData();
   }, [fetchData, isAuthenticated]);
 
-  // Real-time updates listener
   useEffect(() => {
     socketService.connect(Number(user?.id));
     const socket = socketService.getSocket();
@@ -139,29 +190,18 @@ export default function BookingsPage() {
     if (socket) {
       socket.on(
         "bookingUpdate",
-        ({
-          type,
-          data,
-          id,
-        }: {
-          type: string;
-          data: Booking;
-          id: string | number;
-        }) => {
-          // Determine if the update affects currently viewed date
+        ({ type, data, id }: { type: string; data: Booking; id: string | number }) => {
           const affectedDate = data?.date || null;
           if (affectedDate && affectedDate !== formattedDate) return;
 
           if (type === "create") {
             setBookings((prev) => [...prev, data]);
           } else if (type === "update") {
-            setBookings((prev) =>
-              prev.map((b) => (b.id === data.id ? data : b)),
-            );
+            setBookings((prev) => prev.map((b) => (b.id === data.id ? data : b)));
           } else if (type === "delete") {
             setBookings((prev) => prev.filter((b) => b.id !== Number(id)));
           }
-        },
+        }
       );
     }
 
@@ -180,24 +220,15 @@ export default function BookingsPage() {
     setShowBookingModal(true);
   };
 
-  const handleConvertToOpenMatch = async (
-    bookingId: number,
-    maxPlayers: number = 4,
-  ) => {
+  const handleConvertToOpenMatch = async (bookingId: number, maxPlayers: number = 4) => {
     try {
-      const res = await api.post(
-        `/bookings/${bookingId}/convert-to-open-match`,
-        { maxPlayers },
-      );
+      const res = await api.post(`/bookings/${bookingId}/convert-to-open-match`, { maxPlayers });
       if (res.data.success) {
         toast.success("Booking converted to Open Match!");
-        fetchData(); // Refresh grid
+        fetchData();
       }
-    } catch (error: unknown) {
-      toast.error(
-        (error as { response?: { data?: { message?: string } } })?.response
-          ?.data?.message || "Failed to convert to Open Match",
-      );
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to convert to Open Match");
     }
   };
 
@@ -206,13 +237,10 @@ export default function BookingsPage() {
       const res = await api.post(`/bookings/${bookingId}/join`);
       if (res.data.success) {
         toast.success("Successfully joined Open Match!");
-        fetchData(); // Refresh grid
+        fetchData();
       }
-    } catch (error: unknown) {
-      toast.error(
-        (error as { response?: { data?: { message?: string } } })?.response
-          ?.data?.message || "Failed to join Open Match",
-      );
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to join Open Match");
     }
   };
 
@@ -221,13 +249,10 @@ export default function BookingsPage() {
       const res = await api.post(`/bookings/${bookingId}/leave`);
       if (res.data.success) {
         toast.success("Successfully left Open Match!");
-        fetchData(); // Refresh grid
+        fetchData();
       }
-    } catch (error: unknown) {
-      toast.error(
-        (error as { response?: { data?: { message?: string } } })?.response
-          ?.data?.message || "Failed to leave Open Match",
-      );
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to leave Open Match");
     }
   };
 
@@ -250,9 +275,8 @@ export default function BookingsPage() {
       if (res.data.success) {
         toast.success("Booking created successfully!");
         setShowBookingModal(false);
-        fetchData(); // Refresh grid
+        fetchData();
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to create booking");
     }
@@ -260,13 +284,10 @@ export default function BookingsPage() {
 
   return (
     <div className="container py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* Sponsor Carousel */}
       <div className="mb-4 flex flex-col sm:flex-row justify-between items-end gap-4">
         <div className="w-full sm:w-auto flex-1">
           <SponsorCarousel />
         </div>
-
-    
       </div>
 
       <div className="mb-6"></div>
@@ -288,18 +309,21 @@ export default function BookingsPage() {
           onLeaveOpenMatch={handleLeaveOpenMatch}
           publicView={!isAuthenticated}
           selectedBranchId={selectedBranchId}
-          // variant={variant}
           onDateChange={(d) => {
             if (d) {
               const newDate = new Date(d);
               newDate.setHours(12, 0, 0, 0);
               setDate(newDate);
+              updateUrl(format(newDate, "yyyy-MM-dd"));
             }
+          }}
+          onBranchChange={(id) => {
+            setSelectedBranchId(String(id));
+            updateUrl(undefined, String(id));
           }}
         />
       )}
 
-      {/* Create Booking Confirmation Modal */}
       <Dialog open={showBookingModal} onOpenChange={setShowBookingModal}>
         <DialogContent>
           <DialogHeader>
@@ -313,9 +337,7 @@ export default function BookingsPage() {
               </div>
               <div>
                 <Label>Start Time</Label>
-                <div className="text-sm font-medium mt-1">
-                  {selectedSlot?.time}
-                </div>
+                <div className="text-sm font-medium mt-1">{selectedSlot?.time}</div>
               </div>
             </div>
             <div>
@@ -335,10 +357,7 @@ export default function BookingsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowBookingModal(false)}
-            >
+            <Button variant="outline" onClick={() => setShowBookingModal(false)}>
               Cancel
             </Button>
             <Button onClick={confirmBooking}>Confirm Booking</Button>
@@ -346,5 +365,13 @@ export default function BookingsPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function BookingsPage() {
+  return (
+    <Suspense fallback={<BookingSkeleton />}>
+      <BookingsContent />
+    </Suspense>
   );
 }
