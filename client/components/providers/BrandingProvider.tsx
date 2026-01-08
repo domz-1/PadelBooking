@@ -12,6 +12,11 @@ interface BrandingConfig {
     accentColor?: string;
     primaryForeground?: string;
     sidebarColor?: string;
+    supportNumber1?: string;
+    supportNumber2?: string;
+    storeName?: string;
+    storeLogo?: string;
+    storePhone?: string;
 }
 
 interface BrandingContextType {

@@ -7,7 +7,10 @@ export interface Product {
   price: number;
   image: string;
   category: string;
+  categoryId: number;
+  isPriceless: boolean;
   stock: number;
+  isActive: boolean;
 }
 
 export interface Order {
@@ -15,9 +18,10 @@ export interface Order {
   userId: number;
   totalAmount: number;
   status: string;
+  paymentMethod: string;
   createdAt: string;
-  User?: { name: string };
-  OrderItems?: Array<{ name: string; price: number }>;
+  User?: { name: string; email: string; phone: string };
+  OrderItems?: Array<{ name: string; price: number; Product?: { name: string; image: string } }>;
 }
 
 export const adminStoreService = {
@@ -27,8 +31,8 @@ export const adminStoreService = {
     limit?: number;
     type?: string;
   }) => {
-    // Use client API to fetch products list
-    const response = await api.get("/store/products", { params });
+    // Use admin API to fetch products list (includes inactive)
+    const response = await adminApi.get("/store/products", { params });
     return response.data;
   },
 
@@ -50,24 +54,61 @@ export const adminStoreService = {
   },
 
   // Product Management
-  createProduct: async (data: Partial<Product>) => {
+  createProduct: async (data: FormData) => {
     const response = await adminApi.post<{ success: boolean; data: Product }>(
       "/store/products",
       data,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
     );
     return response.data;
   },
 
-  updateProduct: async (id: number, data: Partial<Product>) => {
+  updateProduct: async (id: number, data: FormData | Partial<Product>) => {
     const response = await adminApi.put<{ success: boolean; data: Product }>(
       `/store/products/${id}`,
       data,
+      data instanceof FormData ? {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      } : undefined
     );
     return response.data;
   },
 
   deleteProduct: async (id: number) => {
     const response = await adminApi.delete(`/store/products/${id}`);
+    return response.data;
+  },
+
+  importProducts: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await adminApi.post("/store/products/import", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
+
+  // Categories
+  getCategories: async () => {
+    const response = await adminApi.get("/store/categories");
+    return response.data;
+  },
+
+  createCategory: async (data: any) => {
+    const response = await adminApi.post("/store/categories", data);
+    return response.data;
+  },
+
+  updateCategory: async (id: number, data: any) => {
+    const response = await adminApi.put(`/store/categories/${id}`, data);
     return response.data;
   },
 };

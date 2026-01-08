@@ -17,7 +17,15 @@ const Product = sequelize.define('Product', {
     },
     price: {
         type: DataTypes.DECIMAL(10, 2),
-        allowNull: false
+        allowNull: true
+    },
+    isPriceless: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    showInLanding: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
     },
     type: {
         type: DataTypes.ENUM('sale', 'rental'),
@@ -37,9 +45,21 @@ const Product = sequelize.define('Product', {
             const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
             return `${baseUrl}/${rawValue.replace(/\\/g, '/')}`;
         }
+    },
+    categoryId: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
     }
 }, {
     timestamps: true
 });
+
+const Category = require('./category.model');
+Product.belongsTo(Category, { foreignKey: 'categoryId' });
+Category.hasMany(Product, { foreignKey: 'categoryId' });
 
 module.exports = Product;

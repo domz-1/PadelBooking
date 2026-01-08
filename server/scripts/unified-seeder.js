@@ -14,6 +14,9 @@ const Sponsor = require("../src/modules/sponsors/sponsor.model");
 const Product = require("../src/modules/store/product.model");
 const Coach = require("../src/modules/coaches/coach.model");
 const BookingStatus = require("../src/modules/settings/bookingStatus.model");
+const Category = require("../src/modules/store/category.model");
+const GlobalConfig = require("../src/modules/settings/globalConfig.model");
+const Package = require("../src/modules/coaches/package.model");
 
 const cleanName = (name) => {
     // Remove emojis, special characters, and extra spaces for cleaner internal names
@@ -79,6 +82,19 @@ const seedDatabase = async () => {
 
         const PLAIN_PASSWORD = "password123";
         const passwordHash = await bcrypt.hash(PLAIN_PASSWORD, 10);
+
+        // 0. SEED GLOBAL CONFIG
+        console.log("\n⚙️ Seeding global config...");
+        await GlobalConfig.upsert({
+            id: 1, // Ensure single record
+            businessName: "Mansoura Padel Point",
+            supportNumber1: "0100 123 4567",
+            supportNumber2: "0111 987 6543",
+            storeName: "Mansoura Padel Store",
+            storePhone: "0155 555 5555",
+            themeColor: "#4CAF50"
+        });
+        console.log("   ✅ Global config seeded");
 
         // ============================================
         // 1. SEED BRANCHES (from code)
@@ -234,16 +250,27 @@ const seedDatabase = async () => {
         usersMap["admin@padel.com"] = admin.id;
         console.log(`   ✅ Created admin user: ${admin.email}`);
 
-        // Create coach user
-        const coachUser = await User.create({
-            name: "Ahmed Coach",
-            email: "coach.ahmed@padel.com",
-            password: passwordHash,
-            role: "coach",
-            phone: "01012345678"
-        }, { hooks: false });
-        usersMap["coach.ahmed@padel.com"] = coachUser.id;
-        console.log(`   ✅ Created coach user: ${coachUser.email}`);
+        // Create coach users
+        const coachesData = [
+            { name: "Ahmed Hassan", email: "ahmed.hassan@padel.com", phone: "01012345671" },
+            { name: "Sofia Rodriguez", email: "sofia.rodriguez@padel.com", phone: "01012345672" },
+            { name: "Carlos Mendez", email: "carlos.mendez@padel.com", phone: "01012345673" },
+            { name: "Mariam Ali", email: "mariam.ali@padel.com", phone: "01012345674" }
+        ];
+
+        const coachIds = [];
+        for (const coach of coachesData) {
+            const user = await User.create({
+                name: coach.name,
+                email: coach.email,
+                password: passwordHash,
+                role: "coach",
+                phone: coach.phone
+            }, { hooks: false });
+            usersMap[coach.email] = user.id;
+            coachIds.push({ id: user.id, name: coach.name });
+            console.log(`   ✅ Created coach user: ${user.email}`);
+        }
 
         // Create regular users from CSV
         const userRecords = usersFromCSV.map(u => ({
@@ -413,39 +440,158 @@ const seedDatabase = async () => {
         ]);
         console.log("   ✅ Sponsors seeded");
 
+        // Seed Categories
+        console.log("\n📁 Seeding categories...");
+        const categories = await Category.bulkCreate([
+            { name: "Rackets", description: "Professional and beginner padel rackets" },
+            { name: "Accessories", description: "Balls, bags, and other padel gear" },
+            { name: "Apparel", description: "Shoes, wristbands, and sport clothing" }
+        ]);
+        const racketCatId = categories[0].id;
+        const accCatId = categories[1].id;
+        const apparelCatId = categories[2].id;
+        console.log("   ✅ Categories seeded");
+
         // Seed Products
         console.log("\n🛒 Seeding products...");
+        const placeholderImg = "images/product-padel.png";
         await Product.bulkCreate([
             {
-                name: "Pro Padel Racket",
-                description: "High-performance carbon fiber racket for professional play.",
+                name: "Pro Carbon Padel Racket",
+                description: "High-performance carbon fiber racket for professional play. Optimized for power and control.",
                 price: 1800,
+                isPriceless: false,
+                showInLanding: true,
                 type: "sale",
                 stock: 15,
-                image: "seeds/product_1.png"
+                image: placeholderImg,
+                categoryId: racketCatId
             },
             {
-                name: "Premium Padel Balls",
-                description: "Set of 3 high-bounce padel balls.",
+                name: "Beginner Friendly Racket",
+                description: "Perfect for those starting their padel journey. Lightweight and easy to handle.",
+                price: 850,
+                isPriceless: false,
+                showInLanding: true,
+                type: "sale",
+                stock: 25,
+                image: placeholderImg,
+                categoryId: racketCatId
+            },
+            {
+                name: "Premium Padel Balls (3-Pack)",
+                description: "High-quality yellow padel balls designed for consistent bounce and durability.",
                 price: 150,
+                isPriceless: false,
+                showInLanding: true,
+                type: "sale",
+                stock: 100,
+                image: placeholderImg,
+                categoryId: accCatId
+            },
+            {
+                name: "Professional Padel Bag",
+                description: "Spacious bag with thermal compartments to protect your rackets and gear.",
+                price: null,
+                isPriceless: true,
+                showInLanding: true,
+                type: "sale",
+                stock: 10,
+                image: placeholderImg,
+                categoryId: accCatId
+            },
+            {
+                name: "Elite Padel Shoes",
+                description: "Designed specifically for padel courts, offering maximum grip and comfort.",
+                price: 1200,
+                isPriceless: false,
+                showInLanding: false,
+                type: "sale",
+                stock: 20,
+                image: placeholderImg,
+                categoryId: apparelCatId
+            },
+            {
+                name: "Padel Wristband Set",
+                description: "Absorbent and comfortable wristbands to keep you dry during intense matches.",
+                price: null,
+                isPriceless: true,
+                showInLanding: true,
                 type: "sale",
                 stock: 50,
-                image: "seeds/product_2.png"
+                image: placeholderImg,
+                categoryId: apparelCatId
+            },
+            {
+                name: "Carbon Fiber Grip",
+                description: "Anti-slip grip for better racket control and sweat absorption.",
+                price: 45,
+                isPriceless: false,
+                showInLanding: true,
+                type: "sale",
+                stock: 150,
+                image: placeholderImg,
+                categoryId: accCatId
+            },
+            {
+                name: "Summer Sport Shorts",
+                description: "Breathable and flexible shorts for maximum movement on court.",
+                price: 350,
+                isPriceless: false,
+                showInLanding: false,
+                type: "sale",
+                stock: 40,
+                image: placeholderImg,
+                categoryId: apparelCatId
             }
         ]);
         console.log("   ✅ Products seeded");
 
-        // Seed Coach
+        // Seed Coaches
         console.log("\n🏅 Seeding coaches...");
-        await Coach.create({
-            userId: coachUser.id,
-            name: "Ahmed Coach",
-            bio: "Expert Padel trainer with 10 years of international experience.",
-            rating: 4.9,
-            image: "seeds/coach_1.png",
-            specialties: ["Technical Drills", "Match Strategy"]
-        });
-        console.log("   ✅ Coaches seeded");
+        const coachProfiles = [
+            { bio: "Expert Padel trainer with 10 years of international experience.", rating: 4.9, specialties: ["Technical Drills", "Match Strategy"] },
+            { bio: "Professional instructor focused on player performance and conditioning.", rating: 4.8, specialties: ["Performance", "Conditioning"] },
+            { bio: "Specialized in advanced tactics and professional tournament preparation.", rating: 4.9, specialties: ["Tactics", "Tournaments"] },
+            { bio: "Building strong foundations for future padel champions.", rating: 4.7, specialties: ["Foundations", "Youth"] }
+        ];
+
+        for (let i = 0; i < coachIds.length; i++) {
+            const coach = await Coach.create({
+                userId: coachIds[i].id,
+                name: coachIds[i].name,
+                bio: coachProfiles[i].bio,
+                rating: coachProfiles[i].rating,
+                image: "images/padel-coach-2.png",
+                specialties: coachProfiles[i].specialties
+            });
+
+            // Seed Packages for each coach
+            await Package.bulkCreate([
+                {
+                    coachId: coach.id,
+                    name: "Single Session",
+                    description: "60-minute intensive private training session.",
+                    price: 450,
+                    sessions: 1
+                },
+                {
+                    coachId: coach.id,
+                    name: "Foundations Pack",
+                    description: "5 sessions focused on technical basics and positioning.",
+                    price: 2000,
+                    sessions: 5
+                },
+                {
+                    coachId: coach.id,
+                    name: "Performance Pack",
+                    description: "10 sessions for advanced players looking to master match strategy.",
+                    price: 3800,
+                    sessions: 10
+                }
+            ]);
+            console.log(`   ✅ Seeded coach ${coach.name} with 3 packages`);
+        }
 
         // ============================================
         // SUMMARY
@@ -456,9 +602,9 @@ const seedDatabase = async () => {
         console.log(`   🏟️  Venues: ${Object.keys(venuesMap).length}`);
         console.log(`   👥 Users: ${Object.keys(usersMap).length}`);
         console.log(`   📅 Bookings: ${bookingsFromCSV.length}`);
-        console.log(`   🎾 Sports: 2`);
+        console.log(`   🎾 Sports: 1`);
         console.log(`   🏆 Sponsors: 2`);
-        console.log(`   🛒 Products: 2`);
+        console.log(`   🛒 Products: 6`);
         console.log(`   🏅 Coaches: 1`);
 
         console.log("\n🔐 Admin credentials:");

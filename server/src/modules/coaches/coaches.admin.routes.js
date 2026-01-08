@@ -1,5 +1,5 @@
 const express = require('express');
-const { deleteCoach, deletePackage } = require('./coach.controller');
+const { deleteCoach, deletePackage, adminCreatePackage, updatePackage } = require('./coach.controller');
 const { protect, authorize } = require('../../middleware/auth');
 
 const router = express.Router();
@@ -44,5 +44,7 @@ router.delete('/:id', deleteCoach);
  *         description: Package deleted
  */
 router.delete('/packages/:id', deletePackage);
+router.post('/packages', adminCreatePackage);
+router.put('/packages/:id', updatePackage);
 
 module.exports = router;

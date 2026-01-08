@@ -10,6 +10,7 @@ import {
   Megaphone,
   Building,
   Palette,
+  ChevronDown,
 } from "lucide-react";
 
 export interface NavItem {
@@ -17,19 +18,75 @@ export interface NavItem {
   href: string;
   icon: LucideIcon;
   roles?: string[];
+  children?: NavItem[];
 }
 
 export const adminNavItems: NavItem[] = [
-  
-   {
-     title: "Branding",
-     href: "/admin/settings/branding",
-     icon: Palette,
-   },
   {
-    title: "Branches",
+    title: "Dashboard",
+    href: "/admin/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Branding",
+    href: "/admin/settings/branding",
+    icon: Palette,
+  },
+  {
+    title: "Store",
+    href: "/admin/store",
+    icon: ShoppingBag,
+    children: [
+      {
+        title: "Orders",
+        href: "/admin/store?tab=orders",
+        icon: ShoppingBag,
+      },
+      {
+        title: "Products",
+        href: "/admin/store?tab=products",
+        icon: Tag,
+      },
+      {
+        title: "Categories",
+        href: "/admin/store?tab=categories",
+        icon: Tag,
+      }
+    ]
+  },
+  {
+    title: "Facilities",
     href: "/admin/branches",
     icon: Building,
+    children: [
+      {
+        title: "Branches",
+        href: "/admin/branches",
+        icon: Building,
+      },
+      {
+        title: "Venues",
+        href: "/admin/venues",
+        icon: MapPin,
+      },
+    ]
+  },
+  {
+    title: "Bookings",
+    href: "/admin/booking-logs",
+    icon: CalendarDays,
+    children: [
+      {
+        title: "Logs",
+        href: "/admin/booking-logs",
+        icon: CalendarDays,
+      },
+      {
+        title: "Statuses",
+        href: "/admin/booking-statuses",
+        icon: Tag,
+      }
+    ]
   },
   {
     title: "Users",
@@ -37,30 +94,25 @@ export const adminNavItems: NavItem[] = [
     icon: Users,
   },
   {
-    title: "Booking Logs",
-    href: "/admin/booking-logs",
-    icon: CalendarDays,
-  },
-  {
-    title: "Booking Statuses",
-    href: "/admin/booking-statuses",
-    icon: CalendarDays,
-  },
-  {
-    title: "Venues",
-    href: "/admin/venues",
-    icon: MapPin,
-  },
-
-  {
     title: "Sponsors",
     href: "/admin/sponsors",
     icon: Megaphone,
   },
- 
   {
-    title: "Coaches",
+    title: "Academy",
     href: "/admin/coaches",
-    icon: Megaphone,
+    icon: Trophy,
+    children: [
+      {
+        title: "Coaches",
+        href: "/admin/coaches",
+        icon: Users,
+      },
+      {
+        title: "Packages",
+        href: "/admin/academy-packages",
+        icon: Tag,
+      },
+    ]
   },
 ];

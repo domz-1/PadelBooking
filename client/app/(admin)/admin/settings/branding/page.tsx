@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { settingsService } from "@/lib/services/settings.service";
-import { Loader2, Palette, Image as ImageIcon, Type, Save } from "lucide-react";
+import { Loader2, Palette, Image as ImageIcon, Type, Save, ShoppingCart, Phone } from "lucide-react";
 import Image from "next/image";
 import { useBrandingStore } from "@/hooks/use-branding-store";
 import { API_BASE_URL } from "@/lib/api";
@@ -51,6 +51,11 @@ const brandingSchema = z.object({
     .string()
     .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid hex color")
     .optional(),
+  supportNumber1: z.string().optional(),
+  supportNumber2: z.string().optional(),
+  storeName: z.string().optional(),
+  storePhone: z.string().optional(),
+  storeLogo: z.string().optional(),
 });
 
 type BrandingFormValues = z.infer<typeof brandingSchema>;
@@ -60,6 +65,7 @@ export default function BrandingSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [storeLogoPreview, setStoreLogoPreview] = useState<string | null>(null);
   const { fetchConfig } = useBrandingStore();
 
   const form = useForm<BrandingFormValues>({
@@ -72,6 +78,11 @@ export default function BrandingSettingsPage() {
       accentColor: "#81C784",
       primaryForeground: "#FFFFFF",
       sidebarColor: "#FFFFFF",
+      supportNumber1: "",
+      supportNumber2: "",
+      storeName: "",
+      storePhone: "",
+      storeLogo: "",
     },
   });
 
@@ -88,8 +99,14 @@ export default function BrandingSettingsPage() {
           accentColor: data.accentColor || "#81C784",
           primaryForeground: data.primaryForeground || "#FFFFFF",
           sidebarColor: data.sidebarColor || "#FFFFFF",
+          supportNumber1: data.supportNumber1 || "",
+          supportNumber2: data.supportNumber2 || "",
+          storeName: data.storeName || "",
+          storePhone: data.storePhone || "",
+          storeLogo: data.storeLogo || "",
         });
         setLogoPreview(data.logo || null);
+        setStoreLogoPreview(data.storeLogo || null);
       } catch {
         toast.error("Failed to load branding settings");
       } finally {
@@ -124,6 +141,23 @@ export default function BrandingSettingsPage() {
       toast.success("Logo uploaded successfully");
     } catch {
       toast.error("Failed to upload logo");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleStoreLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const res = await settingsService.uploadLogo(file);
+      form.setValue("storeLogo", res.logoUrl);
+      setStoreLogoPreview(res.logoUrl);
+      toast.success("Store logo uploaded successfully");
+    } catch {
+      toast.error("Failed to upload store logo");
     } finally {
       setUploading(false);
     }
@@ -217,6 +251,130 @@ export default function BrandingSettingsPage() {
                     <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Phone className="h-5 w-5" />
+                Contact & Support
+              </CardTitle>
+              <CardDescription>
+                Configure support contact numbers shown in the landing page and footer.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="supportNumber1"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Support Number 1</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. +20 100 000 0000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="supportNumber2"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Support Number 2</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. +20 111 000 0000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5" />
+                Store Configuration
+              </CardTitle>
+              <CardDescription>
+                Customize how your store appears to customers.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="storeName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Store Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter store name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="storePhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Store Support Phone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter store phone number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="flex flex-col md:flex-row gap-6 items-start">
+                <div className="flex-1 w-full">
+                  <FormField
+                    control={form.control}
+                    name="storeLogo"
+                    render={() => (
+                      <FormItem>
+                        <FormLabel>Store Logo</FormLabel>
+                        <FormControl>
+                          <div className="flex flex-col gap-2">
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleStoreLogoUpload}
+                              disabled={uploading}
+                            />
+                            <FormDescription>
+                              Optional: Separate logo for the store section.
+                            </FormDescription>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="w-full md:w-32 h-32 border rounded-lg flex items-center justify-center bg-muted overflow-hidden relative">
+                  {storeLogoPreview ? (
+                    <Image
+                      src={storeLogoPreview.startsWith('http') ? storeLogoPreview : `${API_BASE_URL}/${storeLogoPreview}`}
+                      alt="Store Logo preview"
+                      unoptimized
+                      width={128}
+                      height={128}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  ) : (
+                    <ImageIcon className="h-10 w-10 text-muted-foreground" />
                   )}
                 </div>
               </div>

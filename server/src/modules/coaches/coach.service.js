@@ -8,14 +8,14 @@ class CoachService {
     }
 
     async getCoachByUserId(userId) {
-        return await Coach.findOne({ where: { userId }, include: [Package] });
+        return await Coach.findOne({ where: { userId }, include: [{ model: Package, as: 'packages' }] });
     }
 
     async getAllCoaches() {
         return await Coach.findAll({
             include: [
                 { model: User, attributes: ['name', 'image'] },
-                { model: Package }
+                { model: Package, as: 'packages' }
             ]
         });
     }
@@ -34,6 +34,12 @@ class CoachService {
         const pkg = await Package.findByPk(id);
         if (!pkg) return null;
         return await pkg.destroy();
+    }
+
+    async updatePackage(id, data) {
+        const pkg = await Package.findByPk(id);
+        if (!pkg) return null;
+        return await pkg.update(data);
     }
 }
 

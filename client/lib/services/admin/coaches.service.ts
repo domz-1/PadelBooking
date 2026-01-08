@@ -26,5 +26,15 @@ export const adminCoachService = {
     deletePackage: async (packageId: number) => {
         const response = await adminApi.delete(`/coaches/packages/${packageId}`);
         return response.data;
+    },
+
+    createPackage: async (data: { coachId: number; name: string; price: number; description?: string }) => {
+        const response = await adminApi.post('/coaches/packages', data);
+        return response.data;
+    },
+
+    updatePackage: async (id: number, data: { name?: string; price?: number; description?: string }) => {
+        const response = await adminApi.put(`/coaches/packages/${id}`, data);
+        return response.data;
     }
 };

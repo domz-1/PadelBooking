@@ -57,3 +57,28 @@ exports.deletePackage = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.updatePackage = async (req, res, next) => {
+    try {
+        const pkg = await coachService.updatePackage(req.params.id, req.body);
+        if (!pkg) {
+            return res.status(404).json({ success: false, message: req.t('notFound') });
+        }
+        res.status(200).json({ success: true, data: pkg, message: req.t('success') });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.adminCreatePackage = async (req, res, next) => {
+    try {
+        const { coachId, ...data } = req.body;
+        if (!coachId) {
+            return res.status(400).json({ success: false, message: 'coachId is required' });
+        }
+        const pkg = await coachService.createPackage(coachId, data);
+        res.status(201).json({ success: true, data: pkg, message: req.t('success') });
+    } catch (error) {
+        next(error);
+    }
+};

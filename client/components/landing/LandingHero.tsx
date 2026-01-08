@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import api from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
-import { Clock, MapPin, Loader2, Sparkles, Copy, ClipboardCheck } from "lucide-react";
+import { Clock, MapPin, Loader2, Sparkles, Copy, ClipboardCheck, Phone } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 import { useBranding } from "@/components/providers/BrandingProvider";
@@ -22,15 +22,37 @@ export function LandingHero() {
     useEffect(() => {
         const fetchSlots = async () => {
             try {
-                const today = new Date();
-                const tomorrow = addDays(today, 1);
+                const now = new Date();
+                const hour = now.getHours();
+
+                let startDate, startTime, endDate, endTime;
+
+                if (hour < 3) {
+                    // Early morning (12am - 3am): Still part of 'tonight's' session
+                    startDate = format(now, "yyyy-MM-dd");
+                    startTime = (hour + 1).toString().padStart(2, "0");
+                    endDate = format(now, "yyyy-MM-dd");
+                    endTime = "03"; // Session ends at 3am
+                } else if (hour >= 17) {
+                    // Evening (5pm - 12am): Start of 'tonight's' session
+                    startDate = format(now, "yyyy-MM-dd");
+                    startTime = (hour + 1).toString().padStart(2, "0");
+                    endDate = format(addDays(now, 1), "yyyy-MM-dd");
+                    endTime = "03"; // Session ends at 3am next day
+                } else {
+                    // Daytime (3am - 5pm): Waiting for next session
+                    startDate = format(now, "yyyy-MM-dd");
+                    startTime = "17"; // Show from 5pm onwards
+                    endDate = format(addDays(now, 1), "yyyy-MM-dd");
+                    endTime = "03";
+                }
 
                 const response = await api.get("/public/bookings/free-slots", {
                     params: {
-                        startDate: format(today, "yyyy-MM-dd"),
-                        startTime: "17",
-                        endDate: format(tomorrow, "yyyy-MM-dd"),
-                        endTime: "03",
+                        startDate,
+                        startTime,
+                        endDate,
+                        endTime,
                         branchId: "all"
                     }
                 });
@@ -95,12 +117,12 @@ export function LandingHero() {
                     <h1 className="mt-8 text-4xl font-bold tracking-tight text-foreground sm:text-7xl">
                         Book Your Perfect <span className="text-primary italic">Padel Court</span>
                     </h1>
-                    <p className="mt-6 text-xl leading-8 text-muted-foreground">
+                    <p className="mt-6 text-lg leading-8 text-muted-foreground">
                         Experience the best Padel facilities in the region. Seamless booking, real-time availability, and a vibrant community of players.
                     </p>
 
                     {/* Quick Metrics */}
-                    <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 items-center text-muted-foreground">
+                    <div className="hidden mt-6 flex flex-wrap gap-x-6 gap-y-2 items-center text-muted-foreground">
                         <div className="flex items-center gap-2">
                             <span className="font-bold text-foreground text-md">6+</span>
                             <span className="text-xs font-semibold uppercase tracking-wider opacity-70">Premium Courts</span>
@@ -110,12 +132,40 @@ export function LandingHero() {
                             <span className="font-bold text-foreground text-md">24/7</span>
                             <span className="text-xs font-semibold uppercase tracking-wider opacity-70">Online Booking</span>
                         </div>
-                        <div className="hidden sm:block h-3 w-px bg-border/60" />
                         <div className="flex items-center gap-2">
                             <span className="font-bold text-foreground text-md">500+</span>
                             <span className="text-xs font-semibold uppercase tracking-wider opacity-70">Active Players</span>
                         </div>
                     </div>
+
+                    {/* Support Numbers */}
+                    <div className="mt-8 flex flex-wrap gap-4">
+                        <a
+                            href={`tel:${useBranding().config?.supportNumber1}`}
+                            className="bg-muted/50 rounded-2xl p-4 border flex items-center gap-4 hover:bg-muted transition-colors"
+                        >
+                            <div className="bg-primary/10 p-2 rounded-xl">
+                                <Phone className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-70">Support Line 1</p>
+                                <p className="text-sm font-black text-foreground">{useBranding().config?.supportNumber1 || "0100 123 4567"}</p>
+                            </div>
+                        </a>
+                        <a
+                            href={`tel:${useBranding().config?.supportNumber2}`}
+                            className="bg-muted/50 rounded-2xl p-4 border flex items-center gap-4 hover:bg-muted transition-colors"
+                        >
+                            <div className="bg-primary/10 p-2 rounded-xl">
+                                <Phone className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-70">Support Line 2</p>
+                                <p className="text-sm font-black text-foreground">{useBranding().config?.supportNumber2 || "0111 987 6543"}</p>
+                            </div>
+                        </a>
+                    </div>
+
                     <div className="mt-10 flex items-center gap-x-6">
                         <Button size="lg" onClick={() => router.push("/bookings")} className="rounded-full shadow-lg hover:shadow-primary/20 transition-all">
                             Book a Slot Now

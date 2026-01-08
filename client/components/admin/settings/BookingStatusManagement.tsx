@@ -128,7 +128,7 @@ export function BookingStatusManagement() {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Booking Statuses</h2>
+                <h2 className="text-2xl font-bold opacity-0">Booking Statuses</h2>
                 <Button onClick={handleCreate}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Status

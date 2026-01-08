@@ -28,7 +28,7 @@ const Package = sequelize.define('Package', {
     timestamps: true
 });
 
-Package.belongsTo(Coach, { foreignKey: 'coachId' });
-Coach.hasMany(Package, { foreignKey: 'coachId' });
+Package.belongsTo(Coach, { foreignKey: 'coachId', as: 'coach' });
+Coach.hasMany(Package, { foreignKey: 'coachId', as: 'packages' });
 
 module.exports = Package;

@@ -8,7 +8,7 @@ import {
   metricsService,
   DashboardStats,
 } from "@/lib/services/admin/metrics.service";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { format, subDays } from "date-fns";
 import {
@@ -32,20 +32,32 @@ export default function AdminDashboardPage() {
   const { brandName } = useBranding();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [startDate, setStartDate] = useState(
-    format(subDays(new Date(), 30), "yyyy-MM-dd"),
+  const [startDate, setStartDate] = useState<Date | undefined>(
+    subDays(new Date(), 30),
   );
-  const [endDate, setEndDate] = useState(
-    format(new Date(), "yyyy-MM-dd"),
+  const [endDate, setEndDate] = useState<Date | undefined>(
+    new Date(),
   );
 
   useEffect(() => {
     const fetchStats = async () => {
+      if (!startDate || !endDate) return;
       setLoading(true);
       try {
-        const res = await metricsService.getStats(startDate, endDate);
-        setStats(res.data);
-      } catch {
+        const res = await metricsService.getStats(
+          format(startDate, "yyyy-MM-dd"),
+          format(endDate, "yyyy-MM-dd")
+        );
+        // Backend returns { success: true, data: { ...stats } }
+        // metricsService returns response.data
+        if (res.data) {
+          setStats(res.data);
+        } else if (res && !('success' in res)) {
+          // Fallback if data is returned directly
+          setStats(res as any);
+        }
+      } catch (error) {
+        console.error("Dashboard error:", error);
         toast.error("Failed to load dashboard statistics");
       } finally {
         setLoading(false);
@@ -116,32 +128,26 @@ export default function AdminDashboardPage() {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <Label
-              htmlFor="start-date"
               className="text-[10px] font-bold text-gray-400 uppercase tracking-wider"
             >
               Start
             </Label>
-            <Input
-              id="start-date"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="h-9 w-[140px] text-xs font-medium border-gray-200 focus:ring-primary/20"
+            <DatePicker
+              date={startDate}
+              setDate={setStartDate}
+              className="h-9 w-[160px] text-xs font-medium border-gray-200"
             />
           </div>
           <div className="flex items-center gap-2">
             <Label
-              htmlFor="end-date"
               className="text-[10px] font-bold text-gray-400 uppercase tracking-wider"
             >
               End
             </Label>
-            <Input
-              id="end-date"
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="h-9 w-[140px] text-xs font-medium border-gray-200 focus:ring-primary/20"
+            <DatePicker
+              date={endDate}
+              setDate={setEndDate}
+              className="h-9 w-[160px] text-xs font-medium border-gray-200"
             />
           </div>
         </div>

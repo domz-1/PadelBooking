@@ -3,6 +3,8 @@
 import { useAuthStore } from "@/hooks/use-auth-store";
 import { LandingHero } from "@/components/landing/LandingHero";
 import { SponsorCarousel } from "@/components/wrapper/ClientPage";
+import { FeaturedProducts } from "@/components/landing/FeaturedProducts";
+import { AcademySection } from "@/components/landing/AcademySection";
 
 export default function Home() {
   return (
@@ -13,6 +15,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8 mb-16">
           <SponsorCarousel />
         </div>
+
+        <FeaturedProducts />
+        <AcademySection />
 
 
         {/* Additional sections can go here: Features, Testimonials, etc. */}
@@ -33,8 +38,8 @@ export default function Home() {
                       description: 'See which courts are free instantly and book your slot in seconds.',
                     },
                     {
-                      name: 'Open Matches',
-                      description: 'Join existing matches or create your own to find new playing partners.',
+                      name: 'Padel Academy',
+                      description: 'Learn from professional coaches with tailored training packages.',
                     },
                     {
                       name: 'Branch Management',

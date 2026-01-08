@@ -1,5 +1,5 @@
 const express = require('express');
-const { getProducts, createOrder, getMyOrders } = require('./store.controller');
+const { getProducts, createOrder, getMyOrders, getCategories } = require('./store.controller');
 const { protect } = require('../../middleware/auth');
 
 const router = express.Router();
@@ -21,6 +21,7 @@ const router = express.Router();
  *         description: List of products
  */
 router.get('/products', getProducts);
+router.get('/categories', getCategories);
 
 router.use(protect);
 

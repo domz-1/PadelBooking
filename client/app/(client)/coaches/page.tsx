@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Image from "next/image";
 
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -50,8 +51,10 @@ export default function CoachesPage() {
           <Card key={coach.id}>
             <CardHeader className="flex flex-row items-center gap-4">
               <Avatar className="h-16 w-16">
-                <AvatarImage src={coach.User?.avatar} />
-                <AvatarFallback>{coach.User?.name?.[0] || "C"}</AvatarFallback>
+                <AvatarImage src={coach.User?.image || coach.User?.avatar} />
+                <AvatarFallback className="bg-primary/10">
+                  <Image src="/images/padel-coach-2.png" alt="Coach" width={64} height={64} className="object-cover" />
+                </AvatarFallback>
               </Avatar>
               <div>
                 <CardTitle>{coach.User?.name}</CardTitle>

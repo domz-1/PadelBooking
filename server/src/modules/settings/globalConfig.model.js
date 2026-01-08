@@ -58,6 +58,26 @@ const GlobalConfig = sequelize.define('GlobalConfig', {
     currency: {
         type: DataTypes.STRING,
         defaultValue: 'USD'
+    },
+    supportNumber1: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    supportNumber2: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    storeName: {
+        type: DataTypes.STRING,
+        defaultValue: 'Padel Pro Store'
+    },
+    storeLogo: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    storePhone: {
+        type: DataTypes.STRING,
+        allowNull: true
     }
 }, {
     timestamps: true
