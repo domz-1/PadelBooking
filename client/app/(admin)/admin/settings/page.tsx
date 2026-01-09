@@ -37,6 +37,7 @@ export default function AdminSettingsPage() {
   };
 
   const handleSave = async () => {
+    if (!config) return;
     try {
       await settingsService.updateConfig(config);
       toast.success("Settings saved successfully");
@@ -67,7 +68,7 @@ export default function AdminSettingsPage() {
               <Label htmlFor="appName">Application Name</Label>
               <Input
                 id="appName"
-                value={config?.appName || ""}
+                value={(config?.appName as string) || ""}
                 onChange={(e) =>
                   setConfig({ ...config, appName: e.target.value })
                 }

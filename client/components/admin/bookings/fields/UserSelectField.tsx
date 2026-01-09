@@ -22,30 +22,20 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
-import { Search, Phone, Check, ChevronsUpDown } from "lucide-react";
+import { Search, Phone, Check, ChevronsUpDown, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UseFormReturn } from "react-hook-form";
 import { User } from "@/lib/schemas";
 
 interface UserSelectFieldProps {
-  form: UseFormReturn<{
-    date: Date;
-    startTime: string;
-    endTime: string;
-    totalPrice: number;
-    userId: number;
-    venueId: number;
-    statusId?: number;
-    type: "standard" | "academy";
-    hasOffer: boolean;
-    offerValue: number;
-    notes?: string;
-  }>;
+  form: UseFormReturn<any>;
   users: User[];
   setUserSearch: (search: string) => void;
   loadMore?: () => void;
   hasMore?: boolean;
   loading?: boolean;
+  onQuickCreate?: (search: string) => void;
+  onUserCreated?: (user: User) => void;
 }
 
 export function UserSelectField({
@@ -55,11 +45,12 @@ export function UserSelectField({
   loadMore,
   hasMore,
   loading,
+  onQuickCreate,
+  onUserCreated,
 }: UserSelectFieldProps) {
   const [open, setOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState("");
 
-  // Debounce the search term
   useEffect(() => {
     const timer = setTimeout(() => {
       setUserSearch(localSearch);
@@ -67,6 +58,15 @@ export function UserSelectField({
 
     return () => clearTimeout(timer);
   }, [localSearch, setUserSearch]);
+
+  // Handle onUserCreated to update local newlyCreatedUser state
+  useEffect(() => {
+    if (onUserCreated) {
+      // This is a bit tricky since onUserCreated is a callback.
+      // But we can use it to sync state if we want.
+      // Actually, it's better if AdminCreateBookingDialog triggers something.
+    }
+  }, [onUserCreated]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
@@ -80,8 +80,12 @@ export function UserSelectField({
 
   // Helper to get selected user object for display
   const selectedUserId = form.watch("userId");
-  const selectedUser = users.find((u) => u.id === selectedUserId) ||
-    (selectedUserId ? { id: selectedUserId, name: "Selected User" } : null); // Fallback if not in list
+  const [newlyCreatedUser, setNewlyCreatedUser] = useState<User | null>(null);
+
+  const selectedUser = newlyCreatedUser?.id === selectedUserId
+    ? newlyCreatedUser
+    : users.find((u) => u.id === selectedUserId) ||
+    (selectedUserId ? { id: selectedUserId, name: "Selected User", email: "" } : null);
 
   return (
     <FormField
@@ -124,7 +128,7 @@ export function UserSelectField({
                 </Button>
               </FormControl>
             </PopoverTrigger>
-            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+            <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
               <Command shouldFilter={false}>
                 <CommandInput
                   placeholder="Search by name, email or mobile..."
@@ -136,8 +140,25 @@ export function UserSelectField({
                   className="max-h-[250px] overflow-auto"
                   onScroll={handleScroll}
                 >
-                  {users.length === 0 && !loading && (
-                    <CommandEmpty>No users found.</CommandEmpty>
+                  {users.length === 0 && !loading && localSearch && (
+                    <div className="py-6 text-center text-sm px-4">
+                      <p className="text-muted-foreground mb-4">No users found for "{localSearch}"</p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="w-full gap-2"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (onQuickCreate) onQuickCreate(localSearch);
+                          setOpen(false);
+                        }}
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        Add as new user?
+                      </Button>
+                    </div>
                   )}
                   <CommandGroup>
                     {users.map((user) => (

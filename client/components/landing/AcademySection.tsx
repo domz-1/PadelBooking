@@ -62,7 +62,7 @@ export function AcademySection() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {STATIC_COACHES.map((coach) => (
                         <div key={coach.id} className="group relative bg-card rounded-3xl overflow-hidden border border-border shadow-sm hover:shadow-xl transition-all duration-500">
-                            <div className="aspect-[4/5] relative">
+                            <div className="relative aspect-4/5">
                                 <Image
                                     src={coach.image}
                                     alt={coach.name}
@@ -96,25 +96,7 @@ export function AcademySection() {
                     ))}
                 </div>
 
-                <div className="mt-20 p-8 rounded-[2rem] bg-muted/30 border border-border flex flex-col md:flex-row items-center justify-between gap-8">
-                    <div className="flex gap-4 items-center">
-                        <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                            <CheckCircle2 className="h-6 w-6" />
-                        </div>
-                        <div>
-                            <p className="font-bold text-lg">Daily Training Sessions</p>
-                            <p className="text-sm text-muted-foreground text-balance">Moorning and evening slots available for all skill levels.</p>
-                        </div>
-                    </div>
-                    <Button
-                        variant="link"
-                        onClick={() => router.push('/academy')}
-                        className="text-primary font-bold text-lg p-0"
-                    >
-                        Check Availability
-                        <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
-                </div>
+
             </div>
         </section>
     );

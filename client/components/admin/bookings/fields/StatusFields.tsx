@@ -18,19 +18,7 @@ import { UseFormReturn } from "react-hook-form";
 import { BookingStatus } from "@/lib/services/admin/bookingStatus.service";
 
 interface StatusFieldsProps {
-  form: UseFormReturn<{
-    date: Date;
-    startTime: string;
-    endTime: string;
-    totalPrice: number;
-    userId: number;
-    venueId: number;
-    statusId?: number;
-    type: "standard" | "academy";
-    hasOffer: boolean;
-    offerValue: number;
-    notes?: string;
-  }>;
+  form: UseFormReturn<any>;
   statuses: BookingStatus[];
 }
 

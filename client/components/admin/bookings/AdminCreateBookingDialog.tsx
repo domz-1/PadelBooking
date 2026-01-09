@@ -23,6 +23,7 @@ import { UserSelectField } from "./fields/UserSelectField";
 import { StatusFields } from "./fields/StatusFields";
 import { PriceOfferFields } from "./fields/PriceOfferFields";
 import { BookingTypeField } from "./fields/BookingTypeField";
+import { QuickCreateUserDialog } from "./dialogs/QuickCreateUserDialog";
 import {
   Select,
   SelectContent,
@@ -80,6 +81,8 @@ export function AdminCreateBookingDialog({
   const [userSearch, setUserSearch] = useState("");
   const { users, venues, statuses } = useBookingData(open, userSearch);
   const { createBooking, loading } = useBookingOperations();
+  const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false);
+  const [searchForQuickCreate, setSearchForQuickCreate] = useState("");
 
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingFormSchema),
@@ -117,11 +120,11 @@ export function AdminCreateBookingDialog({
       offerValue: values.offerValue,
       ...(values.isRecurring && values.repeatCount > 1
         ? {
-            repeat: {
-              frequency: values.repeatFrequency,
-              count: values.repeatCount,
-            },
-          }
+          repeat: {
+            frequency: values.repeatFrequency,
+            count: values.repeatCount,
+          },
+        }
         : {}),
     };
 
@@ -155,6 +158,10 @@ export function AdminCreateBookingDialog({
               form={form}
               users={users}
               setUserSearch={setUserSearch}
+              onQuickCreate={(search) => {
+                setSearchForQuickCreate(search);
+                setIsQuickCreateOpen(true);
+              }}
             />
 
             <div className="grid grid-cols-2 gap-4">
@@ -287,6 +294,14 @@ export function AdminCreateBookingDialog({
           </form>
         </Form>
       </DialogContent>
+      <QuickCreateUserDialog
+        open={isQuickCreateOpen}
+        onOpenChange={setIsQuickCreateOpen}
+        defaultPhone={searchForQuickCreate}
+        onSuccess={(user) => {
+          form.setValue("userId", user.id);
+        }}
+      />
     </Dialog>
   );
 }
