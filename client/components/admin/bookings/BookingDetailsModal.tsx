@@ -33,7 +33,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { EditBookingDialog } from "@/components/admin/bookings/EditBookingDialog";
 import { BookingLogs } from "@/components/admin/bookings/BookingLogs";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Separator } from "@/components/ui/separator";
@@ -111,7 +110,7 @@ export function BookingDetailsModal({
   onOpenChange,
   onSuccess,
 }: BookingDetailsModalProps) {
-  const [viewMode, setViewMode] = useState<'details' | 'edit'>('details'); // Track current view mode
+  const [viewMode, setViewMode] = useState<"details" | "edit">("details"); // Track current view mode
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
 
@@ -177,14 +176,14 @@ export function BookingDetailsModal({
   // Reset to details view when modal is closed
   useEffect(() => {
     if (!open) {
-      setViewMode('details');
+      setViewMode("details");
     }
   }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0">
-        {viewMode === 'details' ? (
+        {viewMode === "details" ? (
           <>
             <DialogHeader className="p-6 pb-0">
               <div className="flex items-center justify-between gap-4">
@@ -224,7 +223,7 @@ export function BookingDetailsModal({
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      setViewMode('edit'); // Switch to edit mode
+                      setViewMode("edit"); // Switch to edit mode
                     }}
                     className="h-8 gap-1.5"
                   >
@@ -289,7 +288,8 @@ export function BookingDetailsModal({
                               const [endH, endM] = booking.endTime
                                 .split(":")
                                 .map(Number);
-                              const duration = endH - startH + (endM - startM) / 60;
+                              const duration =
+                                endH - startH + (endM - startM) / 60;
                               return `${duration}h`;
                             })()}
                             )
@@ -328,7 +328,9 @@ export function BookingDetailsModal({
                         <DollarSign className="w-4 h-4 text-primary" />
                       </Badge>
                       <div>
-                        <p className="text-xs text-muted-foreground">Total Price</p>
+                        <p className="text-xs text-muted-foreground">
+                          Total Price
+                        </p>
                         <p className="text-sm font-bold text-green-600">
                           {booking.totalPrice} USD
                         </p>
@@ -495,11 +497,11 @@ export function BookingDetailsModal({
               booking={booking}
               setViewMode={setViewMode}
               onOpenChange={() => {
-                setViewMode('details'); // Go back to details view
+                setViewMode("details"); // Go back to details view
                 onSuccess?.();
               }}
               onSuccess={() => {
-                setViewMode('details'); // Go back to details view after successful edit
+                setViewMode("details"); // Go back to details view after successful edit
                 onSuccess?.();
               }}
             />
@@ -534,17 +536,23 @@ interface EditBookingDialogContentProps {
   booking: Booking;
   onOpenChange: () => void;
   onSuccess?: () => void;
-  setViewMode: (mode: 'details' | 'edit') => void;
+  setViewMode: (mode: "details" | "edit") => void;
 }
 
 function EditBookingDialogContent({
   booking,
   onOpenChange,
   onSuccess,
-  setViewMode
+  setViewMode,
 }: EditBookingDialogContentProps) {
   const [userSearch, setUserSearch] = useState("");
-  const { users, venues, statuses, loading: dataLoading } = useBookingData(true, userSearch); // Always load data when in edit mode
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const {
+    users,
+    venues,
+    statuses,
+    loading: dataLoading,
+  } = useBookingData(true, userSearch); // Always load data when in edit mode
   const {
     loading,
     updateBooking,
@@ -565,7 +573,6 @@ function EditBookingDialogContent({
   const [seriesOption, setSeriesOption] = useState<"single" | "upcoming">(
     "single",
   );
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingFormSchema),
@@ -639,18 +646,6 @@ function EditBookingDialogContent({
       onSuccess?.();
     });
   }
-
-  const handleDelete = async () => {
-    if (!booking.id) return;
-    await deleteBooking(
-      booking.id as number,
-      booking.recurrenceId ? seriesOption : "single",
-      () => {
-        onOpenChange();
-        onSuccess?.();
-      },
-    );
-  };
 
   const onAddWaitlist = async () => {
     if (!selectedWaitlistUser) return;
@@ -906,7 +901,7 @@ function EditBookingDialogContent({
                       type="button"
                       variant="outline"
                       onClick={() => {
-                        setViewMode('details'); // Go back to details view
+                        setViewMode("details"); // Go back to details view
                       }}
                       size="sm"
                     >

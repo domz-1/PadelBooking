@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Overview } from "@/components/admin/Overview";
-import { EmptySlotsBoard } from "@/components/admin/EmptySlotsBoard";
+
 import {
   metricsService,
   DashboardStats,
@@ -35,9 +35,7 @@ export default function AdminDashboardPage() {
   const [startDate, setStartDate] = useState<Date | undefined>(
     subDays(new Date(), 30),
   );
-  const [endDate, setEndDate] = useState<Date | undefined>(
-    new Date(),
-  );
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -46,15 +44,15 @@ export default function AdminDashboardPage() {
       try {
         const res = await metricsService.getStats(
           format(startDate, "yyyy-MM-dd"),
-          format(endDate, "yyyy-MM-dd")
+          format(endDate, "yyyy-MM-dd"),
         );
         // Backend returns { success: true, data: { ...stats } }
         // metricsService returns response.data
         if (res.data) {
           setStats(res.data);
-        } else if (res && !('success' in res)) {
+        } else if (res && !("success" in res)) {
           // Fallback if data is returned directly
-          setStats(res as any);
+          setStats(res as DashboardStats);
         }
       } catch (error) {
         console.error("Dashboard error:", error);
@@ -127,9 +125,7 @@ export default function AdminDashboardPage() {
         </div>
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
-            <Label
-              className="text-[10px] font-bold text-gray-400 uppercase tracking-wider"
-            >
+            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
               Start
             </Label>
             <DatePicker
@@ -139,9 +135,7 @@ export default function AdminDashboardPage() {
             />
           </div>
           <div className="flex items-center gap-2">
-            <Label
-              className="text-[10px] font-bold text-gray-400 uppercase tracking-wider"
-            >
+            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
               End
             </Label>
             <DatePicker

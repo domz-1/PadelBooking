@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { User, adminUserService } from "@/lib/services/admin/users.service";
 import { DataTable } from "@/components/ui/data-table";
 import { columns } from "./columns";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";

@@ -8,9 +8,13 @@ interface OverviewProps {
 }
 
 export function Overview({ data = [] }: OverviewProps) {
-  const getValue = (item: any) => {
+  const getValue = (item: {
+    count?: number | string;
+    value?: number | string;
+  }) => {
     const rawValue = item?.count ?? item?.value ?? 0;
-    const parsed = typeof rawValue === 'string' ? parseFloat(rawValue) : rawValue;
+    const parsed =
+      typeof rawValue === "string" ? parseFloat(rawValue) : rawValue;
     return isFinite(parsed) ? parsed : 0;
   };
 
@@ -54,7 +58,8 @@ export function Overview({ data = [] }: OverviewProps) {
                       style={{ height: `${safeHeight}%` }}
                     >
                       <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[9px] font-bold px-2 py-1 rounded shadow-xl whitespace-nowrap z-30 pointer-events-none transition-all">
-                        {Math.round(val * 10) / 10} {item.value !== undefined ? "%" : ""}
+                        {Math.round(val * 10) / 10}{" "}
+                        {item.value !== undefined ? "%" : ""}
                         <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-zinc-900 rotate-45" />
                       </div>
                     </div>

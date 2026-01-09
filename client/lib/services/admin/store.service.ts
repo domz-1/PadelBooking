@@ -102,12 +102,12 @@ export const adminStoreService = {
     return response.data;
   },
 
-  createCategory: async (data: any) => {
+  createCategory: async (data: { name: string; description?: string }) => {
     const response = await adminApi.post("/store/categories", data);
     return response.data;
   },
 
-  updateCategory: async (id: number, data: any) => {
+  updateCategory: async (id: number, data: { name?: string; description?: string }) => {
     const response = await adminApi.put(`/store/categories/${id}`, data);
     return response.data;
   },

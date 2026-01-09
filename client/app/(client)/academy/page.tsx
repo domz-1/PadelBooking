@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { coachService } from "@/lib/services/coach.service";
-import { Coach, Package } from "@/lib/types";
+import { Coach } from "@/lib/types";
 import {
     CheckCircle2,
     MessageCircle,

@@ -516,7 +516,7 @@ export default function BookingGrid({
                                     .className,
                                   "cursor-pointer ring-offset-1",
                                   isOwn && "ring-2 ring-primary",
-                                  ((booking as any).isVenueBlock || (booking.type === "clocked" && !isAdmin)) && "pointer-events-none"
+                                  (((booking as Booking & { isVenueBlock?: boolean }).isVenueBlock) || (booking.type === "clocked" && !isAdmin)) && "pointer-events-none"
                                 )}
                                 style={{
                                   ...getBookingStatusStyle(
@@ -534,7 +534,7 @@ export default function BookingGrid({
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if ((booking as any).isVenueBlock) return;
+                                  if ((booking as Booking & { isVenueBlock?: boolean }).isVenueBlock) return;
 
                                   if (booking.type === "clocked" && !isAdmin) {
                                     return;

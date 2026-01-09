@@ -10,7 +10,6 @@ import {
   Megaphone,
   Building,
   Palette,
-  ChevronDown,
 } from "lucide-react";
 
 export interface NavItem {

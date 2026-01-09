@@ -24,11 +24,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Search, Phone, Check, ChevronsUpDown, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { UseFormReturn } from "react-hook-form";
+import { FieldValues, Path, UseFormReturn } from "react-hook-form";
 import { User } from "@/lib/schemas";
 
-interface UserSelectFieldProps {
-  form: UseFormReturn<any>;
+interface UserSelectFieldProps<T extends FieldValues> {
+  form: UseFormReturn<T>;
   users: User[];
   setUserSearch: (search: string) => void;
   loadMore?: () => void;
@@ -39,7 +39,7 @@ interface UserSelectFieldProps {
   initialUser?: User | null;
 }
 
-export function UserSelectField({
+export function UserSelectField<T extends FieldValues>({
   form,
   users,
   setUserSearch,
@@ -49,7 +49,7 @@ export function UserSelectField({
   onQuickCreate,
   onUserCreated,
   initialUser,
-}: UserSelectFieldProps) {
+}: UserSelectFieldProps<T>) {
   const [open, setOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState("");
 
@@ -81,7 +81,7 @@ export function UserSelectField({
   };
 
   // Helper to get selected user object for display
-  const selectedUserId = form.watch("userId");
+  const selectedUserId = form.watch("userId" as Path<T>);
   const [newlyCreatedUser, setNewlyCreatedUser] = useState<User | null>(null);
 
   const selectedUser = newlyCreatedUser?.id === selectedUserId
@@ -93,7 +93,7 @@ export function UserSelectField({
   return (
     <FormField
       control={form.control}
-      name="userId"
+      name={"userId" as Path<T>}
       render={({ field }) => (
         <FormItem className="flex flex-col">
           <FormLabel>Customer</FormLabel>
@@ -145,7 +145,7 @@ export function UserSelectField({
                 >
                   {users.length === 0 && !loading && localSearch && (
                     <div className="py-6 text-center text-sm px-4">
-                      <p className="text-muted-foreground mb-4">No users found for "{localSearch}"</p>
+                      <p className="text-muted-foreground mb-4">No users found for &quot;{localSearch}&quot;</p>
                       <Button
                         type="button"
                         size="sm"

@@ -40,7 +40,6 @@ export const adminUserService = {
 
     updateUser: async (id: number, data: Partial<User> | FormData) => {
         const config = data instanceof FormData ? { headers: { 'Content-Type': undefined } } : {};
-        // @ts-ignore - Content-Type undefined is valid for letting browser set it
         const response = await adminApi.put<{ success: boolean; data: User }>(`/users/${id}`, data, config);
         return response.data;
     },

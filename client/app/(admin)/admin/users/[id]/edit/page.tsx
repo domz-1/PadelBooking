@@ -151,7 +151,7 @@ export default function EditUserPage() {
                 <FormField
                   control={form.control}
                   name="image"
-                  render={({ field: { value, onChange, ...fieldProps } }) => (
+                  render={({ field: { onChange, ...fieldProps } }) => (
                     <FormItem>
                       <FormLabel>Profile Image</FormLabel>
                       <FormControl>

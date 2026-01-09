@@ -14,20 +14,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UseFormReturn } from "react-hook-form";
+import { FieldValues, Path, UseFormReturn } from "react-hook-form";
 import { BookingStatus } from "@/lib/services/admin/bookingStatus.service";
 
-interface StatusFieldsProps {
-  form: UseFormReturn<any>;
+interface StatusFieldsProps<T extends FieldValues> {
+  form: UseFormReturn<T>;
   statuses: BookingStatus[];
 }
 
-export function StatusFields({ form, statuses }: StatusFieldsProps) {
+export function StatusFields<T extends FieldValues>({ form, statuses }: StatusFieldsProps<T>) {
   return (
     <div className="w-full">
       <FormField
         control={form.control}
-        name="statusId"
+        name={"statusId" as Path<T>}
         render={({ field }) => (
           <FormItem>
             <FormLabel>Booking Status</FormLabel>

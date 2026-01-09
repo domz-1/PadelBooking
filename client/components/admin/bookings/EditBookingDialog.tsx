@@ -105,7 +105,15 @@ export function EditBookingDialog({
   onSuccess,
 }: EditBookingDialogProps) {
   const [userSearch, setUserSearch] = useState("");
-  const { users, venues, statuses, loading: dataLoading, loadMore, hasMore, usersLoading } = useBookingData(
+  const {
+    users,
+    venues,
+    statuses,
+    loading: dataLoading,
+    loadMore,
+    hasMore,
+    usersLoading,
+  } = useBookingData(
     open,
     userSearch,
     booking.userId ? Number(booking.userId) : undefined,
@@ -152,8 +160,12 @@ export function EditBookingDialog({
   // Reset form when booking changes or dialog opens
   useEffect(() => {
     if (open && booking.id) {
-      const pendingStatus = statuses.find(s => s.name.toLowerCase() === "pending");
-      const defaultStatusId = booking.statusId ? Number(booking.statusId) : pendingStatus?.id;
+      const pendingStatus = statuses.find(
+        (s) => s.name.toLowerCase() === "pending",
+      );
+      const defaultStatusId = booking.statusId
+        ? Number(booking.statusId)
+        : pendingStatus?.id;
 
       form.reset({
         date: new Date(booking.date + "T12:00:00"),
@@ -163,13 +175,30 @@ export function EditBookingDialog({
         userId: Number(booking.userId),
         venueId: Number(booking.venueId),
         statusId: defaultStatusId,
-        type: (booking.type as "standard" | "academy" | "clocked") || "standard",
+        type:
+          (booking.type as "standard" | "academy" | "clocked") || "standard",
         hasOffer: !!booking.hasOffer,
         offerValue: Number(booking.offerValue || 0),
         notes: booking.notes || "",
       });
     }
-  }, [open, booking.id, form, statuses, booking.statusId, booking.date, booking.startTime, booking.endTime, booking.totalPrice, booking.userId, booking.venueId, booking.type, booking.hasOffer, booking.offerValue, booking.notes]);
+  }, [
+    open,
+    booking.id,
+    form,
+    statuses,
+    booking.statusId,
+    booking.date,
+    booking.startTime,
+    booking.endTime,
+    booking.totalPrice,
+    booking.userId,
+    booking.venueId,
+    booking.type,
+    booking.hasOffer,
+    booking.offerValue,
+    booking.notes,
+  ]);
 
   useEffect(() => {
     if (
@@ -267,9 +296,11 @@ export function EditBookingDialog({
   // eslint-disable-next-line react-hooks/incompatible-library
   const currentStatusId = form.watch("statusId");
   const currentStatus =
-    statuses.find((s) => s.id === Number(currentStatusId)) || booking.BookingStatus;
+    statuses.find((s) => s.id === Number(currentStatusId)) ||
+    booking.BookingStatus;
 
-  const bookedUser = users.find((u) => u.id === Number(booking.userId)) || booking.User;
+  const bookedUser =
+    users.find((u) => u.id === Number(booking.userId)) || booking.User;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -324,7 +355,9 @@ export function EditBookingDialog({
               <div className="grid gap-6">
                 {/* User Info Section */}
                 <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Customer</h4>
+                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                    Customer
+                  </h4>
                   <div className="bg-muted/30 p-4 rounded-xl border">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
@@ -332,8 +365,12 @@ export function EditBookingDialog({
                           {bookedUser?.name?.[0]?.toUpperCase() || "U"}
                         </div>
                         <div>
-                          <p className="font-semibold">{bookedUser?.name || "Unknown User"}</p>
-                          <p className="text-sm text-muted-foreground">{bookedUser?.email}</p>
+                          <p className="font-semibold">
+                            {bookedUser?.name || "Unknown User"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {bookedUser?.email}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -341,14 +378,26 @@ export function EditBookingDialog({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {bookedUser?.phone && (
                         <>
-                          <Button variant="outline" className="w-full justify-start h-10 gap-2" asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start h-10 gap-2"
+                            asChild
+                          >
                             <a href={`tel:${bookedUser.phone}`}>
                               <Phone className="w-4 h-4 text-green-600" />
                               Call
                             </a>
                           </Button>
-                          <Button variant="outline" className="w-full justify-start h-10 gap-2" asChild>
-                            <a href={`https://wa.me/${bookedUser.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer">
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start h-10 gap-2"
+                            asChild
+                          >
+                            <a
+                              href={`https://wa.me/${bookedUser.phone.replace(/[^0-9]/g, "")}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
                               <MessageCircle className="w-4 h-4 text-green-500" />
                               WhatsApp
                             </a>
@@ -356,7 +405,9 @@ export function EditBookingDialog({
                         </>
                       )}
                       {!bookedUser?.phone && (
-                        <div className="col-span-2 text-sm text-muted-foreground italic px-2">No phone number available</div>
+                        <div className="col-span-2 text-sm text-muted-foreground italic px-2">
+                          No phone number available
+                        </div>
                       )}
                     </div>
                   </div>
@@ -364,59 +415,89 @@ export function EditBookingDialog({
 
                 {/* Booking Info Section */}
                 <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Booking Info</h4>
+                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                    Booking Info
+                  </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Date & Time</Label>
+                      <Label className="text-xs text-muted-foreground">
+                        Date & Time
+                      </Label>
                       <div className="font-medium flex items-center gap-2">
                         <CalendarIcon className="w-4 h-4 text-primary" />
                         {format(new Date(booking.date), "PPP")}
                       </div>
                       <div className="text-sm pl-6">
-                        {booking.startTime.slice(0, 5)} - {booking.endTime.slice(0, 5)}
+                        {booking.startTime.slice(0, 5)} -{" "}
+                        {booking.endTime.slice(0, 5)}
                       </div>
                     </div>
 
                     <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Court</Label>
+                      <Label className="text-xs text-muted-foreground">
+                        Court
+                      </Label>
                       <div className="font-medium">
                         {(() => {
-                          const venue = venues.find(v => v.id === booking.venueId) || booking.Venue;
-                          const venueName = venue?.name || `Court #${booking.venueId}`;
+                          const venue =
+                            venues.find((v) => v.id === booking.venueId) ||
+                            booking.Venue;
+                          const venueName =
+                            venue?.name || `Court #${booking.venueId}`;
                           // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           const branchName = (venue as any)?.Branch?.name;
-                          return branchName ? `${venueName} (${branchName})` : venueName;
+                          return branchName
+                            ? `${venueName} (${branchName})`
+                            : venueName;
                         })()}
                       </div>
                     </div>
 
                     <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Price</Label>
-                      <div className="font-medium text-lg text-primary">{Number(booking.totalPrice).toFixed(2)} SAR</div>
+                      <Label className="text-xs text-muted-foreground">
+                        Price
+                      </Label>
+                      <div className="font-medium text-lg text-primary">
+                        {Number(booking.totalPrice).toFixed(2)} SAR
+                      </div>
                     </div>
 
                     <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Status</Label>
-                      <div className="font-medium capitalize">{booking.BookingStatus?.name || "Pending"}</div>
+                      <Label className="text-xs text-muted-foreground">
+                        Status
+                      </Label>
+                      <div className="font-medium capitalize">
+                        {booking.BookingStatus?.name || "Pending"}
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Notes Section */}
                 <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Notes</h4>
+                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                    Notes
+                  </h4>
                   <div className="bg-muted/50 p-3 rounded-lg border min-h-[60px] text-sm whitespace-pre-wrap">
-                    {booking.notes || <span className="text-muted-foreground italic">No notes added.</span>}
+                    {booking.notes || (
+                      <span className="text-muted-foreground italic">
+                        No notes added.
+                      </span>
+                    )}
                   </div>
                 </div>
                 {/* User Actions Section */}
                 <div className="pt-4 border-t space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">User Actions</h4>
+                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                    User Actions
+                  </h4>
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       variant="outline"
                       className="w-full"
-                      onClick={() => window.open(`/admin/users/${bookedUser?.id}`, '_blank')}
+                      onClick={() =>
+                        window.open(`/admin/users/${bookedUser?.id}`, "_blank")
+                      }
                       disabled={!bookedUser?.id}
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
@@ -428,36 +509,58 @@ export function EditBookingDialog({
                       description="This will generate a random password for the user. Are you sure?"
                       onConfirm={async () => {
                         if (!bookedUser?.id) return;
-                        const newPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+                        const newPassword =
+                          Math.random().toString(36).slice(-8) +
+                          Math.random().toString(36).slice(-8);
                         try {
-                          await adminUserService.updateUser(bookedUser.id, { password: newPassword });
-                          await navigator.clipboard.writeText(`Email: ${bookedUser.email}\nPassword: ${newPassword}`);
-                          toast.success("Password reset and credentials copied to clipboard");
+                          await adminUserService.updateUser(Number(bookedUser.id), {
+                            password: newPassword,
+                          });
+                          await navigator.clipboard.writeText(
+                            `Email: ${bookedUser.email}\nPassword: ${newPassword}`,
+                          );
+                          toast.success(
+                            "Password reset and credentials copied to clipboard",
+                          );
                         } catch {
                           toast.error("Failed to reset password");
                         }
                       }}
                     >
-                      <Button variant="outline" className="w-full" disabled={!bookedUser?.id}>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        disabled={!bookedUser?.id}
+                      >
                         <KeyRound className="w-4 h-4 mr-2" />
                         Reset Password
                       </Button>
                     </ConfirmDialog>
 
                     <ConfirmDialog
-                      title={bookedUser?.isActive ? "Ban User" : "Activate User"}
-                      description={bookedUser?.isActive
-                        ? "Are you sure you want to ban this user? This will also cancel all their future bookings."
-                        : "Are you sure you want to activate this user?"}
+                      title={
+                        bookedUser?.isActive ? "Ban User" : "Activate User"
+                      }
+                      description={
+                        bookedUser?.isActive
+                          ? "Are you sure you want to ban this user? This will also cancel all their future bookings."
+                          : "Are you sure you want to activate this user?"
+                      }
                       onConfirm={async () => {
                         if (!bookedUser?.id) return;
                         try {
                           if (bookedUser.isActive) {
-                            await adminUserService.banUser(bookedUser.id);
+                            await adminUserService.banUser(Number(bookedUser.id));
                           } else {
-                            await adminUserService.updateUser(bookedUser.id, { isActive: true });
+                            await adminUserService.updateUser(Number(bookedUser.id), {
+                              isActive: true,
+                            });
                           }
-                          toast.success(bookedUser.isActive ? "User blocked" : "User activated");
+                          toast.success(
+                            bookedUser.isActive
+                              ? "User blocked"
+                              : "User activated",
+                          );
                           onOpenChange(false);
                           onSuccess?.();
                         } catch {
@@ -466,7 +569,9 @@ export function EditBookingDialog({
                       }}
                     >
                       <Button
-                        variant={bookedUser?.isActive ? "destructive" : "outline"}
+                        variant={
+                          bookedUser?.isActive ? "destructive" : "outline"
+                        }
                         className="w-full col-span-2"
                         disabled={!bookedUser?.id}
                       >
@@ -522,7 +627,10 @@ export function EditBookingDialog({
                                 </Button>
                               </FormControl>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
+                            <PopoverContent
+                              className="w-auto p-0"
+                              align="start"
+                            >
                               <Calendar
                                 mode="single"
                                 selected={field.value}
@@ -543,7 +651,14 @@ export function EditBookingDialog({
                       loadMore={loadMore}
                       hasMore={hasMore}
                       loading={usersLoading}
-                      initialUser={bookedUser as any}
+                      initialUser={
+                        bookedUser as {
+                          id: number;
+                          name: string;
+                          email: string;
+                          role: string;
+                        }
+                      }
                     />
 
                     <div className="grid grid-cols-2 gap-4">
@@ -685,13 +800,12 @@ export function EditBookingDialog({
                   </div>
                 </form>
               </Form>
-
-            </TabsContent >
+            </TabsContent>
 
             {/* WAITLIST TAB */}
-            < TabsContent value="waitlist" className="space-y-6 py-4" >
+            <TabsContent value="waitlist" className="space-y-6 py-4">
               {/* Waitlist Section */}
-              < div className="space-y-4" >
+              <div className="space-y-4">
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium leading-none">
                     Add User to Waitlist
@@ -789,21 +903,21 @@ export function EditBookingDialog({
                     </div>
                   )}
                 </div>
-              </div >
-            </TabsContent >
+              </div>
+            </TabsContent>
 
             {/* HISTORY TAB */}
-            < TabsContent value="history" className="space-y-4 py-4" >
-              {
-                booking.id && (
-                  <BookingLogsList bookingId={Number(booking.id)} className="h-full" />
-                )
-              }
-            </TabsContent >
-          </Tabs >
-        )
-        }
-      </DialogContent >
+            <TabsContent value="history" className="space-y-4 py-4">
+              {booking.id && (
+                <BookingLogsList
+                  bookingId={Number(booking.id)}
+                  className="h-full"
+                />
+              )}
+            </TabsContent>
+          </Tabs>
+        )}
+      </DialogContent>
 
       <ConfirmDialog
         open={showDeleteConfirm}
@@ -817,6 +931,6 @@ export function EditBookingDialog({
         onConfirm={handleDelete}
         variant="destructive"
       />
-    </Dialog >
+    </Dialog>
   );
 }

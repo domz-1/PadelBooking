@@ -83,7 +83,6 @@ export function useBookingData(
         });
 
         const newUsers = usersRes.data || [];
-        const totalCount = usersRes.count || 0;
 
         setUsers(prev => {
           const userMap = new Map();

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { adminBookingService } from "@/lib/services/admin/bookings.service";
-import { type BookingLog, type ApiResponse } from "@/lib/types";
+import { type BookingLog } from "@/lib/types";
 import { toast } from "sonner";
 import { settingsService } from "@/lib/services/settings.service";
 import { type BookingStatus } from "@/lib/types";
@@ -43,13 +43,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
-interface BookingLogsResponse {
-  success: boolean;
-  data: BookingLog[];
-  count: number;
-  totalPages: number;
-  currentPage: number;
-}
 
 export function AllBookingLogs() {
   const [logs, setLogs] = useState<BookingLog[]>([]);

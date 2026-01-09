@@ -13,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Venue, adminVenueService } from "@/lib/services/admin/venues.service";
-import { Badge } from "@/components/ui/badge";
 
 export const columns: ColumnDef<Venue>[] = [
   {

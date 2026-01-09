@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { type Booking } from "@/lib/schemas"; // Fixed import
-import { Badge } from "@/components/ui/badge";
+
 import { useBookingOperations } from "@/hooks/useBookingOperations";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useState } from "react";
@@ -95,7 +95,7 @@ export const columns = (onRefresh: () => void): ColumnDef<Booking>[] => [
         <div
           className={cn(
             "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize border",
-            className
+            className,
           )}
           style={style}
         >

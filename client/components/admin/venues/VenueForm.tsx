@@ -101,13 +101,12 @@ export function VenueForm({ initialData, isEditing = false }: VenueFormProps) {
     }, [])
 
     const form = useForm<VenueFormValues>({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         resolver: zodResolver(venueSchema) as any,
         defaultValues: initialData ? {
             ...initialData,
             amenities: initialData.amenities ? (Array.isArray(initialData.amenities) ? initialData.amenities.join(", ") : String(initialData.amenities)) : "",
             branchId: initialData.branchId ? String(initialData.branchId) : undefined,
-            blockedPeriods: (initialData as any).blockedPeriods || [],
+            blockedPeriods: (initialData as { blockedPeriods?: Array<{ days: number[], startTime: string, endTime: string }> }).blockedPeriods || [],
         } : {
             name: "",
             location: "",
@@ -141,8 +140,7 @@ export function VenueForm({ initialData, isEditing = false }: VenueFormProps) {
             router.push("/admin/venues")
             router.refresh()
         } catch (error: unknown) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const err = error as any
+            const err = error as { response?: { data?: { message?: string } } };
             toast.error(err.response?.data?.message || (isEditing ? "Failed to update venue" : "Failed to create venue"))
             console.error(err)
         } finally {

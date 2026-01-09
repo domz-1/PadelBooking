@@ -11,7 +11,18 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Trash, Ban, CheckCircle, KeyRound, Eye, MoreHorizontal, Clock, XCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Edit,
+  Trash,
+  Ban,
+  CheckCircle,
+  KeyRound,
+  Eye,
+  MoreHorizontal,
+  Clock,
+  XCircle,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -21,13 +32,16 @@ import { adminBookingService } from "@/lib/services/admin/bookings.service";
 import Image from "next/image";
 import type { Booking } from "@/lib/schemas";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { adminStoreService, type Order } from "@/lib/services/admin/store.service";
+import {
+  adminStoreService,
+  type Order,
+} from "@/lib/services/admin/store.service";
 import { ColumnDef } from "@tanstack/react-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
@@ -114,11 +128,19 @@ export default function ViewUserPage() {
             description="This will generate a random password for the user. Are you sure?"
             onConfirm={async () => {
               if (!user?.id) return;
-              const newPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+              const newPassword =
+                Math.random().toString(36).slice(-8) +
+                Math.random().toString(36).slice(-8);
               try {
-                await adminUserService.updateUser(user.id, { password: newPassword });
-                await navigator.clipboard.writeText(`Email: ${user.email}\nPassword: ${newPassword}`);
-                toast.success("Password reset and credentials copied to clipboard");
+                await adminUserService.updateUser(user.id, {
+                  password: newPassword,
+                });
+                await navigator.clipboard.writeText(
+                  `Email: ${user.email}\nPassword: ${newPassword}`,
+                );
+                toast.success(
+                  "Password reset and credentials copied to clipboard",
+                );
               } catch {
                 toast.error("Failed to reset password");
               }
@@ -160,7 +182,6 @@ export default function ViewUserPage() {
           </ConfirmDialog>
         </div>
       </div>
-
 
       {user.image && (
         <Card>
@@ -321,7 +342,7 @@ function OrdersTable({ userId }: { userId: number }) {
       });
       setData(response.data);
       setTotalOrders(response.count);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to fetch user orders", error);
       toast.error("Failed to fetch user orders");
     } finally {
@@ -340,7 +361,7 @@ function OrdersTable({ userId }: { userId: number }) {
         toast.success(`Order #${orderId} status updated to ${status}`);
         fetchOrders();
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to update status");
     }
   };
@@ -362,7 +383,16 @@ function OrdersTable({ userId }: { userId: number }) {
       cell: ({ row }) => {
         const status = row.getValue("status") as string;
         return (
-          <Badge variant={status === 'completed' ? 'default' : status === 'pending' ? 'outline' : 'destructive'} className="capitalize">
+          <Badge
+            variant={
+              status === "completed"
+                ? "default"
+                : status === "pending"
+                  ? "outline"
+                  : "destructive"
+            }
+            className="capitalize"
+          >
             {status}
           </Badge>
         );
@@ -371,7 +401,8 @@ function OrdersTable({ userId }: { userId: number }) {
     {
       accessorKey: "createdAt",
       header: "Date",
-      cell: ({ row }) => new Date(row.getValue("createdAt")).toLocaleDateString(),
+      cell: ({ row }) =>
+        new Date(row.getValue("createdAt")).toLocaleDateString(),
     },
     {
       id: "actions",
@@ -382,7 +413,10 @@ function OrdersTable({ userId }: { userId: number }) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => { setSelectedOrder(order); setIsDetailsOpen(true); }}
+              onClick={() => {
+                setSelectedOrder(order);
+                setIsDetailsOpen(true);
+              }}
               className="h-8 w-8 text-primary hover:bg-primary/10"
             >
               <Eye className="h-4 w-4" />
@@ -394,13 +428,20 @@ function OrdersTable({ userId }: { userId: number }) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, 'completed')}>
-                  <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Mark Completed
+                <DropdownMenuItem
+                  onClick={() => handleUpdateStatus(order.id, "completed")}
+                >
+                  <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Mark
+                  Completed
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, 'pending')}>
+                <DropdownMenuItem
+                  onClick={() => handleUpdateStatus(order.id, "pending")}
+                >
                   <Clock className="mr-2 h-4 w-4 text-yellow-500" /> Set Pending
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, 'cancelled')}>
+                <DropdownMenuItem
+                  onClick={() => handleUpdateStatus(order.id, "cancelled")}
+                >
                   <XCircle className="mr-2 h-4 w-4 text-red-500" /> Cancel Order
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -430,7 +471,9 @@ function OrdersTable({ userId }: { userId: number }) {
               <DialogHeader className="p-8 pb-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <DialogTitle className="text-3xl font-black">Order #{selectedOrder.id}</DialogTitle>
+                    <DialogTitle className="text-3xl font-black">
+                      Order #{selectedOrder.id}
+                    </DialogTitle>
                     <p className="text-muted-foreground text-sm uppercase tracking-widest font-bold mt-1">
                       {new Date(selectedOrder.createdAt).toLocaleString()}
                     </p>
@@ -445,29 +488,54 @@ function OrdersTable({ userId }: { userId: number }) {
                 <div className="space-y-8">
                   {/* Items List */}
                   <div>
-                    <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-4">Ordered Items</h3>
+                    <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-4">
+                      Ordered Items
+                    </h3>
                     <div className="space-y-4">
-                      {selectedOrder.OrderItems?.map((item: any, idx: number) => (
-                        <div key={idx} className="flex items-center gap-4 bg-white dark:bg-zinc-950 p-4 rounded-2xl border shadow-sm">
-                          <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center p-2">
-                            {item.Product?.image && (
-                              <Image
-                                src={item.Product.image.startsWith('http') ? item.Product.image : `${API_BASE_URL}/${item.Product.image}`}
-                                alt={item.Product.name}
-                                width={40}
-                                height={40}
-                                className="object-contain unoptimized"
-                                unoptimized
-                              />
-                            )}
+                      {selectedOrder.OrderItems?.map(
+                        (
+                          item: {
+                            Product?: { name?: string; image?: string };
+                            quantity?: number;
+                            price?: number;
+                          },
+                          idx: number,
+                        ) => (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-4 bg-white dark:bg-zinc-950 p-4 rounded-2xl border shadow-sm"
+                          >
+                            <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center p-2">
+                              {item.Product?.image && (
+                                <Image
+                                  src={
+                                    item.Product.image.startsWith("http")
+                                      ? item.Product.image
+                                      : `${API_BASE_URL}/${item.Product.image}`
+                                  }
+                                  alt={item.Product.name || "Product image"}
+                                  width={40}
+                                  height={40}
+                                  className="object-contain unoptimized"
+                                  unoptimized
+                                />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-bold text-sm">
+                                {item.Product?.name || "Unknown Product"}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground font-bold">
+                                Qty: {item.quantity} × {item.price} EGP
+                              </p>
+                            </div>
+                            <p className="font-black">
+                              {((item.quantity || 0) * (item.price || 0)).toLocaleString()}{" "}
+                              EGP
+                            </p>
                           </div>
-                          <div className="flex-1">
-                            <p className="font-bold text-sm">{item.Product?.name || 'Unknown Product'}</p>
-                            <p className="text-[10px] text-muted-foreground font-bold">Qty: {item.quantity} × {item.price} EGP</p>
-                          </div>
-                          <p className="font-black">{(item.quantity * item.price).toLocaleString()} EGP</p>
-                        </div>
-                      ))}
+                        ),
+                      )}
                     </div>
                   </div>
                 </div>
@@ -475,8 +543,13 @@ function OrdersTable({ userId }: { userId: number }) {
 
               <div className="p-8 pt-4 border-t bg-muted/10 flex justify-between items-center">
                 <div className="text-right w-full">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Amount</p>
-                  <p className="text-3xl font-black text-primary">{Number(selectedOrder.totalAmount).toLocaleString()} <span className="text-xs">EGP</span></p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    Total Amount
+                  </p>
+                  <p className="text-3xl font-black text-primary">
+                    {Number(selectedOrder.totalAmount).toLocaleString()}{" "}
+                    <span className="text-xs">EGP</span>
+                  </p>
                 </div>
               </div>
             </div>

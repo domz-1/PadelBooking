@@ -45,7 +45,9 @@ export default function ProfilePage() {
 
   // Booking Management States
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
-  const [cancelingBookingId, setCancelingBookingId] = useState<number | null>(null);
+  const [cancelingBookingId, setCancelingBookingId] = useState<number | null>(
+    null,
+  );
 
   // Data States
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -78,7 +80,7 @@ export default function ProfilePage() {
       setProfileForm({
         name: user.name,
         email: user.email,
-        phone: user.phone || ""
+        phone: user.phone || "",
       });
     }
   }, [user]);
@@ -86,7 +88,7 @@ export default function ProfilePage() {
   const fetchBookings = useCallback(async () => {
     if (!user) return;
     try {
-      const res = await api.get('/bookings/my-bookings');
+      const res = await api.get("/bookings/my-bookings");
       if (res.data.success) {
         setBookings(res.data.data.slice(0, 3));
       }
@@ -103,9 +105,9 @@ export default function ProfilePage() {
     }
   }, [isAuthenticated, user, fetchBookings]);
 
-  if (!user) return null;
-
   const { fetchUser } = useAuthStore();
+
+  if (!user) return null;
 
   const handleUpdateProfile = async () => {
     setIsSaving(true);
@@ -166,13 +168,23 @@ export default function ProfilePage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <Avatar className="h-16 w-16">
                 <AvatarImage
-                  src={user.image ? (user.image.startsWith('http') ? user.image : `${API_BASE_URL}/${user.image}`) : "/images/padel.png"}
+                  src={
+                    user.image
+                      ? user.image.startsWith("http")
+                        ? user.image
+                        : `${API_BASE_URL}/${user.image}`
+                      : "/images/padel.png"
+                  }
                   alt={user.name}
                   className="object-cover"
                 />
                 <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
               </Avatar>
-              <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditOpen(true)}
+              >
                 Edit Profile
               </Button>
             </CardHeader>
@@ -189,7 +201,11 @@ export default function ProfilePage() {
                 <Label htmlFor="phone">Phone</Label>
                 <Input id="phone" value={user.phone || "N/A"} readOnly />
               </div>
-              <Button variant="link" className="p-0" onClick={() => setIsPasswordOpen(true)}>
+              <Button
+                variant="link"
+                className="p-0"
+                onClick={() => setIsPasswordOpen(true)}
+              >
                 Change Password
               </Button>
             </CardContent>
@@ -202,16 +218,24 @@ export default function ProfilePage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Recent Bookings</CardTitle>
-                <CardDescription>Your latest match reservations</CardDescription>
+                <CardDescription>
+                  Your latest match reservations
+                </CardDescription>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => router.push('/my-bookings')}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push("/my-bookings")}
+              >
                 <History className="w-4 h-4 mr-2" />
                 View All
               </Button>
             </CardHeader>
             <CardContent>
               {loadingBookings ? (
-                <div className="text-center py-8 text-muted-foreground">Loading bookings...</div>
+                <div className="text-center py-8 text-muted-foreground">
+                  Loading bookings...
+                </div>
               ) : bookings.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   No bookings found. Time to play!
@@ -220,8 +244,11 @@ export default function ProfilePage() {
                 <div className="space-y-4">
                   {bookings.map((booking) => {
                     const bookingDateTime = new Date(booking.date);
-                    const [hours, minutes] = booking.startTime.split(':');
-                    bookingDateTime.setHours(parseInt(hours), parseInt(minutes));
+                    const [hours, minutes] = booking.startTime.split(":");
+                    bookingDateTime.setHours(
+                      parseInt(hours),
+                      parseInt(minutes),
+                    );
                     const isPastBooking = isPast(bookingDateTime);
 
                     return (
@@ -231,27 +258,38 @@ export default function ProfilePage() {
                       >
                         <div className="space-y-1">
                           <div className="font-semibold flex items-center gap-2">
-                            {booking.Venue?.name || 'Venue'}
+                            {booking.Venue?.name || "Venue"}
                             {isPastBooking ? (
-                              <Badge variant="secondary" className="text-[10px]">Past</Badge>
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px]"
+                              >
+                                Past
+                              </Badge>
                             ) : (
-                              <Badge variant="default" className="text-[10px] bg-green-600 hover:bg-green-700">Upcoming</Badge>
+                              <Badge
+                                variant="default"
+                                className="text-[10px] bg-green-600 hover:bg-green-700"
+                              >
+                                Upcoming
+                              </Badge>
                             )}
                           </div>
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
-                              {format(new Date(booking.date), 'MMM d, yyyy')}
+                              {format(new Date(booking.date), "MMM d, yyyy")}
                             </span>
                             <span className="flex items-center gap-1">
                               <Clock className="w-3 h-3" />
-                              {booking.startTime.slice(0, 5)} - {booking.endTime.slice(0, 5)}
+                              {booking.startTime.slice(0, 5)} -{" "}
+                              {booking.endTime.slice(0, 5)}
                             </span>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2 self-end sm:self-auto">
-                          {!isPastBooking && booking.status !== 'cancelled' && (
+                          {!isPastBooking && booking.status !== "cancelled" && (
                             <>
                               <Button
                                 variant="outline"
@@ -263,13 +301,15 @@ export default function ProfilePage() {
                               <Button
                                 variant="destructive"
                                 size="sm"
-                                onClick={() => setCancelingBookingId(booking.id)}
+                                onClick={() =>
+                                  setCancelingBookingId(booking.id)
+                                }
                               >
                                 Cancel
                               </Button>
                             </>
                           )}
-                          {booking.status === 'cancelled' && (
+                          {booking.status === "cancelled" && (
                             <Badge variant="destructive">Cancelled</Badge>
                           )}
                         </div>
@@ -298,7 +338,9 @@ export default function ProfilePage() {
               <Input
                 id="edit-name"
                 value={profileForm.name}
-                onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                onChange={(e) =>
+                  setProfileForm({ ...profileForm, name: e.target.value })
+                }
               />
             </div>
             <div className="space-y-1">
@@ -307,7 +349,9 @@ export default function ProfilePage() {
                 id="edit-email"
                 type="email"
                 value={profileForm.email}
-                onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                onChange={(e) =>
+                  setProfileForm({ ...profileForm, email: e.target.value })
+                }
               />
             </div>
             <div className="space-y-1">
@@ -316,7 +360,9 @@ export default function ProfilePage() {
                 id="edit-phone"
                 type="tel"
                 value={profileForm.phone}
-                onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                onChange={(e) =>
+                  setProfileForm({ ...profileForm, phone: e.target.value })
+                }
               />
             </div>
             <div className="space-y-1">
@@ -325,7 +371,9 @@ export default function ProfilePage() {
                 id="edit-image"
                 type="file"
                 accept="image/*"
-                onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)}
+                onChange={(e) =>
+                  setImageFile(e.target.files ? e.target.files[0] : null)
+                }
               />
             </div>
           </div>
@@ -361,7 +409,12 @@ export default function ProfilePage() {
                 id="current-password"
                 type="password"
                 value={passwordForm.currentPassword}
-                onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                onChange={(e) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    currentPassword: e.target.value,
+                  })
+                }
               />
             </div>
             <div className="space-y-1">
@@ -370,13 +423,20 @@ export default function ProfilePage() {
                 id="new-password"
                 type="password"
                 value={passwordForm.newPassword}
-                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                onChange={(e) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    newPassword: e.target.value,
+                  })
+                }
               />
             </div>
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleChangePassword}>Change Password</AlertDialogAction>
+            <AlertDialogAction onClick={handleChangePassword}>
+              Change Password
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -390,22 +450,29 @@ export default function ProfilePage() {
         />
       )}
 
-      <AlertDialog open={!!cancelingBookingId} onOpenChange={() => setCancelingBookingId(null)}>
+      <AlertDialog
+        open={!!cancelingBookingId}
+        onOpenChange={() => setCancelingBookingId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel Booking?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to cancel this booking? This action cannot be undone.
+              Are you sure you want to cancel this booking? This action cannot
+              be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>No, Keep It</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCancelBooking} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction
+              onClick={handleCancelBooking}
+              className="bg-red-600 hover:bg-red-700"
+            >
               Yes, Cancel Booking
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div >
+    </div>
   );
 }

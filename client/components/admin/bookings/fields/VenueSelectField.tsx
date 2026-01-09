@@ -14,18 +14,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UseFormReturn } from "react-hook-form";
+import { FieldValues, Path, UseFormReturn } from "react-hook-form";
 
-interface VenueSelectFieldProps {
-  form: UseFormReturn<any>;
+interface VenueSelectFieldProps<T extends FieldValues> {
+  form: UseFormReturn<T>;
   venues: { id: number; name: string }[];
 }
 
-export function VenueSelectField({ form, venues }: VenueSelectFieldProps) {
+export function VenueSelectField<T extends FieldValues>({ form, venues }: VenueSelectFieldProps<T>) {
   return (
     <FormField
       control={form.control}
-      name="venueId"
+      name={"venueId" as Path<T>}
       render={({ field }) => (
         <FormItem>
           <FormLabel>Venue (Court)</FormLabel>

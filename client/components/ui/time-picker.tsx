@@ -46,7 +46,7 @@ export function TimePicker({
       const timeString = `${hour24.toString().padStart(2, "0")}:${minute.padStart(2, "0")}`;
       onChange(timeString);
     }
-  }, [hour, minute, period]);
+  }, [hour, minute, period, onChange]);
 
   const incrementHour = () => {
     let newHour = (parseInt(hour) || 0) + 1;

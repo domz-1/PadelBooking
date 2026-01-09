@@ -43,6 +43,34 @@ export function LandingFreeSlots() {
     };
 
     useEffect(() => {
+        const fetchSlots = async () => {
+            if (isRefreshing) return;
+            setIsRefreshing(true);
+            try {
+                const today = new Date();
+                const tomorrow = addDays(today, 1);
+
+                const response = await api.get("/public/bookings/free-slots", {
+                    params: {
+                        startDate: format(today, "yyyy-MM-dd"),
+                        startTime: "17", // 5 PM
+                        endDate: format(tomorrow, "yyyy-MM-dd"),
+                        endTime: "03", // 3 AM next day
+                        branchId: "all"
+                    }
+                });
+
+                if (response.data.success) {
+                    setFreeSlots(response.data.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch free slots", error);
+            } finally {
+                setLoading(false);
+                setIsRefreshing(false);
+            }
+        };
+
         const userId = useAuthStore.getState().user?.id;
         socketService.connect(userId ? Number(userId) : undefined);
 
@@ -68,7 +96,7 @@ export function LandingFreeSlots() {
                 socket.off("bookingUpdate", handleBookingUpdate);
             }
         };
-    }, []);
+    }, [isRefreshing, setLoading, setIsRefreshing, setFreeSlots]);
 
     if (loading) {
         return (
@@ -88,7 +116,7 @@ export function LandingFreeSlots() {
                 <div className="mx-auto max-w-2xl text-center mb-16">
                     <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Available Slots Tonight</h2>
                     <p className="mt-4 text-lg leading-8 text-muted-foreground">
-                        Don't miss out! Check out the available court slots for tonight and tomorrow morning.
+                        Don&apos;t miss out! Check out the available court slots for tonight and tomorrow morning.
                     </p>
                 </div>
 

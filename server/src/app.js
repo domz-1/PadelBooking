@@ -10,40 +10,40 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./config/swagger');
 
 // Admin Route Imports
-const adminUserRoutes = require('./modules/users/users.admin.routes');
-const adminVenueRoutes = require('./modules/venues/venues.admin.routes');
-const adminBookingRoutes = require('./modules/bookings/bookings.admin.routes');
-const adminSettingsRoutes = require('./modules/settings/settings.admin.routes');
-const adminSportRoutes = require('./modules/sports/sports.admin.routes');
-const adminNotificationRoutes = require('./modules/notifications/notifications.admin.routes');
-const adminStoreRoutes = require('./modules/store/store.admin.routes');
-const adminSponsorRoutes = require('./modules/sponsors/sponsors.admin.routes');
-const adminOfferRoutes = require('./modules/offers/offers.admin.routes');
-const adminCoachRoutes = require('./modules/coaches/coaches.admin.routes'); // NEW
-const adminMatchRoutes = require('./modules/matches/matches.admin.routes'); // NEW
-const adminStoryRoutes = require('./modules/stories/stories.admin.routes'); // NEW
-const adminBranchRoutes = require('./modules/branches/branches.admin.routes'); // NEW
-const adminMetricsRoutes = require('./modules/metrics/metrics.routes'); // NEW
+const adminUserRoutes = require('./api/modules/users/users.admin.routes');
+const adminVenueRoutes = require('./api/modules/venues/venues.admin.routes');
+const adminBookingRoutes = require('./api/modules/bookings/bookings.admin.routes');
+const adminSettingsRoutes = require('./api/modules/settings/settings.admin.routes');
+const adminSportRoutes = require('./api/modules/sports/sports.admin.routes');
+const adminNotificationRoutes = require('./api/modules/notifications/notifications.admin.routes');
+const adminStoreRoutes = require('./api/modules/store/store.admin.routes');
+const adminSponsorRoutes = require('./api/modules/sponsors/sponsors.admin.routes');
+const adminOfferRoutes = require('./api/modules/offers/offers.admin.routes');
+const adminCoachRoutes = require('./api/modules/coaches/coaches.admin.routes'); // NEW
+const adminMatchRoutes = require('./api/modules/matches/matches.admin.routes'); // NEW
+const adminStoryRoutes = require('./api/modules/stories/stories.admin.routes'); // NEW
+const adminBranchRoutes = require('./api/modules/branches/branches.admin.routes'); // NEW
+const adminMetricsRoutes = require('./api/modules/metrics/metrics.routes'); // NEW
 
 // Client Route Imports
-const clientAuthRoutes = require('./modules/auth/auth.client.routes');
-const clientUserRoutes = require('./modules/users/users.client.routes');
-const clientVenueRoutes = require('./modules/venues/venues.client.routes');
-const clientBookingRoutes = require('./modules/bookings/bookings.client.routes');
-const clientChatRoutes = require('./modules/chat/chat.client.routes');
-const clientSettingsRoutes = require('./modules/settings/settings.client.routes');
-const clientSportRoutes = require('./modules/sports/sports.client.routes');
-const clientCoachRoutes = require('./modules/coaches/coaches.client.routes');
-const clientMatchRoutes = require('./modules/matches/matches.client.routes');
-const clientOfferRoutes = require('./modules/offers/offers.client.routes');
-const clientStoryRoutes = require('./modules/stories/stories.client.routes');
-const clientNotificationRoutes = require('./modules/notifications/notifications.client.routes');
-const clientStoreRoutes = require('./modules/store/store.client.routes');
-const clientSponsorRoutes = require('./modules/sponsors/sponsors.client.routes');
-const clientBranchRoutes = require('./modules/branches/branches.client.routes');
+const clientAuthRoutes = require('./api/modules/auth/auth.client.routes');
+const clientUserRoutes = require('./api/modules/users/users.client.routes');
+const clientVenueRoutes = require('./api/modules/venues/venues.client.routes');
+const clientBookingRoutes = require('./api/modules/bookings/bookings.client.routes');
+const clientChatRoutes = require('./api/modules/chat/chat.client.routes');
+const clientSettingsRoutes = require('./api/modules/settings/settings.client.routes');
+const clientSportRoutes = require('./api/modules/sports/sports.client.routes');
+const clientCoachRoutes = require('./api/modules/coaches/coaches.client.routes');
+const clientMatchRoutes = require('./api/modules/matches/matches.client.routes');
+const clientOfferRoutes = require('./api/modules/offers/offers.client.routes');
+const clientStoryRoutes = require('./api/modules/stories/stories.client.routes');
+const clientNotificationRoutes = require('./api/modules/notifications/notifications.client.routes');
+const clientStoreRoutes = require('./api/modules/store/store.client.routes');
+const clientSponsorRoutes = require('./api/modules/sponsors/sponsors.client.routes');
+const clientBranchRoutes = require('./api/modules/branches/branches.client.routes');
 
 // Public Route Imports
-const publicBookingRoutes = require('./modules/bookings/bookings.public.routes');
+const publicBookingRoutes = require('./api/modules/bookings/bookings.public.routes');
 
 const app = express();
 

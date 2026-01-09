@@ -45,7 +45,7 @@ export async function generateMetadata(): Promise<Metadata> {
         images: logoUrl ? [{ url: logoUrl }] : [],
       }
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       title: "PadelBooking",
       description: "Book your padel court easily",

@@ -14,17 +14,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UseFormReturn } from "react-hook-form";
+import { FieldValues, Path, UseFormReturn } from "react-hook-form";
 
-interface BookingTypeFieldProps {
-  form: UseFormReturn<any>;
+interface BookingTypeFieldProps<T extends FieldValues> {
+  form: UseFormReturn<T>;
 }
 
-export function BookingTypeField({ form }: BookingTypeFieldProps) {
+export function BookingTypeField<T extends FieldValues>({ form }: BookingTypeFieldProps<T>) {
   return (
     <FormField
       control={form.control}
-      name="type"
+      name={"type" as Path<T>}
       render={({ field }) => (
         <FormItem>
           <FormLabel>Booking Type</FormLabel>

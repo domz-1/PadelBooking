@@ -36,7 +36,7 @@ interface QuickCreateUserDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     defaultPhone?: string;
-    onSuccess: (user: any) => void;
+    onSuccess: (user: { id: number; name: string; email: string; phone?: string }) => void;
 }
 
 export function QuickCreateUserDialog({
@@ -65,11 +65,7 @@ export function QuickCreateUserDialog({
         }
     }, [open, defaultPhone, form]);
 
-    async function onSubmit(values: UserFormValues, e?: any) {
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
+    async function onSubmit(values: UserFormValues) {
 
         setLoading(true);
         try {
@@ -94,9 +90,12 @@ export function QuickCreateUserDialog({
             } else {
                 toast.error("Failed to create user");
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Create user error:", error);
-            toast.error(error.response?.data?.message || "Error creating user");
+            const errorMessage = error instanceof Error ? error.message :
+                (typeof error === 'object' && error && 'response' in error) ?
+                (error as any).response?.data?.message : "Error creating user";
+            toast.error(errorMessage || "Error creating user");
         } finally {
             setLoading(false);
         }

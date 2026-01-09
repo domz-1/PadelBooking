@@ -9,15 +9,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/hooks/use-auth-store";
 import { socketService } from "@/lib/socket";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -100,23 +92,26 @@ function BookingsContent() {
     }
   }, [searchParams, formattedDate, router]);
 
-  const updateUrl = useCallback((newDate?: string, newBranch?: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    let changed = false;
+  const updateUrl = useCallback(
+    (newDate?: string, newBranch?: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      let changed = false;
 
-    if (newDate && params.get("date") !== newDate) {
-      params.set("date", newDate);
-      changed = true;
-    }
-    if (newBranch && params.get("branch") !== newBranch) {
-      params.set("branch", newBranch);
-      changed = true;
-    }
+      if (newDate && params.get("date") !== newDate) {
+        params.set("date", newDate);
+        changed = true;
+      }
+      if (newBranch && params.get("branch") !== newBranch) {
+        params.set("branch", newBranch);
+        changed = true;
+      }
 
-    if (changed) {
-      router.push(`?${params.toString()}`, { scroll: false });
-    }
-  }, [searchParams, router]);
+      if (changed) {
+        router.push(`?${params.toString()}`, { scroll: false });
+      }
+    },
+    [searchParams, router],
+  );
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -143,7 +138,9 @@ function BookingsContent() {
         }
       } else {
         try {
-          const bookingsRes = await api.get(`/public/bookings?date=${formattedDate}`);
+          const bookingsRes = await api.get(
+            `/public/bookings?date=${formattedDate}`,
+          );
           if (bookingsRes.data.success) {
             bookingsData = bookingsRes.data.data;
           }
@@ -167,9 +164,15 @@ function BookingsContent() {
         } else if (branchesRes.data.success) {
           branchData = branchesRes.data.data;
         }
-        setBranches([...branchData].sort((a, b) =>
-          (a.order ?? 0) - (b.order ?? 0) || a.name.trim().localeCompare(b.name.trim(), undefined, { sensitivity: 'base' })
-        ));
+        setBranches(
+          [...branchData].sort(
+            (a, b) =>
+              (a.order ?? 0) - (b.order ?? 0) ||
+              a.name.trim().localeCompare(b.name.trim(), undefined, {
+                sensitivity: "base",
+              }),
+          ),
+        );
       }
     } catch (error) {
       console.error("Failed to fetch data", error);
@@ -190,7 +193,15 @@ function BookingsContent() {
     if (socket) {
       socket.on(
         "bookingUpdate",
-        ({ type, data, id }: { type: string; data: Booking; id: string | number }) => {
+        ({
+          type,
+          data,
+          id,
+        }: {
+          type: string;
+          data: Booking;
+          id: string | number;
+        }) => {
           if (type === "delete") {
             setBookings((prev) => prev.filter((b) => b.id !== Number(id)));
             return;
@@ -206,16 +217,23 @@ function BookingsContent() {
               return [...prev, data];
             });
           } else if (type === "update") {
-            setBookings((prev) => prev.map((b) => (b.id === data.id ? data : b)));
+            setBookings((prev) =>
+              prev.map((b) => (b.id === data.id ? data : b)),
+            );
           }
-        }
+        },
       );
 
       socket.on(
         "waitlistUpdate",
         ({ type, data }: { type: string; data: WaitlistEntry }) => {
           // 1. Check if the entry belongs to the current user
-          if (data?.userId && user?.id && Number(data.userId) !== Number(user.id)) return;
+          if (
+            data?.userId &&
+            user?.id &&
+            Number(data.userId) !== Number(user.id)
+          )
+            return;
 
           // 2. Check if the date matches the current view
           const affectedDate = data?.date || null;
@@ -223,14 +241,16 @@ function BookingsContent() {
 
           if (type === "join") {
             setWaitlistEntries((prev) => {
-              const exists = prev.some(e => Number(e.id) === Number(data.id));
+              const exists = prev.some((e) => Number(e.id) === Number(data.id));
               if (exists) return prev;
               return [...prev, data];
             });
           } else if (type === "leave") {
-            setWaitlistEntries((prev) => prev.filter((e) => Number(e.id) !== Number(data.id)));
+            setWaitlistEntries((prev) =>
+              prev.filter((e) => Number(e.id) !== Number(data.id)),
+            );
           }
-        }
+        },
       );
     }
 
@@ -252,14 +272,23 @@ function BookingsContent() {
     setShowBookingModal(true);
   };
 
-  const handleConvertToOpenMatch = async (bookingId: number, maxPlayers: number = 4) => {
+  const handleConvertToOpenMatch = async (
+    bookingId: number,
+    maxPlayers: number = 4,
+  ) => {
     try {
-      const res = await api.post(`/bookings/${bookingId}/convert-to-open-match`, { maxPlayers });
+      const res = await api.post(
+        `/bookings/${bookingId}/convert-to-open-match`,
+        { maxPlayers },
+      );
       if (res.data.success) {
         toast.success("Booking converted to Open Match!");
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to convert to Open Match");
+    } catch (error) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(
+        err.response?.data?.message || "Failed to convert to Open Match",
+      );
     }
   };
 
@@ -269,8 +298,9 @@ function BookingsContent() {
       if (res.data.success) {
         toast.success("Successfully joined Open Match!");
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to join Open Match");
+    } catch (error) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Failed to join Open Match");
     }
   };
 
@@ -280,8 +310,9 @@ function BookingsContent() {
       if (res.data.success) {
         toast.success("Successfully left Open Match!");
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to leave Open Match");
+    } catch (error) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Failed to leave Open Match");
     }
   };
 
@@ -305,8 +336,9 @@ function BookingsContent() {
         toast.success("Booking created successfully!");
         setShowBookingModal(false);
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to create booking");
+    } catch (error) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Failed to create booking");
     }
   };
 
@@ -365,7 +397,9 @@ function BookingsContent() {
               </div>
               <div>
                 <Label>Start Time</Label>
-                <div className="text-sm font-medium mt-1">{selectedSlot?.time}</div>
+                <div className="text-sm font-medium mt-1">
+                  {selectedSlot?.time}
+                </div>
               </div>
             </div>
             <div>
@@ -385,7 +419,10 @@ function BookingsContent() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBookingModal(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowBookingModal(false)}
+            >
               Cancel
             </Button>
             <Button onClick={confirmBooking}>Confirm Booking</Button>

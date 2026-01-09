@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -23,9 +23,8 @@ export function LandingHero() {
 
     const [isRefreshing, setIsRefreshing] = useState(false);
 
-    const fetchSlots = async () => {
-        if (isRefreshing) return;
-        setIsRefreshing(true);
+    const fetchSlots = useCallback(async (showRefreshing = true) => {
+        if (showRefreshing) setIsRefreshing(true);
         try {
             const now = new Date();
             const hour = now.getHours();
@@ -70,9 +69,9 @@ export function LandingHero() {
             console.error("Failed to fetch free slots", error);
         } finally {
             setLoading(false);
-            setIsRefreshing(false);
+            if (showRefreshing) setIsRefreshing(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         const userId = useAuthStore.getState().user?.id;
@@ -89,7 +88,7 @@ export function LandingHero() {
             console.log("Booking update received, refreshing free slots...");
             clearTimeout(refreshTimeout);
             // Small delay to ensure DB transaction is fully finished and visible
-            refreshTimeout = setTimeout(fetchSlots, 1000);
+            refreshTimeout = setTimeout(() => fetchSlots(false), 2000);
         };
 
         if (socket) {
@@ -102,7 +101,7 @@ export function LandingHero() {
                 socket.off("bookingUpdate", handleBookingUpdate);
             }
         };
-    }, []);
+    }, [fetchSlots]);
 
     const handleCopy = () => {
         if (!freeSlots || Object.keys(freeSlots).length === 0) {
@@ -195,7 +194,7 @@ export function LandingHero() {
                 </div>
 
                 {/* Right Content - The "Live Dashboard" */}
-                <div className="relative mt-8 lg:mt-16 sm:mt-24 lg:mt-0 lg:flex-1 lg:-translate-y-16">
+                <div className="relative mt-8 sm:mt-24 lg:mt-0 lg:flex-1 lg:-translate-y-16">
                     {/* Main Image Backdrop */}
                     <div className="hidden lg:block relative aspect-4/3 overflow-hidden rounded-3xl shadow-2xl ring-1 ring-border/50">
                         <Image
