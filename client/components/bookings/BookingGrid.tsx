@@ -502,7 +502,7 @@ export default function BookingGrid({
                                     formatTimeForValue(hour)
                                   );
                                 } else if (!isAuthenticated) {
-                                  router.push("/auth/login");
+                                  setTimeout(() => router.push("/auth/login"), 0);
                                 }
                               }
                             }}
@@ -540,7 +540,7 @@ export default function BookingGrid({
                                     return;
                                   }
                                   if (!isAuthenticated) {
-                                    router.push("/auth/login");
+                                    setTimeout(() => router.push("/auth/login"), 0);
                                     return;
                                   }
                                   if (isOwn || isAdmin) {
