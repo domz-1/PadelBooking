@@ -106,6 +106,7 @@ export function AdminCreateBookingDialog({
     if (open) {
       form.reset({
         userId: 0,
+        statusId: undefined, // Will be set by the statuses effect below
         duration: "1",
         totalPrice: 0,
         venueId: venueId,
@@ -121,6 +122,16 @@ export function AdminCreateBookingDialog({
       setSearchForQuickCreate("");
     }
   }, [open, venueId, form]);
+
+  // Set default status to "Pending" once statuses are loaded
+  useEffect(() => {
+    if (open && statuses.length > 0 && !form.getValues("statusId")) {
+      const pendingStatus = statuses.find(s => s.name.toLowerCase() === "pending");
+      if (pendingStatus) {
+        form.setValue("statusId", pendingStatus.id);
+      }
+    }
+  }, [open, statuses, form]);
 
   async function onSubmit(values: BookingFormValues) {
     const startStr = `${date}T${startTime}`;

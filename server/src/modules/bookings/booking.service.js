@@ -251,7 +251,13 @@ class BookingService {
             }
 
             const start = new Date(`1970-01-01T${bookingData.startTime}Z`);
-            const end = new Date(`1970-01-01T${bookingData.endTime}Z`);
+            let end = new Date(`1970-01-01T${bookingData.endTime}Z`);
+
+            // Handle cross-day bookings (e.g., 23:00 to 00:00)
+            if (end <= start) {
+                end.setDate(end.getDate() + 1);
+            }
+
             const durationHours = (end - start) / (1000 * 60 * 60);
 
             if (durationHours <= 0) {

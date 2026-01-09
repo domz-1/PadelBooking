@@ -4,6 +4,7 @@ import "./globals.css";
 
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { BrandingProvider } from "@/components/providers/BrandingProvider";
+import { Toaster } from "@/components/ui/sonner";
 
 import { API_BASE_URL } from "@/lib/api";
 
@@ -64,7 +65,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <BrandingProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            {children}
+            <Toaster />
+          </ThemeProvider>
         </BrandingProvider>
       </body>
     </html>

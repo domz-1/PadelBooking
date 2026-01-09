@@ -14,7 +14,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Toaster } from "@/components/ui/sonner";
 import { useBranding } from "@/components/providers/BrandingProvider";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { Badge } from "@/components/ui/badge";
@@ -176,7 +175,6 @@ export default function Navbar() {
           </Sheet>
         </div>
       </div>
-      <Toaster />
     </nav>
   );
 }

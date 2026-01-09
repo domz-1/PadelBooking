@@ -17,19 +17,7 @@ import {
 import { UseFormReturn } from "react-hook-form";
 
 interface BookingTypeFieldProps {
-  form: UseFormReturn<{
-    date: Date;
-    startTime: string;
-    endTime: string;
-    totalPrice: number;
-    userId: number;
-    venueId: number;
-    statusId?: number;
-    type: "standard" | "academy";
-    hasOffer: boolean;
-    offerValue: number;
-    notes?: string;
-  }>;
+  form: UseFormReturn<any>;
 }
 
 export function BookingTypeField({ form }: BookingTypeFieldProps) {
