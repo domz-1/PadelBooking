@@ -87,14 +87,14 @@ const seedDatabase = async () => {
         console.log("\n⚙️ Seeding global config...");
         await GlobalConfig.upsert({
             id: 1, // Ensure single record
-            businessName: "Mansoura Padel Point",
+            businessName: "PadelH",
             supportNumber1: "0100 123 4567",
             supportNumber2: "0111 987 6543",
-            storeName: "Mansoura Padel Store",
+            storeName: "PadelH Store",
             storePhone: "0155 555 5555",
-            themeColor: "#8B0000", // Dark Red
-            secondaryColor: "#5D0000", // Darker Red
-            accentColor: "#B71C1C", // Vivid Dark Red
+            themeColor: "#10B981", // emerald-500
+            secondaryColor: "#064E3B", // emerald-900
+            accentColor: "#059669", // emerald-600
             logo: "placeholder/logo.png",
             storeLogo: "placeholder/store-logo.jpg"
         });
