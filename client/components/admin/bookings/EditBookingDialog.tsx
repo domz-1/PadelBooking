@@ -14,8 +14,13 @@ import {
   RefreshCw,
   Phone,
   MessageCircle,
+  CheckCircle,
+  UserX,
+  ExternalLink,
+  KeyRound,
 } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -147,6 +152,9 @@ export function EditBookingDialog({
   // Reset form when booking changes or dialog opens
   useEffect(() => {
     if (open && booking.id) {
+      const pendingStatus = statuses.find(s => s.name.toLowerCase() === "pending");
+      const defaultStatusId = booking.statusId ? Number(booking.statusId) : pendingStatus?.id;
+
       form.reset({
         date: new Date(booking.date + "T12:00:00"),
         startTime: booking.startTime.substring(0, 5),
@@ -154,17 +162,14 @@ export function EditBookingDialog({
         totalPrice: Number(booking.totalPrice),
         userId: Number(booking.userId),
         venueId: Number(booking.venueId),
-        statusId: booking.statusId ? Number(booking.statusId) : undefined,
+        statusId: defaultStatusId,
         type: (booking.type as "standard" | "academy" | "clocked") || "standard",
         hasOffer: !!booking.hasOffer,
         offerValue: Number(booking.offerValue || 0),
         notes: booking.notes || "",
       });
-      setNewlyCreatedUser(null);
     }
-  }, [open, booking.id, form]);
-
-  const [newlyCreatedUser, setNewlyCreatedUser] = useState<any>(null);
+  }, [open, booking.id, form, statuses, booking.statusId, booking.date, booking.startTime, booking.endTime, booking.totalPrice, booking.userId, booking.venueId, booking.type, booking.hasOffer, booking.offerValue, booking.notes]);
 
   useEffect(() => {
     if (
@@ -404,6 +409,82 @@ export function EditBookingDialog({
                     {booking.notes || <span className="text-muted-foreground italic">No notes added.</span>}
                   </div>
                 </div>
+                {/* User Actions Section */}
+                <div className="pt-4 border-t space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">User Actions</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => window.open(`/admin/users/${bookedUser?.id}`, '_blank')}
+                      disabled={!bookedUser?.id}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Open Profile
+                    </Button>
+
+                    <ConfirmDialog
+                      title="Reset Password"
+                      description="This will generate a random password for the user. Are you sure?"
+                      onConfirm={async () => {
+                        if (!bookedUser?.id) return;
+                        const newPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+                        try {
+                          await adminUserService.updateUser(bookedUser.id, { password: newPassword });
+                          await navigator.clipboard.writeText(`Email: ${bookedUser.email}\nPassword: ${newPassword}`);
+                          toast.success("Password reset and credentials copied to clipboard");
+                        } catch {
+                          toast.error("Failed to reset password");
+                        }
+                      }}
+                    >
+                      <Button variant="outline" className="w-full" disabled={!bookedUser?.id}>
+                        <KeyRound className="w-4 h-4 mr-2" />
+                        Reset Password
+                      </Button>
+                    </ConfirmDialog>
+
+                    <ConfirmDialog
+                      title={bookedUser?.isActive ? "Ban User" : "Activate User"}
+                      description={bookedUser?.isActive
+                        ? "Are you sure you want to ban this user? This will also cancel all their future bookings."
+                        : "Are you sure you want to activate this user?"}
+                      onConfirm={async () => {
+                        if (!bookedUser?.id) return;
+                        try {
+                          if (bookedUser.isActive) {
+                            await adminUserService.banUser(bookedUser.id);
+                          } else {
+                            await adminUserService.updateUser(bookedUser.id, { isActive: true });
+                          }
+                          toast.success(bookedUser.isActive ? "User blocked" : "User activated");
+                          onOpenChange(false);
+                          onSuccess?.();
+                        } catch {
+                          toast.error("Failed to update user status");
+                        }
+                      }}
+                    >
+                      <Button
+                        variant={bookedUser?.isActive ? "destructive" : "outline"}
+                        className="w-full col-span-2"
+                        disabled={!bookedUser?.id}
+                      >
+                        {bookedUser?.isActive ? (
+                          <>
+                            <UserX className="w-4 h-4 mr-2" />
+                            Ban User
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                            Activate User
+                          </>
+                        )}
+                      </Button>
+                    </ConfirmDialog>
+                  </div>
+                </div>
               </div>
             </TabsContent>
 
@@ -605,12 +686,12 @@ export function EditBookingDialog({
                 </form>
               </Form>
 
-            </TabsContent>
+            </TabsContent >
 
             {/* WAITLIST TAB */}
-            <TabsContent value="waitlist" className="space-y-6 py-4">
+            < TabsContent value="waitlist" className="space-y-6 py-4" >
               {/* Waitlist Section */}
-              <div className="space-y-4">
+              < div className="space-y-4" >
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium leading-none">
                     Add User to Waitlist
@@ -708,18 +789,21 @@ export function EditBookingDialog({
                     </div>
                   )}
                 </div>
-              </div>
-            </TabsContent>
+              </div >
+            </TabsContent >
 
             {/* HISTORY TAB */}
-            <TabsContent value="history" className="space-y-4 py-4">
-              {booking.id && (
-                <BookingLogsList bookingId={Number(booking.id)} className="h-full" />
-              )}
-            </TabsContent>
-          </Tabs>
-        )}
-      </DialogContent>
+            < TabsContent value="history" className="space-y-4 py-4" >
+              {
+                booking.id && (
+                  <BookingLogsList bookingId={Number(booking.id)} className="h-full" />
+                )
+              }
+            </TabsContent >
+          </Tabs >
+        )
+        }
+      </DialogContent >
 
       <ConfirmDialog
         open={showDeleteConfirm}
@@ -733,6 +817,6 @@ export function EditBookingDialog({
         onConfirm={handleDelete}
         variant="destructive"
       />
-    </Dialog>
+    </Dialog >
   );
 }

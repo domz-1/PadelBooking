@@ -63,6 +63,13 @@ exports.getProfile = async (req, res, next) => {
 
 exports.updateUser = async (req, res, next) => {
     try {
+        if (req.file) {
+            req.body.image = req.file.path;
+        } else if (typeof req.body.image === 'object') {
+            // If image came in as an object (e.g. from multipart parser artifact) and no file was uploaded, remove it
+            delete req.body.image;
+        }
+
         const user = await userService.updateUser(req.params.id, req.body);
         if (!user) {
             return res.status(404).json({ success: false, message: req.t('notFound') });
@@ -79,7 +86,12 @@ exports.banUser = async (req, res, next) => {
         if (!user) {
             return res.status(404).json({ success: false, message: req.t('notFound') });
         }
-        res.status(200).json({ success: true, data: user, message: 'User banned' });
+
+        // Cancel future bookings
+        const bookingService = require('../bookings/booking.service');
+        await bookingService.cancelFutureBookingsForUser(user.id);
+
+        res.status(200).json({ success: true, data: user, message: 'User banned and future bookings cancelled' });
     } catch (error) {
         next(error);
     }

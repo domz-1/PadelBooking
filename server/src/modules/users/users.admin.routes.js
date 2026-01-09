@@ -1,6 +1,7 @@
 const express = require('express');
 const { getUsers, createUser, updateUser, deleteUser, getProfile, banUser } = require('./user.controller');
 const { protect, authorize } = require('../../middleware/auth');
+const { upload, convertImage } = require('../../middleware/upload');
 const router = express.Router();
 
 // Apply protection to all admin routes
@@ -95,7 +96,7 @@ router.route('/')
  */
 router.route('/:id')
     .get(getProfile)
-    .put(updateUser)
+    .put(upload.single('image'), convertImage, updateUser)
     .delete(deleteUser);
 
 /**

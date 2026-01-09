@@ -94,7 +94,7 @@ export function AllBookingLogs() {
           }
         }
 
-        const [response, statusesRes]: [BookingLogsResponse, ApiResponse<BookingStatus[]>] =
+        const [response, statusesRes] =
           await Promise.all([
             adminBookingService.getBookingLogs({
               page: page.toString(),

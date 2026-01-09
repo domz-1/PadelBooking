@@ -29,8 +29,13 @@ class UserService {
         const user = await User.findByPk(id);
         if (!user) return null;
 
-        // Prevent updating sensitive fields through this method
-        const { password, role, id: userId, ...updateData } = data;
+        // Prevent updating sensitive fields through this method, but allow role and image if explicitly passed (admin context)
+        const { password, id: userId, ...updateData } = data;
+
+        // Ensure role is only updated if provided
+        if (data.role) {
+            updateData.role = data.role;
+        }
 
         return await user.update(updateData);
     }

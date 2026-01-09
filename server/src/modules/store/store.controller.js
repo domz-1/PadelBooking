@@ -114,8 +114,11 @@ exports.getAllOrders = async (req, res, next) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
+        const { userId } = req.query;
+        const where = userId ? { userId } : {};
 
         const { count, rows } = await Order.findAndCountAll({
+            where,
             include: [
                 { model: User, attributes: ['id', 'name', 'email', 'phone'] },
                 { model: OrderItem, include: [Product] }

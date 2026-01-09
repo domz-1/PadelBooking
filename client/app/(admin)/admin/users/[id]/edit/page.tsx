@@ -29,6 +29,7 @@ const userSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   role: z.enum(["user", "admin"]),
+  image: z.any().optional(),
   // Password optional for edit
   password: z
     .string()
@@ -54,6 +55,7 @@ export default function EditUserPage() {
           name: user.name,
           email: user.email,
           role: user.role,
+          // image: user.image || "", // Don't set file input value
           password: "",
         });
       } catch {
@@ -69,10 +71,16 @@ export default function EditUserPage() {
   const onSubmit = async (data: UserFormValues) => {
     setLoading(true);
     try {
-      const updateData = { ...data };
-      if (!updateData.password) delete updateData.password; // Don't send empty password
+      const formData = new FormData();
+      formData.append("name", data.name);
+      formData.append("email", data.email);
+      formData.append("role", data.role);
+      if (data.password) formData.append("password", data.password);
+      if (data.image instanceof File) {
+        formData.append("image", data.image);
+      }
 
-      await adminUserService.updateUser(Number(params.id), updateData);
+      await adminUserService.updateUser(Number(params.id), formData);
       toast.success("User updated successfully");
       router.push(`/admin/users/${params.id}`);
     } catch (error: unknown) {
@@ -133,6 +141,27 @@ export default function EditUserPage() {
                           type="email"
                           placeholder="john@example.com"
                           {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="image"
+                  render={({ field: { value, onChange, ...fieldProps } }) => (
+                    <FormItem>
+                      <FormLabel>Profile Image</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...fieldProps}
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => {
+                            onChange(event.target.files && event.target.files[0]);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />

@@ -36,7 +36,7 @@ export const adminStoreService = {
     return response.data;
   },
 
-  getOrders: async (params?: { page?: number; limit?: number }) => {
+  getOrders: async (params?: { page?: number; limit?: number; userId?: number }) => {
     const response = await adminApi.get<{
       success: boolean;
       data: Order[];

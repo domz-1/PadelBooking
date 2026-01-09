@@ -13,6 +13,9 @@ export const UserSchema = z.object({
     email: z.string().email("Invalid email address"),
     role: z.string(),
     phone: z.string().optional(),
+    isActive: z.boolean().optional(),
+    image: z.string().nullable().optional(), // Nullable since DB can be null
+    bio: z.string().optional(),
 });
 
 export const LoginSchema = z.object({
@@ -79,7 +82,8 @@ export const BookingSchema = z.object({
         id: z.number(),
         name: z.string(),
         email: z.string().email(),
-        phone: z.string().optional()
+        phone: z.string().optional(),
+        isActive: z.boolean().optional(),
     }).optional(),
     Venue: z.object({
         name: z.string(),

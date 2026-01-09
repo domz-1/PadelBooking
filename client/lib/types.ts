@@ -172,7 +172,7 @@ export interface ApiListResponse<T> {
 
 export interface BookingLog {
   id: number;
-  bookingId: number;
+  bookingId: number | null;
   userId?: number | null;
   action: string;
   description?: string | null;
@@ -180,7 +180,7 @@ export interface BookingLog {
   newStatus?: string | null;
   details?: Record<string, unknown> | null;
   timestamp: string;
-  User?: User;
+  User?: { id: number; name: string; email: string; role: string };
 }
 
 export interface ApiResponse<T> {

@@ -398,8 +398,9 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
                         if (['logTimestamp', 'bookingSnapshotId', 'userName', 'userEmail', 'userRole', 'recurrenceDetails', 'seriesOption'].includes(field)) return null;
 
                         // Hide raw ID if Name field is also present
-                        if (field === 'userId' && expandedLog.details.targetUserName) return null;
-                        if (field === 'venueId' && expandedLog.details.venueName) return null;
+                        const details = expandedLog.details as any;
+                        if (field === 'userId' && details.targetUserName) return null;
+                        if (field === 'venueId' && details.venueName) return null;
 
                         return (
                           <div key={field} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm border">
@@ -431,8 +432,9 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
                         if (['logTimestamp', 'bookingSnapshotId', 'userName', 'userEmail', 'userRole', 'seriesOption'].includes(field)) return null;
 
                         // Consolidation
-                        if (field === 'userId' && expandedLog.details.targetUserName) return null;
-                        if (field === 'venueId' && expandedLog.details.venueName) return null;
+                        const details = expandedLog.details as any;
+                        if (field === 'userId' && details.targetUserName) return null;
+                        if (field === 'venueId' && details.venueName) return null;
 
                         return (
                           <div key={field} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm border">

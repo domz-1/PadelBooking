@@ -262,6 +262,10 @@ class BookingService {
     }
 
     async _internalCreateSingleBooking(bookingData, user) {
+        if (!user.isActive) {
+            throw new Error('User is banned from making bookings');
+        }
+
         // Check Venue Blocks
         const isBlocked = await this._checkVenueBlocked(
             bookingData.venueId,
@@ -712,6 +716,32 @@ class BookingService {
 
         await this._internalDeleteSingleBooking(booking, user, seriesOption);
         return [booking.id];
+    }
+
+    async cancelFutureBookingsForUser(userId) {
+        const futureBookings = await Booking.findAll({
+            where: {
+                userId: userId,
+                [Op.or]: [
+                    { date: { [Op.gt]: new Date() } },
+                    {
+                        date: new Date(),
+                        startTime: { [Op.gt]: new Date().toTimeString().substring(0, 5) }
+                    }
+                ],
+                status: { [Op.notIn]: ['cancelled', 'rejected'] }
+            }
+        });
+
+        const deletedIds = [];
+        const adminUser = await User.findOne({ where: { role: 'admin' } }); // Use first admin system user for logging
+
+        for (const booking of futureBookings) {
+            await this._internalDeleteSingleBooking(booking, adminUser || { id: null, role: 'system' });
+            deletedIds.push(booking.id);
+        }
+
+        return deletedIds;
     }
 
     async _internalDeleteSingleBooking(booking, user, seriesOption = 'single') {

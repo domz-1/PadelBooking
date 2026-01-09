@@ -371,7 +371,7 @@ export function BookingDetailsModal({
                   </div>
                 </div>
                 <div className="bg-muted/30 rounded-xl p-4 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                     <User className="w-6 h-6 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -493,6 +493,7 @@ export function BookingDetailsModal({
           <div className="p-6">
             <EditBookingDialogContent
               booking={booking}
+              setViewMode={setViewMode}
               onOpenChange={() => {
                 setViewMode('details'); // Go back to details view
                 onSuccess?.();
@@ -533,12 +534,14 @@ interface EditBookingDialogContentProps {
   booking: Booking;
   onOpenChange: () => void;
   onSuccess?: () => void;
+  setViewMode: (mode: 'details' | 'edit') => void;
 }
 
 function EditBookingDialogContent({
   booking,
   onOpenChange,
-  onSuccess
+  onSuccess,
+  setViewMode
 }: EditBookingDialogContentProps) {
   const [userSearch, setUserSearch] = useState("");
   const { users, venues, statuses, loading: dataLoading } = useBookingData(true, userSearch); // Always load data when in edit mode

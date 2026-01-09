@@ -9,13 +9,12 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
+import type { Venue } from "@/lib/schemas";
+
 export default function EditVenuePage() {
   const router = useRouter();
   const params = useParams();
-  const [initialData, setInitialData] = useState<Record<
-    string,
-    unknown
-  > | null>(null);
+  const [initialData, setInitialData] = useState<Venue | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -51,7 +50,7 @@ export default function EditVenuePage() {
           <CardTitle>Venue Details</CardTitle>
         </CardHeader>
         <CardContent>
-          <VenueForm initialData={initialData} isEditing />
+          <VenueForm initialData={initialData || undefined} isEditing />
         </CardContent>
       </Card>
     </div>
