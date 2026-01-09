@@ -19,6 +19,16 @@ exports.joinWaitlist = async (req, res, next) => {
             endTime
         });
 
+        const fullEntry = await Waitlist.findByPk(waitlistEntry.id, {
+            include: [
+                { model: require('../users/user.model'), attributes: ['id', 'name', 'email', 'phone'] },
+                { model: require('../venues/venue.model'), attributes: ['id', 'name'] }
+            ]
+        });
+
+        // Notify all clients about waitlist change
+        req.app.get('io').emit('waitlistUpdate', { type: 'join', data: fullEntry });
+
         res.status(201).json({ success: true, data: waitlistEntry, message: req.t('success') });
     } catch (error) {
         next(error);
@@ -36,6 +46,10 @@ exports.leaveWaitlist = async (req, res, next) => {
         }
 
         await entry.destroy();
+
+        // Notify all clients about waitlist change
+        req.app.get('io').emit('waitlistUpdate', { type: 'leave', data: { id: Number(req.params.id), date: entry.date, venueId: entry.venueId } });
+
         res.status(200).json({ success: true, data: {}, message: req.t('success') });
     } catch (error) {
         next(error);
@@ -89,6 +103,16 @@ exports.adminJoinWaitlist = async (req, res, next) => {
             endTime
         });
 
+        const fullEntry = await Waitlist.findByPk(waitlistEntry.id, {
+            include: [
+                { model: require('../users/user.model'), attributes: ['id', 'name', 'email', 'phone'] },
+                { model: require('../venues/venue.model'), attributes: ['id', 'name'] }
+            ]
+        });
+
+        // Notify all clients about waitlist change
+        req.app.get('io').emit('waitlistUpdate', { type: 'join', data: fullEntry });
+
         res.status(201).json({ success: true, data: waitlistEntry });
     } catch (error) {
         next(error);
@@ -104,6 +128,10 @@ exports.adminDeleteWaitlist = async (req, res, next) => {
         }
 
         await entry.destroy();
+
+        // Notify all clients about waitlist change
+        req.app.get('io').emit('waitlistUpdate', { type: 'leave', data: { id: req.params.id, date: entry.date, venueId: entry.venueId } });
+
         res.status(200).json({ success: true, data: {} });
     } catch (error) {
         next(error);

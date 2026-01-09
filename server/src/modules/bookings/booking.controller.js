@@ -41,7 +41,7 @@ exports.getBookings = async (req, res, next) => {
 exports.getPublicBookings = async (req, res, next) => {
     try {
         const { date } = req.query;
-        
+
         // Date is required for public access
         if (!date) {
             return res.status(400).json({
@@ -49,7 +49,7 @@ exports.getPublicBookings = async (req, res, next) => {
                 message: 'Date parameter is required'
             });
         }
-        
+
         // Create a mock public user
         const publicUser = {
             id: 0,
@@ -57,14 +57,14 @@ exports.getPublicBookings = async (req, res, next) => {
             name: 'Public User',
             email: 'public@example.com'
         };
-        
+
         const options = {
             date,
             limit: 100
         };
-        
+
         const { count, rows } = await bookingService.getBookings(options, publicUser);
-        
+
         res.status(200).json({
             success: true,
             count,
@@ -252,12 +252,18 @@ exports.updateBooking = async (req, res, next) => {
             return res.status(403).json({ success: false, message: 'Not authorized' });
         }
 
-        booking = await bookingService.updateBooking(req.params.id, req.body, req.user);
+        const result = await bookingService.updateBooking(req.params.id, req.body, req.user);
 
-        // Notify all clients about updated booking
-        req.app.get('io').emit('bookingUpdate', { type: 'update', data: booking });
+        // Notify all clients about updated booking(s)
+        if (Array.isArray(result)) {
+            result.forEach(b => {
+                req.app.get('io').emit('bookingUpdate', { type: 'update', data: b });
+            });
+        } else {
+            req.app.get('io').emit('bookingUpdate', { type: 'update', data: result });
+        }
 
-        res.status(200).json({ success: true, data: booking });
+        res.status(200).json({ success: true, data: result });
     } catch (error) {
         next(error);
     }
@@ -266,10 +272,16 @@ exports.updateBooking = async (req, res, next) => {
 exports.deleteBooking = async (req, res, next) => {
     try {
         const { seriesOption = 'single' } = req.query;
-        await bookingService.deleteBooking(req.params.id, req.user, seriesOption);
+        const deletedIds = await bookingService.deleteBooking(req.params.id, req.user, seriesOption);
 
-        // Notify all clients about deleted booking
-        req.app.get('io').emit('bookingUpdate', { type: 'delete', id: req.params.id });
+        // Notify all clients about deleted booking(s)
+        if (Array.isArray(deletedIds)) {
+            deletedIds.forEach(id => {
+                req.app.get('io').emit('bookingUpdate', { type: 'delete', id });
+            });
+        } else {
+            req.app.get('io').emit('bookingUpdate', { type: 'delete', id: req.params.id });
+        }
 
         res.status(200).json({ success: true, data: {} });
     } catch (error) {

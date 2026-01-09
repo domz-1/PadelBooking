@@ -24,6 +24,7 @@ import type { Venue, Branch } from "@/lib/schemas";
 import { addDays, format } from "date-fns";
 import { adminApi } from "@/lib/api";
 import { useBranding } from "@/components/providers/BrandingProvider";
+import { socketService } from "@/lib/socket";
 
 interface EmptySlotsBoardProps {
     open: boolean;
@@ -96,6 +97,17 @@ export function EmptySlotsBoard({
     useEffect(() => {
         if (open) {
             fetchFreeSlots();
+
+            const socket = socketService.getSocket();
+            if (socket) {
+                socket.on("bookingUpdate", fetchFreeSlots);
+            }
+
+            return () => {
+                if (socket) {
+                    socket.off("bookingUpdate", fetchFreeSlots);
+                }
+            };
         }
     }, [open, fetchFreeSlots]);
 

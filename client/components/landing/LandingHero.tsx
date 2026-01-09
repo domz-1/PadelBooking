@@ -10,6 +10,8 @@ import { Clock, MapPin, Loader2, Sparkles, Copy, ClipboardCheck, Phone } from "l
 import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 import { useBranding } from "@/components/providers/BrandingProvider";
+import { socketService } from "@/lib/socket";
+import { useAuthStore } from "@/hooks/use-auth-store";
 
 export function LandingHero() {
     const router = useRouter();
@@ -19,56 +21,87 @@ export function LandingHero() {
     const [copied, setCopied] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-    useEffect(() => {
-        const fetchSlots = async () => {
-            try {
-                const now = new Date();
-                const hour = now.getHours();
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
-                let startDate, startTime, endDate, endTime;
+    const fetchSlots = async () => {
+        if (isRefreshing) return;
+        setIsRefreshing(true);
+        try {
+            const now = new Date();
+            const hour = now.getHours();
 
-                if (hour < 3) {
-                    // Early morning (12am - 3am): Still part of 'tonight's' session
-                    startDate = format(now, "yyyy-MM-dd");
-                    startTime = (hour + 1).toString().padStart(2, "0");
-                    endDate = format(now, "yyyy-MM-dd");
-                    endTime = "03"; // Session ends at 3am
-                } else if (hour >= 17) {
-                    // Evening (5pm - 12am): Start of 'tonight's' session
-                    startDate = format(now, "yyyy-MM-dd");
-                    startTime = (hour + 1).toString().padStart(2, "0");
-                    endDate = format(addDays(now, 1), "yyyy-MM-dd");
-                    endTime = "03"; // Session ends at 3am next day
-                } else {
-                    // Daytime (3am - 5pm): Waiting for next session
-                    startDate = format(now, "yyyy-MM-dd");
-                    startTime = "17"; // Show from 5pm onwards
-                    endDate = format(addDays(now, 1), "yyyy-MM-dd");
-                    endTime = "03";
-                }
+            let startDate, startTime, endDate, endTime;
 
-                const response = await api.get("/public/bookings/free-slots", {
-                    params: {
-                        startDate,
-                        startTime,
-                        endDate,
-                        endTime,
-                        branchId: "all"
-                    }
-                });
-
-                if (response.data.success) {
-                    setFreeSlots(response.data.data);
-                    setLastUpdated(new Date());
-                }
-            } catch (error) {
-                console.error("Failed to fetch free slots", error);
-            } finally {
-                setLoading(false);
+            if (hour < 3) {
+                // Early morning (12am - 3am): Still part of 'tonight's' session
+                startDate = format(now, "yyyy-MM-dd");
+                startTime = (hour + 1).toString().padStart(2, "0");
+                endDate = format(now, "yyyy-MM-dd");
+                endTime = "03"; // Session ends at 3am
+            } else if (hour >= 17) {
+                // Evening (5pm - 12am): Start of 'tonight's' session
+                startDate = format(now, "yyyy-MM-dd");
+                startTime = (hour + 1).toString().padStart(2, "0");
+                endDate = format(addDays(now, 1), "yyyy-MM-dd");
+                endTime = "03"; // Session ends at 3am next day
+            } else {
+                // Daytime (3am - 5pm): Waiting for next session
+                startDate = format(now, "yyyy-MM-dd");
+                startTime = "17"; // Show from 5pm onwards
+                endDate = format(addDays(now, 1), "yyyy-MM-dd");
+                endTime = "03";
             }
-        };
+
+            const response = await api.get("/public/bookings/free-slots", {
+                params: {
+                    startDate,
+                    startTime,
+                    endDate,
+                    endTime,
+                    branchId: "all"
+                }
+            });
+
+            if (response.data.success) {
+                setFreeSlots(response.data.data);
+                setLastUpdated(new Date());
+            }
+        } catch (error) {
+            console.error("Failed to fetch free slots", error);
+        } finally {
+            setLoading(false);
+            setIsRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
+        const userId = useAuthStore.getState().user?.id;
+        socketService.connect(userId ? Number(userId) : undefined);
 
         fetchSlots();
+
+        // Socket listener for real-time updates
+        const socket = socketService.getSocket();
+
+        // Debounced refresh for socket events
+        let refreshTimeout: NodeJS.Timeout;
+        const handleBookingUpdate = () => {
+            console.log("Booking update received, refreshing free slots...");
+            clearTimeout(refreshTimeout);
+            // Small delay to ensure DB transaction is fully finished and visible
+            refreshTimeout = setTimeout(fetchSlots, 1000);
+        };
+
+        if (socket) {
+            socket.on("bookingUpdate", handleBookingUpdate);
+        }
+
+        return () => {
+            if (refreshTimeout) clearTimeout(refreshTimeout);
+            if (socket) {
+                socket.off("bookingUpdate", handleBookingUpdate);
+            }
+        };
     }, []);
 
     const handleCopy = () => {
@@ -122,7 +155,7 @@ export function LandingHero() {
                     </p>
 
                     {/* Quick Metrics */}
-                    <div className="hidden mt-6 flex flex-wrap gap-x-6 gap-y-2 items-center text-muted-foreground">
+                    <div className="hidden">
                         <div className="flex items-center gap-2">
                             <span className="font-bold text-foreground text-md">6+</span>
                             <span className="text-xs font-semibold uppercase tracking-wider opacity-70">Premium Courts</span>

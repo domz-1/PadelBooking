@@ -191,22 +191,54 @@ function BookingsContent() {
       socket.on(
         "bookingUpdate",
         ({ type, data, id }: { type: string; data: Booking; id: string | number }) => {
+          if (type === "delete") {
+            setBookings((prev) => prev.filter((b) => b.id !== Number(id)));
+            return;
+          }
+
           const affectedDate = data?.date || null;
           if (affectedDate && affectedDate !== formattedDate) return;
 
           if (type === "create") {
-            setBookings((prev) => [...prev, data]);
+            setBookings((prev) => {
+              const exists = prev.some((b) => b.id === data.id);
+              if (exists) return prev;
+              return [...prev, data];
+            });
           } else if (type === "update") {
             setBookings((prev) => prev.map((b) => (b.id === data.id ? data : b)));
-          } else if (type === "delete") {
-            setBookings((prev) => prev.filter((b) => b.id !== Number(id)));
+          }
+        }
+      );
+
+      socket.on(
+        "waitlistUpdate",
+        ({ type, data }: { type: string; data: WaitlistEntry }) => {
+          // 1. Check if the entry belongs to the current user
+          if (data?.userId && user?.id && Number(data.userId) !== Number(user.id)) return;
+
+          // 2. Check if the date matches the current view
+          const affectedDate = data?.date || null;
+          if (affectedDate && affectedDate !== formattedDate) return;
+
+          if (type === "join") {
+            setWaitlistEntries((prev) => {
+              const exists = prev.some(e => Number(e.id) === Number(data.id));
+              if (exists) return prev;
+              return [...prev, data];
+            });
+          } else if (type === "leave") {
+            setWaitlistEntries((prev) => prev.filter((e) => Number(e.id) !== Number(data.id)));
           }
         }
       );
     }
 
     return () => {
-      if (socket) socket.off("bookingUpdate");
+      if (socket) {
+        socket.off("bookingUpdate");
+        socket.off("waitlistUpdate");
+      }
     };
   }, [formattedDate, user?.id]);
 
@@ -225,7 +257,6 @@ function BookingsContent() {
       const res = await api.post(`/bookings/${bookingId}/convert-to-open-match`, { maxPlayers });
       if (res.data.success) {
         toast.success("Booking converted to Open Match!");
-        fetchData();
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to convert to Open Match");
@@ -237,7 +268,6 @@ function BookingsContent() {
       const res = await api.post(`/bookings/${bookingId}/join`);
       if (res.data.success) {
         toast.success("Successfully joined Open Match!");
-        fetchData();
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to join Open Match");
@@ -249,7 +279,6 @@ function BookingsContent() {
       const res = await api.post(`/bookings/${bookingId}/leave`);
       if (res.data.success) {
         toast.success("Successfully left Open Match!");
-        fetchData();
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to leave Open Match");
@@ -275,7 +304,6 @@ function BookingsContent() {
       if (res.data.success) {
         toast.success("Booking created successfully!");
         setShowBookingModal(false);
-        fetchData();
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to create booking");

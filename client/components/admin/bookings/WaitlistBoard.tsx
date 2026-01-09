@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Loader2, User, MapPin, Clock, Phone, Mail } from "lucide-react";
 import { format } from "date-fns";
 import { adminApi } from "@/lib/api";
+import { socketService } from "@/lib/socket";
 
 interface WaitlistEntry {
     id: number;
@@ -79,6 +80,17 @@ export function WaitlistBoard({
     useEffect(() => {
         if (open) {
             fetchWaitlist();
+
+            const socket = socketService.getSocket();
+            if (socket) {
+                socket.on("waitlistUpdate", fetchWaitlist);
+            }
+
+            return () => {
+                if (socket) {
+                    socket.off("waitlistUpdate", fetchWaitlist);
+                }
+            };
         }
     }, [open, fetchWaitlist]);
 

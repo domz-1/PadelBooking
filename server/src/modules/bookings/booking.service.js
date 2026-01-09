@@ -580,7 +580,7 @@ class BookingService {
                     seriesOption: 'upcoming'
                 }, user);
             }
-            return bookingsToUpdate[0];
+            return bookingsToUpdate;
         }
 
         // Create comprehensive update log with resolved names
@@ -651,13 +651,15 @@ class BookingService {
                 }
             });
 
+            const deletedIds = bookingsToDelete.map(b => b.id);
             for (const b of bookingsToDelete) {
                 await this._internalDeleteSingleBooking(b, user);
             }
-            return true;
+            return deletedIds;
         }
 
-        return await this._internalDeleteSingleBooking(booking, user, seriesOption);
+        await this._internalDeleteSingleBooking(booking, user, seriesOption);
+        return [booking.id];
     }
 
     async _internalDeleteSingleBooking(booking, user, seriesOption = 'single') {

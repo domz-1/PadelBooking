@@ -6,38 +6,68 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, Loader2, Calendar as CalendarIcon } from "lucide-react";
 import { format, addDays } from "date-fns";
+import { socketService } from "@/lib/socket";
+import { useAuthStore } from "@/hooks/use-auth-store";
 
 export function LandingFreeSlots() {
     const [freeSlots, setFreeSlots] = useState<Record<string, string[]> | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const fetchSlots = async () => {
+        if (isRefreshing) return;
+        setIsRefreshing(true);
+        try {
+            const today = new Date();
+            const tomorrow = addDays(today, 1);
+
+            const response = await api.get("/public/bookings/free-slots", {
+                params: {
+                    startDate: format(today, "yyyy-MM-dd"),
+                    startTime: "17", // 5 PM
+                    endDate: format(tomorrow, "yyyy-MM-dd"),
+                    endTime: "03", // 3 AM next day
+                    branchId: "all"
+                }
+            });
+
+            if (response.data.success) {
+                setFreeSlots(response.data.data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch free slots", error);
+        } finally {
+            setLoading(false);
+            setIsRefreshing(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchSlots = async () => {
-            try {
-                const today = new Date();
-                const tomorrow = addDays(today, 1);
-
-                const response = await api.get("/public/bookings/free-slots", {
-                    params: {
-                        startDate: format(today, "yyyy-MM-dd"),
-                        startTime: "17", // 5 PM
-                        endDate: format(tomorrow, "yyyy-MM-dd"),
-                        endTime: "03", // 3 AM next day
-                        branchId: "all"
-                    }
-                });
-
-                if (response.data.success) {
-                    setFreeSlots(response.data.data);
-                }
-            } catch (error) {
-                console.error("Failed to fetch free slots", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+        const userId = useAuthStore.getState().user?.id;
+        socketService.connect(userId ? Number(userId) : undefined);
 
         fetchSlots();
+
+        const socket = socketService.getSocket();
+
+        // Debounced refresh for socket events
+        let refreshTimeout: NodeJS.Timeout;
+        const handleBookingUpdate = () => {
+            console.log("Booking update received [LandingFree], refreshing...");
+            clearTimeout(refreshTimeout);
+            refreshTimeout = setTimeout(fetchSlots, 1000);
+        };
+
+        if (socket) {
+            socket.on("bookingUpdate", handleBookingUpdate);
+        }
+
+        return () => {
+            if (refreshTimeout) clearTimeout(refreshTimeout);
+            if (socket) {
+                socket.off("bookingUpdate", handleBookingUpdate);
+            }
+        };
     }, []);
 
     if (loading) {

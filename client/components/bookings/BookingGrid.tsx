@@ -316,7 +316,7 @@ export default function BookingGrid({
           </div>
 
           {/* Create Open Match Button - Hidden mostly per original */}
-          <div className="flex justify-end mb-4 hidden ">
+          <div className="hidden ">
             <Button
               onClick={() => setModalOpen("openMatch", true)}
               className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
@@ -358,13 +358,13 @@ export default function BookingGrid({
                           )}
                         >
                           {venue.Branch && (
-                            <span className="text-[10px] text-muted-foreground uppercase tracking-wide whitespace-normal text-wrap break-words max-w-full">
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wide whitespace-normal text-wrap wrap-break-word max-w-full">
                               {venue.Branch.name}
                             </span>
                           )}
                           <div className="flex items-center gap-1">
                             <MapPin className="w-3 h-3 text-brand-500" />
-                            <span className="whitespace-normal text-wrap break-words text-center max-w-full">{venue.name}</span>
+                            <span className="whitespace-normal text-wrap wrap-break-word text-center max-w-full">{venue.name}</span>
                           </div>
                         </div>
                         {isLastInBranch && <div className="h-14" />}
@@ -611,7 +611,10 @@ export default function BookingGrid({
                 booking={selectedBooking}
                 open={modals.management}
                 onOpenChange={(open) => setModalOpen("management", open)}
-                onSuccess={() => window.location.reload()}
+                onSuccess={() => {
+                  // No reload needed, socket will handle it
+                  setModalOpen("management", false);
+                }}
               />
             )}
 
