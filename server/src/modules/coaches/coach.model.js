@@ -21,9 +21,9 @@ const Coach = sequelize.define('Coach', {
         allowNull: true,
         get() {
             const rawValue = this.getDataValue('image');
-            if (!rawValue) return null;
-            if (rawValue.startsWith('http')) return rawValue;
             const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            if (!rawValue) return `${baseUrl}/placeholder/padel-coach-2.png`;
+            if (rawValue.startsWith('http')) return rawValue;
             return `${baseUrl}/${rawValue.replace(/\\/g, '/')}`;
         }
     },

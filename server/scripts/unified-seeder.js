@@ -92,7 +92,11 @@ const seedDatabase = async () => {
             supportNumber2: "0111 987 6543",
             storeName: "Mansoura Padel Store",
             storePhone: "0155 555 5555",
-            themeColor: "#4CAF50"
+            themeColor: "#8B0000", // Dark Red
+            secondaryColor: "#5D0000", // Darker Red
+            accentColor: "#B71C1C", // Vivid Dark Red
+            logo: "placeholder/logo.png",
+            storeLogo: "placeholder/store-logo.jpg"
         });
         console.log("   ✅ Global config seeded");
 
@@ -265,7 +269,8 @@ const seedDatabase = async () => {
                 email: coach.email,
                 password: passwordHash,
                 role: "coach",
-                phone: coach.phone
+                phone: coach.phone,
+                image: "placeholder/padel-coach-2.png"
             }, { hooks: false });
             usersMap[coach.email] = user.id;
             coachIds.push({ id: user.id, name: coach.name });
@@ -454,7 +459,7 @@ const seedDatabase = async () => {
 
         // Seed Products
         console.log("\n🛒 Seeding products...");
-        const placeholderImg = "images/product-padel.png";
+        const placeholderImg = "placeholder/product-padel.png";
         await Product.bulkCreate([
             {
                 name: "Pro Carbon Padel Racket",
@@ -562,7 +567,7 @@ const seedDatabase = async () => {
                 name: coachIds[i].name,
                 bio: coachProfiles[i].bio,
                 rating: coachProfiles[i].rating,
-                image: "images/padel-coach-2.png",
+                image: "placeholder/padel-coach-2.png",
                 specialties: coachProfiles[i].specialties
             });
 

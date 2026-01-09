@@ -40,9 +40,9 @@ const Product = sequelize.define('Product', {
         allowNull: true,
         get() {
             const rawValue = this.getDataValue('image');
-            if (!rawValue) return null;
-            if (rawValue.startsWith('http')) return rawValue;
             const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            if (!rawValue) return `${baseUrl}/placeholder/product-padel.png`;
+            if (rawValue.startsWith('http')) return rawValue;
             return `${baseUrl}/${rawValue.replace(/\\/g, '/')}`;
         }
     },

@@ -13,7 +13,14 @@ const GlobalConfig = sequelize.define('GlobalConfig', {
     },
     logo: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true,
+        get() {
+            const rawValue = this.getDataValue('logo');
+            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            if (!rawValue) return `${baseUrl}/placeholder/logo.png`;
+            if (rawValue.startsWith('http')) return rawValue;
+            return `${baseUrl}/${rawValue.replace(/\\/g, '/')}`;
+        }
     },
     themeColor: {
         type: DataTypes.STRING,
@@ -73,7 +80,14 @@ const GlobalConfig = sequelize.define('GlobalConfig', {
     },
     storeLogo: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true,
+        get() {
+            const rawValue = this.getDataValue('storeLogo');
+            const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+            if (!rawValue) return `${baseUrl}/placeholder/store-logo.jpg`;
+            if (rawValue.startsWith('http')) return rawValue;
+            return `${baseUrl}/${rawValue.replace(/\\/g, '/')}`;
+        }
     },
     storePhone: {
         type: DataTypes.STRING,
