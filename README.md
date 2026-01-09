@@ -1,73 +1,124 @@
-# PadelBooking
+# 🎾 PadelBooking
 
-A complete Padel Booking solution with a Node.js/Express backend and a Vue.js dashboard.
+A premium, full-stack Padel Court Management and Booking solution. Features a high-performance **Next.js** frontend with a real-time **Node.js** backend, designed for seamless venue operations and a superior user experience.
 
-## Project Structure
+---
 
-<<<<<<< HEAD
-- `client/`: Frontend
-=======
-- `client/`: Vue.js Dashboard application
->>>>>>> 90869d642b3ca936ee13bbf3124770eb3070163c
-- `server/`: Node.js/Express API server
-- `package.json`: Root orchestration scripts
-- `Dockerfile`: Multi-stage build for production deployment
+## 🚀 Technical Stack
 
-## Getting Started
+### **Frontend (Client)**
+- **Framework:** Next.js 16 (App Router)
+- **Library:** React 19
+- **Styling:** Tailwind CSS 4 + Shadcn UI (Radix UI primitives)
+- **State Management:** Zustand
+- **Real-time:** Socket.io-client
+- **Forms:** React Hook Form + Zod Validation
+- **Animations:** Framer Motion
+- **Icons:** Lucide React
 
-### Prerequisites
+### **Backend (Server)**
+- **Runtime:** Node.js
+- **Framework:** Express.js
+- **Database:** PostgreSQL with Sequelize ORM
+- **Cache/Session:** Redis
+- **Real-time:** Socket.io
+- **Security:** JWT, Bcrypt, Helmet, HPP, XSS-Clean
+- **Logging:** Winston + Morgan
+- **File Handling:** Multer + Sharp (Image optimization)
 
-- Node.js (v18+)
-- Docker (optional, for containerization)
-- PostgreSQL (for the database)
+### **Orchestration**
+- **Package Manager:** [Bun](https://bun.sh/)
+- **Infrastructure:** Docker (for Database & Redis)
 
-### Installation
+---
 
-Install dependencies for both client and server from the root directory:
+## ✨ Key Features
 
-```bash
-npm install
-npm run install:all
-```
+### **For Players**
+- **Live Availability Board**: Real-time "Empty Slots" board on the landing page showing what's available tonight.
+- **Interactive Booking Grid**: Seamlessly book slots across multiple branches and courts.
+- **Waitlist System**: Join a queue for fully booked slots and get notified when they become available.
+- **Order Tracking**: Manage and view your personal bookings and academy packages.
+- **WhatsApp Integration**: Quick contact for support and booking confirmations.
 
-### Development
+### **For Administrators**
+- **Management Dashboard**: Full control over venues, branches, and booking statuses.
+- **Recurring Bookings**: Support for single and upcoming series updates for permanent bookings.
+- **Academy Module**: Manage academy-specific schedules, packages, and students.
+- **Financial Insights**: Detailed analytics on utilization, revenue, and popular time slots.
+- **User Management**: Advanced user controls, including banning, activation, and role assignments.
+- **Booking Logs**: Full audit trail for every booking action.
+- **Branding Engine**: Dynamic configuration for brand colors, logos, and support numbers.
 
-Run both client and server in development mode concurrently:
+---
 
-```bash
-npm run dev
-```
-
-- Dashboard: http://localhost:5173
-- API: http://localhost:4000
-
-### Production Build
-
-To build the client and start the server (which serves the client):
-
-```bash
-npm run build
-npm start
-```
-
-- Application: http://localhost:4000
-
-## Docker
-
-Build the Docker image:
+## 🛠️ Project Structure
 
 ```bash
-npm run docker:build
-# OR
-docker build -t padel-booking .
+├── client/          # Next.js Frontend
+│   ├── app/         # App Router (Pages & API routes)
+│   ├── components/  # Atomic UI & Business components
+│   ├── hooks/       # Custom React hooks (Store, API, Auth)
+│   └── lib/         # Utility functions (API client, Socket)
+├── server/          # Node.js/Express Backend
+│   ├── src/         # API source code (Routes, Controllers, Models)
+│   ├── scripts/     # Maintenance & Seeding scripts
+│   └── config/      # Database & Environment config
+└── package.json     # Workspace management & Global scripts
 ```
 
-Run the container:
+---
+
+## 🏁 Getting Started
+
+### **Prerequisites**
+- [Bun](https://bun.sh/) installed.
+- Docker Desktop (for DB and Redis).
+
+### **Setup & Installation**
+
+1. **Install Dependencies**:
+   ```bash
+   bun install
+   ```
+
+2. **Environment Configuration**:
+   Create `.env` files in both `client/` and `server/` based on their respective `.env.example` templates.
+
+3. **Spin up Infrastructure**:
+   ```bash
+   bun run setup:all
+   # This starts PostgreSQL and Redis via Docker
+   ```
+
+4. **Seed Database (Optional)**:
+   ```bash
+   bun run server seed
+   ```
+
+### **Running for Development**
+
+Start both the client and server concurrently:
+```bash
+bun run dev:all
+```
+
+- **Frontend**: [http://localhost:3000](http://localhost:3000)
+- **Backend API**: [http://localhost:4000](http://localhost:4000)
+- **Documentation**: [http://localhost:4000/api-docs](http://localhost:4000/api-docs)
+
+---
+
+## 🚢 Deployment
+
+The project is structured to be easily containerized and deployed.
 
 ```bash
-npm run docker:run
-# OR
-docker run -p 4000:4000 -e DATABASE_URL=... padel-booking
+# Production Build
+bun run build
 ```
 
-Ensure you provide the necessary environment variables (like `DATABASE_URL`) when running the container.
+---
+
+## 📄 License
+Privately developed for Padel Management. All rights reserved.
