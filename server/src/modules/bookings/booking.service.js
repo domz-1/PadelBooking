@@ -198,8 +198,8 @@ class BookingService {
                         venueId: bookingData.venueId,
                         date: date,
                         [Op.and]: [
-                            { startTime: { [Op.lt]: bookingData.endTime } },
-                            { endTime: { [Op.gt]: bookingData.startTime } }
+                            { startTime: { [Op.lt]: bookingData.endTime.substring(0, 5) === '00:00' ? '23:59:59' : bookingData.endTime.substring(0, 5) } },
+                            { endTime: { [Op.gt]: bookingData.startTime.substring(0, 5) } }
                         ]
                     }
                 });
@@ -233,8 +233,8 @@ class BookingService {
                 venueId: bookingData.venueId,
                 date: bookingData.date,
                 [Op.and]: [
-                    { startTime: { [Op.lt]: bookingData.endTime } },
-                    { endTime: { [Op.gt]: bookingData.startTime } }
+                    { startTime: { [Op.lt]: bookingData.endTime.substring(0, 5) === '00:00' ? '23:59:59' : bookingData.endTime.substring(0, 5) } },
+                    { endTime: { [Op.gt]: bookingData.startTime.substring(0, 5) } }
                 ]
             }
         });
@@ -295,14 +295,20 @@ class BookingService {
         });
 
         // Create comprehensive log
+        const targetUser = await User.findByPk(userId);
+        const targetVenue = await Venue.findByPk(bookingData.venueId);
+
         await this._createBookingLog(booking.id, user.id, 'create', {
             status,
             type: bookingData.type,
-            totalPrice: bookingData.totalPrice,
-            date: bookingData.date,
-            startTime: bookingData.startTime,
-            endTime: bookingData.endTime,
             venueId: bookingData.venueId,
+            venueName: targetVenue ? targetVenue.name : `Court #${bookingData.venueId}`,
+            userId: userId,
+            targetUserName: targetUser ? targetUser.name : `User #${userId}`,
+            totalPrice: booking.totalPrice || bookingData.totalPrice,
+            date: booking.date,
+            startTime: booking.startTime,
+            endTime: booking.endTime,
             isRecurring: !!bookingData.repeat,
             recurrenceDetails: bookingData.repeat ? {
                 count: bookingData.repeat.count,
@@ -343,16 +349,94 @@ class BookingService {
             };
         }
 
-        return await BookingLog.findAndCountAll({
+        const logs = await BookingLog.findAndCountAll({
             where,
             limit,
             offset,
             order: [['timestamp', 'DESC']],
             include: [
-                { model: User, attributes: ['name', 'email', 'phone'] },
+                { model: User, attributes: ['id', 'name', 'email', 'phone'] },
                 { model: Booking, attributes: ['id', 'date', 'startTime'] }
             ]
         });
+
+        // Resolve names for IDs in details on the fly
+        const userCache = new Map();
+        const venueCache = new Map();
+
+        for (const log of logs.rows) {
+            if (log.details) {
+                // Resolve User
+                if (log.details.userId && !log.details.targetUserName) {
+                    const uid = Number(log.details.userId);
+                    if (!userCache.has(uid)) {
+                        const u = await User.findByPk(uid, { attributes: ['name'] });
+                        userCache.set(uid, u ? u.name : null);
+                    }
+                    if (userCache.get(uid)) {
+                        log.details.targetUserName = userCache.get(uid);
+                    }
+                }
+
+                // Resolve Venue
+                if (log.details.venueId && !log.details.venueName) {
+                    const vid = Number(log.details.venueId);
+                    if (!venueCache.has(vid)) {
+                        const v = await Venue.findByPk(vid, { attributes: ['name'] });
+                        venueCache.set(vid, v ? v.name : null);
+                    }
+                    if (venueCache.get(vid)) {
+                        log.details.venueName = venueCache.get(vid);
+                    }
+                }
+
+                // Resolve Changes labels (From and To)
+                if (log.details.changes) {
+                    for (const [key, change] of Object.entries(log.details.changes)) {
+                        // Resolve User Names
+                        if (key === 'userId') {
+                            if (!change.fromLabel && change.from) {
+                                const uid = Number(change.from);
+                                if (!userCache.has(uid)) {
+                                    const u = await User.findByPk(uid, { attributes: ['name'] });
+                                    userCache.set(uid, u ? u.name : null);
+                                }
+                                change.fromLabel = userCache.get(uid) || `User #${uid}`;
+                            }
+                            if (!change.toLabel && change.to) {
+                                const uid = Number(change.to);
+                                if (!userCache.has(uid)) {
+                                    const u = await User.findByPk(uid, { attributes: ['name'] });
+                                    userCache.set(uid, u ? u.name : null);
+                                }
+                                change.toLabel = userCache.get(uid) || `User #${uid}`;
+                            }
+                        }
+                        // Resolve Venue Names
+                        else if (key === 'venueId') {
+                            if (!change.fromLabel && change.from) {
+                                const vid = Number(change.from);
+                                if (!venueCache.has(vid)) {
+                                    const v = await Venue.findByPk(vid, { attributes: ['name'] });
+                                    venueCache.set(vid, v ? v.name : null);
+                                }
+                                change.fromLabel = venueCache.get(vid) || `Court #${vid}`;
+                            }
+                            if (!change.toLabel && change.to) {
+                                const vid = Number(change.to);
+                                if (!venueCache.has(vid)) {
+                                    const v = await Venue.findByPk(vid, { attributes: ['name'] });
+                                    venueCache.set(vid, v ? v.name : null);
+                                }
+                                change.toLabel = venueCache.get(vid) || `Court #${vid}`;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return logs;
     }
 
     async updateBooking(id, updateData, user) {
@@ -382,21 +466,22 @@ class BookingService {
         // Check availability if time or venue is actually changing to different values
         const isTimeOrVenueChanging =
             (updateData.date && updateData.date !== booking.date) ||
-            (updateData.startTime && updateData.startTime !== booking.startTime) ||
-            (updateData.endTime && updateData.endTime !== booking.endTime) ||
-            (updateData.venueId && updateData.venueId !== booking.venueId);
+            (updateData.startTime && updateData.startTime.substring(0, 5) !== booking.startTime.substring(0, 5)) ||
+            (updateData.endTime && updateData.endTime.substring(0, 5) !== booking.endTime.substring(0, 5)) ||
+            (updateData.venueId && Number(updateData.venueId) !== Number(booking.venueId));
 
         if (isTimeOrVenueChanging) {
             const checkDate = updateData.date || booking.date;
-            const checkStartTime = updateData.startTime || booking.startTime;
-            const checkEndTime = updateData.endTime || booking.endTime;
+            const checkStartTime = (updateData.startTime || booking.startTime).substring(0, 5);
+            const checkEndTime = (updateData.endTime || booking.endTime).substring(0, 5);
             const checkVenueId = updateData.venueId || booking.venueId;
 
             // Only check availability if the new time slot is actually different from the current one
+            // We compare only HH:mm to avoid seconds mismatch (e.g. 10:00 vs 10:00:00)
             const isSameTimeSlot = checkDate === booking.date &&
-                checkStartTime === booking.startTime &&
-                checkEndTime === booking.endTime &&
-                checkVenueId === booking.venueId;
+                checkStartTime === booking.startTime.substring(0, 5) &&
+                checkEndTime === booking.endTime.substring(0, 5) &&
+                Number(checkVenueId) === Number(booking.venueId);
 
             console.log(`[DEBUG] Updating booking ${id}:`);
             console.log(`[DEBUG] Current: date=${booking.date}, start=${booking.startTime}, end=${booking.endTime}, venue=${booking.venueId}`);
@@ -405,30 +490,26 @@ class BookingService {
 
             if (!isSameTimeSlot) {
                 console.log(`[DEBUG] Checking availability for venue ${checkVenueId} on ${checkDate} from ${checkStartTime} to ${checkEndTime}`);
-                console.log(`[DEBUG] Excluding booking ID: ${booking.id} (from DB)`);
-                console.log(`[DEBUG] Original ID parameter: ${id} (type: ${typeof id})`);
+
+                // Use explicit ID normalization for exclusion
+                const targetBookingId = Number(booking.id);
 
                 const existingBooking = await Booking.findOne({
                     where: {
-                        venueId: checkVenueId,
+                        venueId: Number(checkVenueId),
                         date: checkDate,
-                        id: { [Op.ne]: booking.id }, // Exclude current booking using the actual booking ID from DB
+                        id: { [Op.ne]: targetBookingId },
                         [Op.and]: [
-                            { startTime: { [Op.lt]: checkEndTime } },
+                            { startTime: { [Op.lt]: checkEndTime === '00:00' ? '23:59:59' : checkEndTime } },
                             { endTime: { [Op.gt]: checkStartTime } }
                         ]
                     }
                 });
 
-                console.log(`[DEBUG] Existing booking found: ${existingBooking ? existingBooking.id : 'none'}`);
                 if (existingBooking) {
-                    console.log(`[DEBUG] Conflict details - Existing: ${existingBooking.startTime}-${existingBooking.endTime}, Requested: ${checkStartTime}-${checkEndTime}`);
+                    console.log(`[DEBUG] Conflict found with booking ID: ${existingBooking.id}`);
                     throw new Error('Venue is already booked for this time slot');
-                } else {
-                    console.log(`[DEBUG] No conflicts found, proceeding with update`);
                 }
-            } else {
-                console.log(`[DEBUG] Same time slot, skipping availability check`);
             }
         }
 
@@ -451,19 +532,19 @@ class BookingService {
 
                 if (isTimeOrVenueChanging) {
                     const checkDate = updateData.date || b.date;
-                    const checkStartTime = updateData.startTime || b.startTime;
-                    const checkEndTime = updateData.endTime || b.endTime;
+                    const checkStartTime = (updateData.startTime || b.startTime).substring(0, 5);
+                    const checkEndTime = (updateData.endTime || b.endTime).substring(0, 5);
                     const checkVenueId = updateData.venueId || b.venueId;
 
                     const conflict = await Booking.findOne({
                         where: {
                             id: { [Op.ne]: b.id },
-                            venueId: checkVenueId,
+                            venueId: Number(checkVenueId),
                             date: checkDate,
                             // Exclude other bookings in the same recurrence series to avoid self-conflicts
                             recurrenceId: { [Op.ne]: booking.recurrenceId },
                             [Op.and]: [
-                                { startTime: { [Op.lt]: checkEndTime } },
+                                { startTime: { [Op.lt]: checkEndTime === '00:00' ? '23:59:59' : checkEndTime } },
                                 { endTime: { [Op.gt]: checkStartTime } }
                             ]
                         }
@@ -502,16 +583,36 @@ class BookingService {
             return bookingsToUpdate[0];
         }
 
-        // Create comprehensive update log
-        const changes = Object.keys(updateData).reduce((acc, key) => {
+        // Create comprehensive update log with resolved names
+        const changes = {};
+        for (const key of Object.keys(updateData)) {
             if (updateData[key] !== booking[key]) {
-                acc[key] = {
+                const change = {
                     from: booking[key],
                     to: updateData[key]
                 };
+
+                // Add readable labels for IDs
+                if (key === 'userId') {
+                    const fromUser = await User.findByPk(booking.userId);
+                    const toUser = await User.findByPk(updateData.userId);
+                    change.fromLabel = fromUser ? fromUser.name : `User #${booking.userId}`;
+                    change.toLabel = toUser ? toUser.name : `User #${updateData.userId}`;
+                } else if (key === 'venueId') {
+                    const fromVenue = await Venue.findByPk(booking.venueId);
+                    const toVenue = await Venue.findByPk(updateData.venueId);
+                    change.fromLabel = fromVenue ? fromVenue.name : `Court #${booking.venueId}`;
+                    change.toLabel = toVenue ? toVenue.name : `Court #${updateData.venueId}`;
+                } else if (key === 'statusId' && updateData.statusId) {
+                    const fromStatus = await BookingStatus.findByPk(booking.statusId);
+                    const toStatus = await BookingStatus.findByPk(updateData.statusId);
+                    change.fromLabel = fromStatus ? fromStatus.name : (booking.status || `Status #${booking.statusId}`);
+                    change.toLabel = toStatus ? toStatus.name : `Status #${updateData.statusId}`;
+                }
+
+                changes[key] = change;
             }
-            return acc;
-        }, {});
+        }
 
         await booking.update(updateData);
 
@@ -569,9 +670,13 @@ class BookingService {
         });
 
         // 2. Unlink associated logs instead of destroying them
+        const targetUserLabel = await User.findByPk(booking.userId);
+        const targetVenueLabel = await Venue.findByPk(booking.venueId);
+
         // First, create the delete log (linked initially so we have the record)
         await this._createBookingLog(booking.id, user.id, 'delete', {
             venueId: booking.venueId,
+            venueName: targetVenueLabel ? targetVenueLabel.name : `Court #${booking.venueId}`,
             date: booking.date,
             startTime: booking.startTime,
             endTime: booking.endTime,
@@ -579,6 +684,7 @@ class BookingService {
             totalPrice: booking.totalPrice,
             bookingId: booking.id, // Explicitly store ID in details
             userId: booking.userId,
+            targetUserName: targetUserLabel ? targetUserLabel.name : `User #${booking.userId}`,
             seriesOption: seriesOption
         }, user);
 

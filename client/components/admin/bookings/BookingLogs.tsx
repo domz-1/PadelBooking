@@ -32,6 +32,7 @@ import {
   DialogContent,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface BookingLogsProps {
   bookingId: number;
@@ -52,19 +53,49 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
   const [dateRange, setDateRange] = useState("all");
   const [expandedLog, setExpandedLog] = useState<BookingLog | null>(null);
   const [statuses, setStatuses] = useState<BookingStatus[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [allVenues, setAllVenues] = useState<any[]>([]);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
-      const [logsRes, statusesRes] = await Promise.all([
+      const [logsRes, statusesRes, venuesRes] = await Promise.all([
         adminBookingService.getBookingLogs({
           bookingId: bookingId.toString(),
           limit: "100",
         }),
-        settingsService.getBookingStatuses()
+        settingsService.getBookingStatuses(),
+        adminBookingService.getVenues({ limit: 1000 })
       ]);
-      setLogs(logsRes.data);
+
+      const logsData = logsRes.data;
+      setLogs(logsData);
       setStatuses(statusesRes.data || []);
+
+      // Build a comprehensive venue map
+      const venueMap = new Map();
+      (venuesRes.data || []).forEach((v: any) => venueMap.set(Number(v.id), v));
+      setAllVenues(Array.from(venueMap.values()));
+
+      // Build a comprehensive user map from all users mentioned in logs
+      const userMap = new Map();
+
+      // 1. Add performers from logs (they are already included in the log objects)
+      logsData.forEach((log: any) => {
+        if (log.User) {
+          userMap.set(Number(log.User.id), log.User);
+        }
+      });
+
+      // 2. Fetch all users from the system (increase limit to be safer)
+      const usersRes = await adminBookingService.getUsers({ limit: 1000 });
+      (usersRes.data || []).forEach((u: any) => {
+        if (!userMap.has(Number(u.id))) {
+          userMap.set(Number(u.id), u);
+        }
+      });
+
+      setAllUsers(Array.from(userMap.values()));
     } catch (error) {
       console.error("Failed to fetch booking logs", error);
       toast.error("Failed to fetch booking logs");
@@ -141,6 +172,8 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
   interface LogChange {
     from: unknown;
     to: unknown;
+    fromLabel?: string;
+    toLabel?: string;
   }
 
   interface RecurrenceDetails {
@@ -151,6 +184,7 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
   const formatFieldName = (field: string): string => {
     const map: Record<string, string> = {
       venueId: "Court",
+      venueName: "Court",
       startTime: "Start Time",
       endTime: "End Time",
       totalPrice: "Price",
@@ -158,14 +192,30 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
       courtNumber: "Court Number",
       status: "Status",
       statusId: "Status",
+      userId: "Customer",
+      targetUserName: "Customer",
       paymentStatus: "Payment Status",
       type: "Booking Type",
     };
     return map[field] || field.replace(/([A-Z])/g, " $1").trim(); // Fallback to Title Case
   };
 
-  const formatValue = (field: string, value: unknown): string => {
+  const formatValue = (field: string, value: unknown, details?: any): string => {
     if (value === null || value === undefined) return "-";
+
+    if (field === "userId") {
+      if (details?.targetUserName) return details.targetUserName;
+      const userIdNum = Number(value);
+      const user = allUsers.find(u => Number(u.id) === userIdNum);
+      return user ? user.name : `User #${userIdNum}`;
+    }
+
+    if (field === "venueId") {
+      if (details?.venueName) return details.venueName;
+      const venueIdNum = Number(value);
+      const venue = allVenues.find(v => Number(v.id) === venueIdNum);
+      return venue ? venue.name : `Court #${venueIdNum}`;
+    }
 
     if (field === "startTime" || field === "endTime") {
       return String(value).slice(0, 5); // Remove seconds
@@ -182,7 +232,11 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
     return String(value);
   };
 
-  const renderValue = (field: string, value: unknown) => {
+  const renderValue = (field: string, value: unknown, label?: string, details?: any) => {
+    if (label) return <span>{label}</span>;
+    if (field === 'userId' && details?.targetUserName) return <span>{details.targetUserName}</span>;
+    if (field === 'venueId' && details?.venueName) return <span>{details.venueName}</span>;
+
     if (field === "statusId") {
       const statusId = Number(value);
       const status = statuses.find(s => s.id === statusId);
@@ -207,104 +261,52 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
     if (!details) return "No details available";
 
     try {
-      const formatted: string[] = [];
+      let formatted: string[] = [];
 
-      // Add user info if available
-      if (details.userName) {
-        formatted.push(`👤 User: ${details.userName} (${details.userEmail})`);
-      }
-
-      // Add action-specific info
-      if (details.action === "create") {
-        formatted.push("✅ Booking created");
-        if (details.courtNumber) {
-          formatted.push(`🏟️ Court: ${details.courtNumber}`);
-        }
-        if (details.totalPrice) {
-          formatted.push(`💰 Price: $${details.totalPrice}`);
-        }
-      } else if (details.action === "update") {
-        formatted.push("🔄 Booking updated");
-      } else if (details.action === "delete") {
-        formatted.push("🗑️ Booking deleted");
-      }
-
-      // Add changes if this is an update
+      // 1. Handle Changes (Updates)
       if (details.changes) {
-        formatted.push("🔄 Changes:");
         Object.entries(details.changes as Record<string, LogChange>).forEach(
           ([field, change]) => {
-            if (
-              change &&
-              typeof change === "object" &&
-              "from" in change &&
-              "to" in change
-            ) {
-              formatted.push(`  - ${field}: ${change.from} → ${change.to}`);
-            } else {
-              formatted.push(`  - ${field}: ${JSON.stringify(change)}`);
+            if (change && typeof change === "object" && "from" in change && "to" in change) {
+              const from = change.fromLabel || formatValue(field, change.from, details);
+              const to = change.toLabel || formatValue(field, change.to, details);
+              if (from !== to) {
+                formatted.push(`• ${formatFieldName(field)}: ${from} → ${to}`);
+              }
             }
           },
         );
       }
 
-      // For recurring bookings
-      if (details.isRecurring) formatted.push("🔁 Recurring: Yes");
+      // 2. Handle Action Specifics
+      if (details.date && formatted.length === 0) {
+        formatted.push(`• Court: ${details.venueName || formatValue('venueId', details.venueId, details)}`);
+        formatted.push(`• Date: ${details.date}`);
+        formatted.push(`• Time: ${details.startTime} - ${details.endTime}`);
+      }
+
+      // 3. Special Actions (Open Match, Waitlist)
+      if (details.action === "convert_to_open_match") {
+        formatted.push("🔄 Converted to Open Match");
+      } else if (details.action === "join_waitlist") {
+        formatted.push(`📝 Joined waitlist${details.waitlistPosition ? ` (Position: ${details.waitlistPosition})` : ""}`);
+      } else if (details.action === "leave_waitlist") {
+        formatted.push("📤 Left waitlist");
+      }
+
+      // 4. Recurring Info
+      if (details.isRecurring) formatted.push("� Recurring series");
       if (details.recurrenceDetails) {
         const recurrence = details.recurrenceDetails as RecurrenceDetails;
-        formatted.push(`  - Frequency: ${recurrence.frequency}`);
-        formatted.push(`  - Count: ${recurrence.count}`);
-      }
-
-      // For delete operations, show original data
-      if (details.action === "delete" && details.originalData) {
-        formatted.push("\n🗑️ Original Data:");
-        Object.entries(details.originalData as Record<string, unknown>).forEach(
-          ([field, value]) => {
-            formatted.push(`  - ${field}: ${value}`);
-          },
-        );
-      }
-
-      // For open match operations
-      if (details.action === "convert_to_open_match") {
-        formatted.push("\n🔄 Open Match Conversion:");
-        if (details.previousData) {
-          formatted.push("  Previous State:");
-          Object.entries(
-            details.previousData as Record<string, unknown>,
-          ).forEach(([field, value]) => {
-            formatted.push(`    - ${field}: ${JSON.stringify(value)}`);
-          });
-        }
-        if (details.newData) {
-          formatted.push("  New State:");
-          Object.entries(details.newData as Record<string, unknown>).forEach(
-            ([field, value]) => {
-              formatted.push(`    - ${field}: ${JSON.stringify(value)}`);
-            },
-          );
-        }
-      }
-
-      // For waitlist operations
-      if (details.action === "join_waitlist") {
-        formatted.push("📝 Joined waitlist");
-        if (details.waitlistPosition) {
-          formatted.push(`  Position: ${details.waitlistPosition}`);
-        }
-      }
-
-      if (details.action === "leave_waitlist") {
-        formatted.push("📤 Left waitlist");
+        formatted.push(`• Cycle: ${recurrence.frequency} (${recurrence.count} matches)`);
       }
 
       return formatted.length > 0
         ? formatted.join("\n")
-        : "No details available";
+        : "Action details logged";
     } catch (error) {
       console.error("Error formatting log details:", error);
-      return "Error formatting details";
+      return "Log details technical view";
     }
   };
 
@@ -392,12 +394,18 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
                     </div>
                     <div className="grid gap-2">
                       {Object.entries(expandedLog.details).map(([field, value]) => {
-                        if (['logTimestamp', 'bookingSnapshotId', 'userName', 'userEmail', 'userRole', 'recurrenceDetails'].includes(field)) return null;
+                        // Skip internal metadata and redundant fields
+                        if (['logTimestamp', 'bookingSnapshotId', 'userName', 'userEmail', 'userRole', 'recurrenceDetails', 'seriesOption'].includes(field)) return null;
+
+                        // Hide raw ID if Name field is also present
+                        if (field === 'userId' && expandedLog.details.targetUserName) return null;
+                        if (field === 'venueId' && expandedLog.details.venueName) return null;
+
                         return (
                           <div key={field} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm border">
                             <span className="font-medium text-muted-foreground">{formatFieldName(field)}</span>
                             <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
-                              {renderValue(field, value)}
+                              {renderValue(field, value, undefined, expandedLog.details)}
                             </Badge>
                           </div>
                         )
@@ -419,12 +427,18 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
                     </div>
                     <div className="grid gap-2">
                       {Object.entries(expandedLog.details).map(([field, value]) => {
+                        // Skip metadata
                         if (['logTimestamp', 'bookingSnapshotId', 'userName', 'userEmail', 'userRole', 'seriesOption'].includes(field)) return null;
+
+                        // Consolidation
+                        if (field === 'userId' && expandedLog.details.targetUserName) return null;
+                        if (field === 'venueId' && expandedLog.details.venueName) return null;
+
                         return (
                           <div key={field} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm border">
                             <span className="font-medium text-muted-foreground">{formatFieldName(field)}</span>
                             <Badge variant="outline" className="bg-destructive/10 border-destructive/20 text-destructive line-through decoration-destructive/50">
-                              {renderValue(field, value)}
+                              {renderValue(field, value, undefined, expandedLog.details)}
                             </Badge>
                           </div>
                         )
@@ -438,8 +452,8 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
                     </div>
                     <div className="grid gap-2">
                       {Object.entries(expandedLog.details.changes as Record<string, LogChange>).map(([field, change]) => {
-                        const fromVal = formatValue(field, change.from);
-                        const toVal = formatValue(field, change.to);
+                        const fromVal = formatValue(field, change.from, expandedLog.details);
+                        const toVal = formatValue(field, change.to, expandedLog.details);
                         const isSame = fromVal === toVal || (change.from === null && change.to === null);
                         const isDeleted = (change.to === null || change.to === undefined || change.to === "") && (change.from !== null && change.from !== undefined && change.from !== "");
                         const isAdded = (change.from === null || change.from === undefined || change.from === "") && (change.to !== null && change.to !== undefined && change.to !== "");
@@ -453,7 +467,7 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
                               {isDeleted ? (
                                 <>
                                   <Badge variant="outline" className="bg-background font-normal border-destructive/20 text-destructive line-through decoration-destructive/50">
-                                    {renderValue(field, change.from)}
+                                    {renderValue(field, change.from, change.fromLabel)}
                                   </Badge>
                                   <ArrowRight className="h-3 w-3 text-muted-foreground" />
                                   <Badge variant="outline" className="bg-destructive/10 border-destructive/20 text-destructive">
@@ -467,17 +481,17 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
                                   </Badge>
                                   <ArrowRight className="h-3 w-3 text-muted-foreground" />
                                   <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
-                                    {renderValue(field, change.to)}
+                                    {renderValue(field, change.to, change.toLabel)}
                                   </Badge>
                                 </>
                               ) : (
                                 <>
                                   <Badge variant="outline" className="bg-background font-normal border-destructive/20 text-destructive line-through decoration-destructive/50">
-                                    {renderValue(field, change.from)}
+                                    {renderValue(field, change.from, change.fromLabel)}
                                   </Badge>
                                   <ArrowRight className="h-3 w-3 text-muted-foreground" />
                                   <Badge variant="outline" className="bg-background font-medium border-primary/20 text-primary">
-                                    {renderValue(field, change.to)}
+                                    {renderValue(field, change.to, change.toLabel)}
                                   </Badge>
                                 </>
                               )}
@@ -598,46 +612,53 @@ export function BookingLogsList({ bookingId, className }: BookingLogsListProps) 
                   return (
                     <Card
                       key={log.id}
-                      className="hover:shadow-md transition-shadow cursor-pointer border-l-4"
+                      className="hover:shadow-md transition-all duration-200 cursor-pointer border-l-4 group relative overflow-hidden"
                       style={{ borderLeftColor: actionInfo.className.includes("green") ? "#22c55e" : actionInfo.className.includes("blue") ? "#3b82f6" : actionInfo.className.includes("red") ? "#ef4444" : "#9ca3af" }}
                       onClick={() => setExpandedLog(log)}
                     >
-                      <CardContent className="pt-4">
-                        <div className="flex items-start gap-3">
+
+                      <CardContent className="py-3 px-4">
+                        <div className="flex items-center gap-4">
                           <div className="shrink-0">
-                            <Badge
-                              variant={actionInfo.variant}
-                              className={actionInfo.className + " capitalize"}
-                            >
-                              {log.action}
-                            </Badge>
+                            <div className={cn(
+                              "w-10 h-10 rounded-xl flex items-center justify-center border transition-transform duration-200 group-hover:scale-105",
+                              actionInfo.className
+                            )}>
+                              {log.action === 'create' && <Calendar className="w-5 h-5" />}
+                              {log.action === 'update' && <RefreshCw className="w-5 h-5" />}
+                              {log.action === 'delete' && <Shield className="w-5 h-5" />}
+                              {!['create', 'update', 'delete'].includes(log.action) && <Clock className="w-5 h-5" />}
+                            </div>
                           </div>
+
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm text-muted-foreground">
-                                {format(logDate, "MMM dd, yyyy • hh:mm a")}
+                            <div className="flex items-center justify-between mb-0.5">
+                              <h4 className="text-[13px] font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                                {log.action === "create" && "New Booking"}
+                                {log.action === "update" && "Changes Saved"}
+                                {log.action === "delete" && "Booking Removed"}
+                                {!['create', 'update', 'delete'].includes(log.action) && `${log.action.charAt(0).toUpperCase() + log.action.slice(1)}`}
+                              </h4>
+                              <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">
+                                {format(logDate, "hh:mm a")}
                               </span>
-                              {log.User && (
-                                <div className="flex items-center gap-1 text-xs bg-secondary px-2 py-0.5 rounded-full">
-                                  <User className="w-3 h-3" />
-                                  {log.User.name}
-                                </div>
-                              )}
                             </div>
-                            <p className="text-sm mb-2">
-                              {log.action === "create" && "Booking created"}
-                              {log.action === "update" && "Booking updated"}
-                              {log.action === "delete" && "Booking deleted"}
-                            </p>
-                            <div className="text-xs text-muted-foreground line-clamp-2">
-                              {formatLogDetails(log.details).split("\n")[0]}
-                              {log.details &&
-                                Object.keys(log.details).length > 1 &&
-                                "..."}
+
+                            <div className="flex items-center gap-1.5 overflow-hidden">
+                              {log.User && (
+                                <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                  by <span className="font-semibold text-foreground/80">{log.User.name}</span>
+                                </span>
+                              )}
+                              <span className="text-[9px] text-muted-foreground/30">•</span>
+                              <div className="text-[11px] text-muted-foreground line-clamp-1 opacity-70 group-hover:opacity-100 transition-opacity flex-1 min-w-0">
+                                {formatLogDetails(log.details).split("\n").filter(line => !line.includes("👤 User:")).join(" • ")}
+                              </div>
                             </div>
                           </div>
-                          <div className="shrink-0">
-                            <Shield className="h-4 w-4 text-muted-foreground" />
+
+                          <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-all translate-x-1 group-hover:translate-x-0 ml-1">
+                            <ArrowRight className="h-4 w-4 text-primary" />
                           </div>
                         </div>
                       </CardContent>

@@ -1,5 +1,8 @@
 import { adminApi } from "@/lib/api";
-import { type Booking, type WaitlistEntry } from "@/lib/schemas";
+import { type Booking, type WaitlistEntry, type BookingLog } from "@/lib/schemas";
+
+import { adminUserService, GetUsersParams } from "./users.service";
+import { adminVenueService, GetVenuesParams } from "./venues.service";
 
 export interface GetBookingsParams {
     page?: number;
@@ -76,5 +79,13 @@ export const adminBookingService = {
             currentPage: number;
         }>('/bookings/logs', { params });
         return response.data;
+    },
+
+    getUsers: async (params?: GetUsersParams) => {
+        return await adminUserService.getAll(params);
+    },
+
+    getVenues: async (params?: GetVenuesParams) => {
+        return await adminVenueService.getAll(params);
     }
 };

@@ -36,6 +36,7 @@ interface UserSelectFieldProps {
   loading?: boolean;
   onQuickCreate?: (search: string) => void;
   onUserCreated?: (user: User) => void;
+  initialUser?: User | null;
 }
 
 export function UserSelectField({
@@ -47,6 +48,7 @@ export function UserSelectField({
   loading,
   onQuickCreate,
   onUserCreated,
+  initialUser,
 }: UserSelectFieldProps) {
   const [open, setOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState("");
@@ -85,7 +87,8 @@ export function UserSelectField({
   const selectedUser = newlyCreatedUser?.id === selectedUserId
     ? newlyCreatedUser
     : users.find((u) => u.id === selectedUserId) ||
-    (selectedUserId ? { id: selectedUserId, name: "Selected User", email: "" } : null);
+    (selectedUserId === initialUser?.id ? initialUser : null) ||
+    (selectedUserId ? { id: selectedUserId, name: "Selected User", email: "", phone: "" } : null);
 
   return (
     <FormField

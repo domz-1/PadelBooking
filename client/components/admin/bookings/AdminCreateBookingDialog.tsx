@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -100,6 +100,27 @@ export function AdminCreateBookingDialog({
       notes: "",
     },
   });
+
+  // Reset form when opening to clear previous data
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        userId: 0,
+        duration: "1",
+        totalPrice: 0,
+        venueId: venueId,
+        type: "standard",
+        hasOffer: false,
+        offerValue: 0,
+        isRecurring: false,
+        repeatFrequency: "weekly",
+        repeatCount: 1,
+        notes: "",
+      });
+      setUserSearch("");
+      setSearchForQuickCreate("");
+    }
+  }, [open, venueId, form]);
 
   async function onSubmit(values: BookingFormValues) {
     const startStr = `${date}T${startTime}`;

@@ -144,6 +144,28 @@ export function EditBookingDialog({
     },
   });
 
+  // Reset form when booking changes or dialog opens
+  useEffect(() => {
+    if (open && booking.id) {
+      form.reset({
+        date: new Date(booking.date + "T12:00:00"),
+        startTime: booking.startTime.substring(0, 5),
+        endTime: booking.endTime.substring(0, 5),
+        totalPrice: Number(booking.totalPrice),
+        userId: Number(booking.userId),
+        venueId: Number(booking.venueId),
+        statusId: booking.statusId ? Number(booking.statusId) : undefined,
+        type: (booking.type as "standard" | "academy") || "standard",
+        hasOffer: !!booking.hasOffer,
+        offerValue: Number(booking.offerValue || 0),
+        notes: booking.notes || "",
+      });
+      setNewlyCreatedUser(null);
+    }
+  }, [open, booking.id, form]);
+
+  const [newlyCreatedUser, setNewlyCreatedUser] = useState<any>(null);
+
   useEffect(() => {
     if (
       open &&
@@ -440,6 +462,7 @@ export function EditBookingDialog({
                       loadMore={loadMore}
                       hasMore={hasMore}
                       loading={usersLoading}
+                      initialUser={bookedUser as any}
                     />
 
                     <div className="grid grid-cols-2 gap-4">
