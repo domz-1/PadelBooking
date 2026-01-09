@@ -17,6 +17,10 @@ interface BrandingConfig {
     storeName?: string;
     storeLogo?: string;
     storePhone?: string;
+    showStore?: boolean;
+    showAcademy?: boolean;
+    showSponsors?: boolean;
+    cancelationLimit?: number;
 }
 
 interface BrandingContextType {
@@ -25,6 +29,10 @@ interface BrandingContextType {
     themeColor: string
     config: BrandingConfig | null
     loading: boolean
+    showStore: boolean
+    showAcademy: boolean
+    showSponsors: boolean
+    cancelationLimit: number
 }
 
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined)
@@ -66,7 +74,11 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         logo: config?.logo || null,
         themeColor: config?.themeColor || "#4CAF50",
         config,
-        loading
+        loading,
+        showStore: config?.showStore ?? true,
+        showAcademy: config?.showAcademy ?? true,
+        showSponsors: config?.showSponsors ?? true,
+        cancelationLimit: config?.cancelationLimit ?? 24
     }
 
     if (loading && !config) {

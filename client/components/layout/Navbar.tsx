@@ -45,7 +45,7 @@ export default function Navbar() {
   const { items } = useCart();
   const router = useRouter();
   const pathname = usePathname();
-  const { brandName, logo } = useBranding();
+  const { brandName, logo, showStore, showAcademy } = useBranding();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const cartItemCount = items.reduce((acc, item) => acc + item.quantity, 0);
@@ -103,16 +103,18 @@ export default function Navbar() {
             <span className="sr-only">Toggle theme</span>
           </Button>
 
-          <Link href="/cart">
-            <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full">
-              <ShoppingCart className="h-5 w-5" />
-              {cartItemCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 rounded-full bg-primary text-[10px] font-bold animate-in zoom-in">
-                  {cartItemCount}
-                </Badge>
-              )}
-            </Button>
-          </Link>
+          {showStore && (
+            <Link href="/cart">
+              <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full">
+                <ShoppingCart className="h-5 w-5" />
+                {cartItemCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 rounded-full bg-primary text-[10px] font-bold animate-in zoom-in">
+                    {cartItemCount}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
+          )}
 
           <div className="hidden md:flex items-center gap-2">
             {isAuthenticated && user?.role === "admin" && (
@@ -151,9 +153,11 @@ export default function Navbar() {
                   <DropdownMenuItem onClick={() => router.push("/my-bookings")} className="cursor-pointer">
                     <Calendar className="mr-2 h-4 w-4" /> My Bookings
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push("/orders")} className="cursor-pointer">
-                    <ShoppingCart className="mr-2 h-4 w-4" /> My Orders
-                  </DropdownMenuItem>
+                  {showStore && (
+                    <DropdownMenuItem onClick={() => router.push("/orders")} className="cursor-pointer">
+                      <ShoppingCart className="mr-2 h-4 w-4" /> My Orders
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
                     onClick={handleLogout}
                     className="text-red-500 cursor-pointer focus:text-red-500 focus:bg-red-50 dark:focus:bg-red-950/20"
@@ -201,7 +205,11 @@ export default function Navbar() {
                 </div>
 
                 <div className="flex flex-col space-y-1">
-                  {NAV_ITEMS.map((item) => (
+                  {NAV_ITEMS.filter(item => {
+                    if (item.href === '/store') return showStore;
+                    if (item.href === '/academy') return showAcademy;
+                    return true;
+                  }).map((item) => (
                     <Button
                       key={item.href}
                       variant={pathname === item.href ? "secondary" : "ghost"}
@@ -244,9 +252,11 @@ export default function Navbar() {
                     <Button variant="ghost" className="w-full justify-start gap-3 h-10 px-4" onClick={() => handleMobileNav("/my-bookings")}>
                       <Calendar className="h-4 w-4" /> My Bookings
                     </Button>
-                    <Button variant="ghost" className="w-full justify-start gap-3 h-10 px-4" onClick={() => handleMobileNav("/orders")}>
-                      <ShoppingCart className="h-4 w-4" /> My Orders
-                    </Button>
+                    {showStore && (
+                      <Button variant="ghost" className="w-full justify-start gap-3 h-10 px-4" onClick={() => handleMobileNav("/orders")}>
+                        <ShoppingCart className="h-4 w-4" /> My Orders
+                      </Button>
+                    )}
                     {user?.role === "admin" && (
                       <Button variant="ghost" className="w-full justify-start gap-3 h-10 px-4 text-primary" onClick={() => handleMobileNav("/admin/dashboard")}>
                         <ShieldPlus className="h-4 w-4" /> Admin Dashboard
@@ -279,29 +289,36 @@ export default function Navbar() {
   );
 }
 
-const DesktopNavLinks = ({ pathname }: { pathname: string }) => (
-  <>
-    {NAV_ITEMS.map((item) => (
-      <Link
-        key={item.href}
-        href={item.href}
-        className={cn(
-          "text-sm font-medium transition-all hover:text-primary relative py-1",
-          pathname === item.href ? "text-primary" : "text-muted-foreground"
-        )}
-      >
-        <span className="flex items-center gap-1.5">
-          {item.label}
-          {item.badge && (
-            <Badge variant="secondary" className="px-1.5 py-0 text-[9px] h-4 bg-primary/10 text-primary border-none">
-              {item.badge}
-            </Badge>
+const DesktopNavLinks = ({ pathname }: { pathname: string }) => {
+  const { showStore, showAcademy } = useBranding();
+  return (
+    <>
+      {NAV_ITEMS.filter(item => {
+        if (item.href === '/store') return showStore;
+        if (item.href === '/academy') return showAcademy;
+        return true;
+      }).map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          className={cn(
+            "text-sm font-medium transition-all hover:text-primary relative py-1",
+            pathname === item.href ? "text-primary" : "text-muted-foreground"
           )}
-        </span>
-        {pathname === item.href && (
-          <span className="absolute -bottom-5 left-0 w-full h-[2px] bg-primary rounded-t-full animate-in zoom-in-50 duration-300" />
-        )}
-      </Link>
-    ))}
-  </>
-);
+        >
+          <span className="flex items-center gap-1.5">
+            {item.label}
+            {item.badge && (
+              <Badge variant="secondary" className="px-1.5 py-0 text-[9px] h-4 bg-primary/10 text-primary border-none">
+                {item.badge}
+              </Badge>
+            )}
+          </span>
+          {pathname === item.href && (
+            <span className="absolute -bottom-5 left-0 w-full h-[2px] bg-primary rounded-t-full animate-in zoom-in-50 duration-300" />
+          )}
+        </Link>
+      ))}
+    </>
+  );
+};

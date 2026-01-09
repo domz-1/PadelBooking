@@ -11,7 +11,6 @@
     "test-admin-flow": "node scripts/test-admin-booking-flow.js",
     "test-all": "npm run test-statuses && npm run test-booking-update && npm run test-admin-flow",
     "reset-admin-password": "node scripts/reset-admin-password.js",
-
     "prepare": "husky"
   },
   "dependencies": {
@@ -28,6 +27,7 @@
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.11",
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",
@@ -38,6 +38,7 @@
     "socket.io": "^4.8.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "telegraf": "^4.16.3",
     "winston": "^3.19.0",
     "xlsx": "^0.18.5",
     "xss-clean": "^0.1.4"

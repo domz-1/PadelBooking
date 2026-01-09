@@ -84,18 +84,26 @@ const NavContent = ({
 }: {
   pathname: string;
   isCollapsed: boolean;
-}) => (
-  <div className="flex flex-col gap-2 py-4">
-    {adminNavItems.map((item) => (
-      <NavItemComponent
-        key={item.title + item.href}
-        item={item}
-        pathname={pathname}
-        isCollapsed={isCollapsed}
-      />
-    ))}
-  </div>
-);
+}) => {
+  const { showStore, showAcademy } = useBranding();
+
+  return (
+    <div className="flex flex-col gap-2 py-4">
+      {adminNavItems.filter(item => {
+        if (item.title === 'Store') return showStore;
+        if (item.title === 'Academy') return showAcademy;
+        return true;
+      }).map((item) => (
+        <NavItemComponent
+          key={item.title + item.href}
+          item={item}
+          pathname={pathname}
+          isCollapsed={isCollapsed}
+        />
+      ))}
+    </div>
+  );
+};
 
 export function Sidebar() {
   const pathname = usePathname();

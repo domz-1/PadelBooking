@@ -102,7 +102,10 @@ exports.updateProfile = async (req, res, next) => {
         if (req.file) {
             req.body.image = req.file.path;
         }
-        const user = await userService.updateUser(req.user.id, req.body);
+        // Strip sensitive fields that should only be updated through specific methods or by admin
+        const { password, role, id, ...allowedUpdates } = req.body;
+
+        const user = await userService.updateUser(req.user.id, allowedUpdates);
         res.status(200).json({ success: true, data: user, message: req.t('success') });
     } catch (error) {
         next(error);

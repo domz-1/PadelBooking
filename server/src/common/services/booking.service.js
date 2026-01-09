@@ -8,6 +8,7 @@ const BookingStatus = require('../../api/modules/settings/bookingStatus.model');
 const sendEmail = require('../utils/emailService');
 const Branch = require('../../api/modules/branches/branch.model');
 const skeddaService = require('./skedda.service');
+const telegramService = require('./telegram.service');
 const { Op } = require('sequelize');
 
 class BookingService {
@@ -388,6 +389,17 @@ class BookingService {
             console.error('Error preparing email', err);
         }
 
+        // Send Telegram notification
+        telegramService.sendToAllSubscribers('BOOKING_CREATED', {
+            userName: targetUser ? targetUser.name : `User #${userId}`,
+            venueName: targetVenue ? targetVenue.name : `Court #${bookingData.venueId}`,
+            startTime: booking.startTime,
+            endTime: booking.endTime,
+            date: booking.date,
+            price: booking.totalPrice || bookingData.totalPrice,
+            currency: 'EGP'
+        });
+
         return await this.getBookingById(booking.id);
     }
 
@@ -671,6 +683,24 @@ class BookingService {
         }
 
         await booking.update(updateData);
+        const updatedBooking = await this.getBookingById(id);
+
+        // Send Telegram notification
+        const changesText = Object.entries(changes).map(([key, change]) => {
+            const label = key === 'userId' || key === 'venueId' || key === 'statusId' ? ' (ID changed)' : '';
+            return `- *${key}*: ${change.fromLabel || change.from} ➡️ ${change.toLabel || change.to}${label}`;
+        }).join('\n');
+
+        if (changesText) {
+            telegramService.sendToAllSubscribers('BOOKING_UPDATED', {
+                userName: updatedBooking.User ? updatedBooking.User.name : `User #${updatedBooking.userId}`,
+                venueName: updatedBooking.Venue ? updatedBooking.Venue.name : `Court #${updatedBooking.venueId}`,
+                startTime: updatedBooking.startTime,
+                endTime: updatedBooking.endTime,
+                date: updatedBooking.date,
+                changes: changesText
+            });
+        }
 
         await this._createBookingLog(booking.id, user.id, 'update', {
             originalData: {
@@ -779,6 +809,16 @@ class BookingService {
 
         // 3. Delete Booking
         await booking.destroy();
+
+        // Send Telegram notification
+        telegramService.sendToAllSubscribers('BOOKING_CANCELLED', {
+            userName: targetUserLabel ? targetUserLabel.name : `User #${booking.userId}`,
+            venueName: targetVenueLabel ? targetVenueLabel.name : `Court #${booking.venueId}`,
+            startTime: booking.startTime,
+            endTime: booking.endTime,
+            date: booking.date,
+            reason: 'Cancelled by user/admin'
+        });
 
         // Check Waitlist
         await this.checkWaitlist(venueId, date, startTime, endTime);
@@ -1019,6 +1059,46 @@ class BookingService {
         });
 
         return freeSlotsByVenue;
+    }
+
+    async getDailyAvailabilityData() {
+        const today = new Date().toISOString().split('T')[0];
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+        // Get free slots for today from 12pm to tomorrow 5am (typical padel peak/day range)
+        const freeSlots = await this.getFreeSlots({
+            startDate: today,
+            startTime: '12',
+            endDate: tomorrowStr,
+            endTime: '05',
+            branchId: 'all'
+        });
+
+        let slotsText = '';
+        for (const [venue, ranges] of Object.entries(freeSlots)) {
+            slotsText += `🔹 *${venue}*:\n   ${ranges.join(', ')}\n`;
+        }
+
+        if (!slotsText) slotsText = 'No free slots available for today.';
+
+        return {
+            date: today,
+            slots: slotsText,
+            bookingUrl: process.env.CLIENT_URL || 'http://localhost:3000'
+        };
+    }
+
+    async broadcastDailyAvailability(chatId = null) {
+        const data = await this.getDailyAvailabilityData();
+
+        if (chatId) {
+            const message = telegramService.formatMessage('DAILY_AVAILABILITY', data);
+            await telegramService.sendMessage(chatId, message);
+        } else {
+            await telegramService.sendToAllSubscribers('DAILY_AVAILABILITY', data);
+        }
     }
 
     _formatFreeRange(startTS, endTS) {

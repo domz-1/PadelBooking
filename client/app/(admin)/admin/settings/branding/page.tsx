@@ -24,7 +24,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { settingsService } from "@/lib/services/settings.service";
-import { Loader2, Palette, Image as ImageIcon, Type, Save, ShoppingCart, Phone } from "lucide-react";
+import { Loader2, Palette, Image as ImageIcon, Type, Save, ShoppingCart, Phone, Eye } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import Image from "next/image";
 import { useBrandingStore } from "@/hooks/use-branding-store";
 import { API_BASE_URL } from "@/lib/api";
@@ -56,6 +57,10 @@ const brandingSchema = z.object({
   storeName: z.string().optional(),
   storePhone: z.string().optional(),
   storeLogo: z.string().optional(),
+  showStore: z.boolean().optional(),
+  showAcademy: z.boolean().optional(),
+  showSponsors: z.boolean().optional(),
+  cancelationLimit: z.number().min(0).optional(),
 });
 
 type BrandingFormValues = z.infer<typeof brandingSchema>;
@@ -69,7 +74,7 @@ export default function BrandingSettingsPage() {
   const { fetchConfig } = useBrandingStore();
 
   const form = useForm<BrandingFormValues>({
-    resolver: zodResolver(brandingSchema),
+    resolver: zodResolver(brandingSchema as any),
     defaultValues: {
       businessName: "",
       logo: "",
@@ -83,6 +88,10 @@ export default function BrandingSettingsPage() {
       storeName: "",
       storePhone: "",
       storeLogo: "",
+      showStore: true,
+      showAcademy: true,
+      showSponsors: true,
+      cancelationLimit: 24,
     },
   });
 
@@ -104,6 +113,10 @@ export default function BrandingSettingsPage() {
           storeName: data.storeName || "",
           storePhone: data.storePhone || "",
           storeLogo: data.storeLogo || "",
+          showStore: typeof data.showStore === 'boolean' ? data.showStore : true,
+          showAcademy: typeof data.showAcademy === 'boolean' ? data.showAcademy : true,
+          showSponsors: typeof data.showSponsors === 'boolean' ? data.showSponsors : true,
+          cancelationLimit: data.cancelationLimit ?? 24,
         });
         setLogoPreview(data.logo || null);
         setStoreLogoPreview(data.storeLogo || null);
@@ -116,7 +129,7 @@ export default function BrandingSettingsPage() {
     fetchConfig();
   }, [form]);
 
-  const onSubmit = async (values: BrandingFormValues) => {
+  const onSubmit = async (values: any) => {
     setSaving(true);
     try {
       await settingsService.updateConfig(values);
@@ -182,8 +195,102 @@ export default function BrandingSettingsPage() {
         </div>
       </div>
 
-      <Form {...form}>
+      <Form {...(form as any)}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                Feature Visibility
+              </CardTitle>
+              <CardDescription>
+                Toggle major features of the system on or off.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control as any}
+                name="showStore"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Show Store</FormLabel>
+                      <FormDescription>
+                        Display store links and featured products to customers.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control as any}
+                name="showAcademy"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Show Academy</FormLabel>
+                      <FormDescription>
+                        Display academy links and sections to customers.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control as any}
+                name="showSponsors"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Show Sponsors</FormLabel>
+                      <FormDescription>
+                        Display sponsor logos and sections to customers.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control as any}
+                name="cancelationLimit"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel>Cancellation Limit (Hours)</FormLabel>
+                    <FormDescription>
+                      Users can cancel their bookings up to this many hours before the start time.
+                    </FormDescription>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -198,7 +305,7 @@ export default function BrandingSettingsPage() {
               <div className="flex flex-col md:flex-row gap-6 items-start">
                 <div className="flex-1 w-full space-y-4">
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="businessName"
                     render={({ field }) => (
                       <FormItem>
@@ -211,7 +318,7 @@ export default function BrandingSettingsPage() {
                     )}
                   />
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="logo"
                     render={() => (
                       <FormItem>
@@ -269,7 +376,7 @@ export default function BrandingSettingsPage() {
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="supportNumber1"
                 render={({ field }) => (
                   <FormItem>
@@ -282,7 +389,7 @@ export default function BrandingSettingsPage() {
                 )}
               />
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="supportNumber2"
                 render={({ field }) => (
                   <FormItem>
@@ -310,7 +417,7 @@ export default function BrandingSettingsPage() {
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="storeName"
                   render={({ field }) => (
                     <FormItem>
@@ -323,7 +430,7 @@ export default function BrandingSettingsPage() {
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="storePhone"
                   render={({ field }) => (
                     <FormItem>
@@ -340,7 +447,7 @@ export default function BrandingSettingsPage() {
               <div className="flex flex-col md:flex-row gap-6 items-start">
                 <div className="flex-1 w-full">
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="storeLogo"
                     render={() => (
                       <FormItem>
@@ -394,7 +501,7 @@ export default function BrandingSettingsPage() {
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="themeColor"
                 render={({ field }) => (
                   <FormItem>
@@ -417,7 +524,7 @@ export default function BrandingSettingsPage() {
                 )}
               />
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="secondaryColor"
                 render={({ field }) => (
                   <FormItem>
@@ -437,7 +544,7 @@ export default function BrandingSettingsPage() {
                 )}
               />
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="accentColor"
                 render={({ field }) => (
                   <FormItem>
@@ -457,7 +564,7 @@ export default function BrandingSettingsPage() {
                 )}
               />
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="primaryForeground"
                 render={({ field }) => (
                   <FormItem>
@@ -479,7 +586,7 @@ export default function BrandingSettingsPage() {
                 )}
               />
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="sidebarColor"
                 render={({ field }) => (
                   <FormItem>

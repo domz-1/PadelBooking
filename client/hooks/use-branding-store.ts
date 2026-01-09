@@ -17,6 +17,10 @@ interface BrandingConfig {
     storeName?: string;
     storeLogo?: string;
     storePhone?: string;
+    showStore?: boolean;
+    showAcademy?: boolean;
+    showSponsors?: boolean;
+    cancelationLimit?: number;
 }
 
 interface BrandingState {

@@ -17,6 +17,7 @@ const BookingStatus = require("../src/api/modules/settings/bookingStatus.model")
 const Category = require("../src/api/modules/store/category.model");
 const GlobalConfig = require("../src/api/modules/settings/globalConfig.model");
 const Package = require("../src/api/modules/coaches/package.model");
+const TelegramSubscriber = require("../src/api/modules/notifications/telegramSubscriber.model");
 
 const cleanName = (name) => {
     // Remove emojis, special characters, and extra spaces for cleaner internal names
@@ -96,7 +97,11 @@ const seedDatabase = async () => {
             secondaryColor: "#5D0000", // Darker Red
             accentColor: "#B71C1C", // Vivid Dark Red
             logo: "placeholder/logo.png",
-            storeLogo: "placeholder/store-logo.jpg"
+            storeLogo: "placeholder/store-logo.jpg",
+            showStore: true,
+            showAcademy: true,
+            showSponsors: true,
+            cancelationLimit: 24
         });
         console.log("   ✅ Global config seeded");
 

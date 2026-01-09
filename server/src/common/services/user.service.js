@@ -30,7 +30,7 @@ class UserService {
         if (!user) return null;
 
         // Prevent updating sensitive fields through this method, but allow role and image if explicitly passed (admin context)
-        const { password, id: userId, ...updateData } = data;
+        const { id: userId, ...updateData } = data;
 
         // Ensure role is only updated if provided
         if (data.role) {

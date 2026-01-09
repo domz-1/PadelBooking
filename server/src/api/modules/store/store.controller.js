@@ -8,6 +8,7 @@ const csv = require('csv-parser');
 const xlsx = require('xlsx');
 const fs = require('fs');
 const path = require('path');
+const telegramService = require('../../../common/services/telegram.service');
 
 
 exports.getProducts = async (req, res, next) => {
@@ -192,34 +193,6 @@ exports.updateCategory = async (req, res, next) => {
     }
 };
 
-// Telegram Helper
-const sendTelegramNotification = async (order, user, items) => {
-    try {
-        const botToken = process.env.TELEGRAM_BOT_TOKEN;
-        const chatId = process.env.TELEGRAM_CHAT_ID;
-        if (!botToken || !chatId) return;
-
-        let message = `🆕 *New Order Received!*\n\n`;
-        message += `👤 *Customer:* ${user.name}\n`;
-        message += `📧 *Email:* ${user.email}\n`;
-        message += `💰 *Total Amount:* ${order.totalAmount} EGP\n`;
-        message += `💳 *Payment:* ${order.paymentMethod}\n\n`;
-        message += `🛒 *Items:*\n`;
-
-        items.forEach(item => {
-            message += `- ${item.productName} x${item.quantity} (${item.price} EGP)\n`;
-        });
-
-        const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-        await axios.post(url, {
-            chat_id: chatId,
-            text: message,
-            parse_mode: 'Markdown'
-        });
-    } catch (error) {
-        console.error('Telegram notification failed:', error);
-    }
-};
 
 // Update createOrder to include Telegram notification
 exports.createOrder = async (req, res, next) => {
@@ -255,7 +228,13 @@ exports.createOrder = async (req, res, next) => {
         }
 
         // Send Telegram notification
-        await sendTelegramNotification(order, req.user, fullItemsForNotify);
+        await telegramService.sendToAdmin('STORE_ORDER', {
+            userName: req.user.name,
+            totalAmount: order.totalAmount,
+            currency: 'EGP',
+            paymentMethod: order.paymentMethod,
+            items: fullItemsForNotify.map(i => `- ${i.productName} x${i.quantity} (${i.price} EGP)`).join('\n')
+        });
 
         res.status(201).json({ success: true, data: order, message: 'Order placed successfully' });
     } catch (error) {

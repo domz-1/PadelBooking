@@ -92,6 +92,22 @@ const GlobalConfig = sequelize.define('GlobalConfig', {
     storePhone: {
         type: DataTypes.STRING,
         allowNull: true
+    },
+    showStore: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
+    },
+    showAcademy: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
+    },
+    showSponsors: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
+    },
+    cancelationLimit: {
+        type: DataTypes.INTEGER, // in hours
+        defaultValue: 24
     }
 }, {
     timestamps: true

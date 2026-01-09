@@ -10,17 +10,21 @@ import { ConnectSection } from "@/components/landing/ConnectSection";
 import { useBranding } from "@/components/providers/BrandingProvider";
 
 export default function Home() {
+  const { showStore, showAcademy, showSponsors } = useBranding();
+
   return (
     <div className="flex flex-col min-h-screen">
       <main className="grow">
         <LandingHero />
 
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 mb-16">
-          <SponsorCarousel />
-        </div>
+        {showSponsors && (
+          <div className="max-w-7xl mx-auto px-6 lg:px-8 mb-16">
+            <SponsorCarousel />
+          </div>
+        )}
 
-        <FeaturedProducts />
-        <AcademySection />
+        {showStore && <FeaturedProducts />}
+        {showAcademy && <AcademySection />}
         <WhyChoose />
         <ConnectSection />
       </main>

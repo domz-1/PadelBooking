@@ -22,11 +22,14 @@ import {
 import { useRouter } from "next/navigation";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { ClientEditBookingDialog } from "@/components/client-edit-booking-dialog";
+import { useBranding } from "@/components/providers/BrandingProvider";
+import { Phone } from "lucide-react";
 
 export default function MyBookingsPage() {
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
     const { isAuthenticated } = useAuthStore();
+    const { cancelationLimit, config } = useBranding();
     const router = useRouter();
 
     // State for dialogs
@@ -135,13 +138,39 @@ export default function MyBookingsPage() {
                                             >
                                                 Edit
                                             </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() => setCancelingBookingId(booking.id)}
-                                            >
-                                                Cancel
-                                            </Button>
+
+                                            {(() => {
+                                                const bookingTime = new Date(booking.date);
+                                                const [h, m] = booking.startTime.split(':');
+                                                bookingTime.setHours(parseInt(h), parseInt(m));
+                                                const diff = (bookingTime.getTime() - new Date().getTime()) / (1000 * 60 * 60);
+
+                                                if (diff >= cancelationLimit) {
+                                                    return (
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            onClick={() => setCancelingBookingId(booking.id)}
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                    );
+                                                }
+
+                                                return (
+                                                    <div className="flex flex-col items-end gap-1">
+                                                        <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50">
+                                                            Cannot cancel (limit reached)
+                                                        </Badge>
+                                                        {(config?.supportNumber1 || config?.supportNumber2) && (
+                                                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                                                                <Phone className="w-3 h-3" />
+                                                                {config.supportNumber1} {config.supportNumber2 && `| ${config.supportNumber2}`}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
                                         </>
                                     )}
                                 </div>
