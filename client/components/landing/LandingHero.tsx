@@ -150,29 +150,13 @@ export function LandingHero() {
                     <h1 className="mt-8 text-4xl font-bold tracking-tight text-foreground sm:text-7xl">
                         Book Your Perfect <span className="text-primary italic">Padel Court</span>
                     </h1>
-                    <p className="mt-6 text-lg leading-8 text-muted-foreground">
+                    <p className="hidden sm:block mt-6 text-sm sm:text-lg leading-8 text-muted-foreground">
                         Experience the best Padel facilities in the region. Seamless booking, real-time availability, and a vibrant community of players.
                     </p>
 
-                    {/* Quick Metrics */}
-                    <div className="hidden">
-                        <div className="flex items-center gap-2">
-                            <span className="font-bold text-foreground text-md">6+</span>
-                            <span className="text-xs font-semibold uppercase tracking-wider opacity-70">Premium Courts</span>
-                        </div>
-                        <div className="hidden sm:block h-3 w-px bg-border/60" />
-                        <div className="flex items-center gap-2">
-                            <span className="font-bold text-foreground text-md">24/7</span>
-                            <span className="text-xs font-semibold uppercase tracking-wider opacity-70">Online Booking</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="font-bold text-foreground text-md">500+</span>
-                            <span className="text-xs font-semibold uppercase tracking-wider opacity-70">Active Players</span>
-                        </div>
-                    </div>
 
                     {/* Support Numbers */}
-                    <div className="mt-8 flex flex-wrap gap-4">
+                    <div className="hidden lg:flex mt-8 flex-wrap gap-4">
                         <a
                             href={`tel:${useBranding().config?.supportNumber1}`}
                             className="bg-muted/50 rounded-2xl p-4 border flex items-center gap-4 hover:bg-muted transition-colors"
@@ -211,9 +195,9 @@ export function LandingHero() {
                 </div>
 
                 {/* Right Content - The "Live Dashboard" */}
-                <div className="relative mt-16 sm:mt-24 lg:mt-0 lg:flex-1 lg:-translate-y-16">
+                <div className="relative mt-8 lg:mt-16 sm:mt-24 lg:mt-0 lg:flex-1 lg:-translate-y-16">
                     {/* Main Image Backdrop */}
-                    <div className="relative aspect-4/3 overflow-hidden rounded-3xl shadow-2xl ring-1 ring-border/50">
+                    <div className="hidden lg:block relative aspect-4/3 overflow-hidden rounded-3xl shadow-2xl ring-1 ring-border/50">
                         <Image
                             src="/new-h-2.png"
                             alt="Padel Court"
@@ -225,7 +209,7 @@ export function LandingHero() {
                     </div>
 
                     {/* Floating Slots Board */}
-                    <div className="absolute -bottom-16 -left-6 right-6 lg:-right-12 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50 shadow-2xl p-6 lg:max-w-md overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-1000">
+                    <div className="relative w-full lg:absolute lg:-bottom-16 lg:-left-6 lg:-right-12 bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50 shadow-2xl p-4 lg:p-6 lg:max-w-md overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-1000">
                         <div className="flex items-center justify-between mb-4">
                             <div>
                                 <h3 className="text-lg font-bold text-foreground flex items-center gap-2">

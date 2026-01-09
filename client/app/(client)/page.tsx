@@ -7,6 +7,7 @@ import { AcademySection } from "@/components/landing/AcademySection";
 
 import { WhyChoose } from "@/components/landing/WhyChoose";
 import { ConnectSection } from "@/components/landing/ConnectSection";
+import { useBranding } from "@/components/providers/BrandingProvider";
 
 export default function Home() {
   return (
@@ -27,10 +28,10 @@ export default function Home() {
       <footer className="border-t py-12 bg-muted/20">
         <div className="mx-auto max-w-7xl px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="text-2xl font-bold bg-clip-text text-transparent bg-linear-to-r from-primary to-brand-600">
-            PadelBooking
+            {useBranding().brandName || "PadelBooking"}
           </div>
           <p className="text-sm text-muted-foreground">
-            © 2026 PadelBooking. All rights reserved.
+            © {new Date().getFullYear()} {useBranding().brandName || "PadelBooking"}. All rights reserved.
           </p>
           <div className="flex gap-6">
             <a href="#" className="text-sm text-muted-foreground hover:text-primary">Privacy Policy</a>
