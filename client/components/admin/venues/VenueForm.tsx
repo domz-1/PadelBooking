@@ -28,6 +28,19 @@ import {
 import { adminVenueService } from "@/lib/services/admin/venues.service"
 import { adminBranchService } from "@/lib/services/admin/branches.service"
 import type { Branch, Venue } from "@/lib/schemas"
+import { Badge } from "@/components/ui/badge"
+import { X, Plus } from "lucide-react"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
+
+// Helper for time options
+const timeOptions = Array.from({ length: 24 }).map((_, i) => {
+    const hour = i.toString().padStart(2, '0');
+    return { value: `${hour}:00`, label: `${hour}:00` };
+});
+// Add end of day option
+timeOptions.push({ value: "23:59", label: "23:59" });
+timeOptions.push({ value: "24:00", label: "24:00" }); // Server handles this
 
 const venueSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -40,13 +53,17 @@ const venueSchema = z.object({
     amenities: z.string().optional(),
     branchId: z.string().optional(), // Select value returns string usually, we'll coerce on submit
     order: z.coerce.number().optional().default(0),
+    blockedPeriods: z.array(z.object({
+        days: z.array(z.number()),
+        startTime: z.string(),
+        endTime: z.string()
+    })).optional().default([]),
 })
 
 type VenueFormValues = z.infer<typeof venueSchema>
 
 interface VenueFormProps {
     initialData?: Venue
-
     isEditing?: boolean
 }
 
@@ -54,6 +71,21 @@ export function VenueForm({ initialData, isEditing = false }: VenueFormProps) {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [branches, setBranches] = useState<Branch[]>([])
+
+    // Local state for the new rule builder
+    const [newRule, setNewRule] = useState<{ days: number[], startTime: string, endTime: string }>({
+        days: [],
+        startTime: "",
+        endTime: ""
+    })
+
+    const addBlockedPeriod = () => {
+        if (newRule.days.length === 0 || !newRule.startTime || !newRule.endTime) return;
+
+        const current = form.getValues("blockedPeriods") || [];
+        form.setValue("blockedPeriods", [...current, { ...newRule }]);
+        setNewRule({ days: [], startTime: "", endTime: "" });
+    };
 
     // Fetch Branches
     useEffect(() => {
@@ -75,6 +107,7 @@ export function VenueForm({ initialData, isEditing = false }: VenueFormProps) {
             ...initialData,
             amenities: initialData.amenities ? (Array.isArray(initialData.amenities) ? initialData.amenities.join(", ") : String(initialData.amenities)) : "",
             branchId: initialData.branchId ? String(initialData.branchId) : undefined,
+            blockedPeriods: (initialData as any).blockedPeriods || [],
         } : {
             name: "",
             location: "",
@@ -85,6 +118,7 @@ export function VenueForm({ initialData, isEditing = false }: VenueFormProps) {
             description: "",
             amenities: "",
             order: 0,
+            blockedPeriods: [],
         },
     })
 
@@ -263,6 +297,121 @@ export function VenueForm({ initialData, isEditing = false }: VenueFormProps) {
                         </FormItem>
                     )}
                 />
+
+                {/* Blocked Periods Section */}
+                <div className="space-y-4 border rounded-lg p-4 bg-muted/10">
+                    <div className="flex items-center justify-between">
+                        <Label className="text-base font-semibold">Blocked schedules (Recurring)</Label>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-md bg-background">
+                            <div className="space-y-3">
+                                <Label>Days</Label>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, i) => (
+                                        <div key={day} className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id={`day-${i}`}
+                                                checked={newRule.days.includes(i)}
+                                                onCheckedChange={(checked) => {
+                                                    const days = checked
+                                                        ? [...newRule.days, i]
+                                                        : newRule.days.filter(d => d !== i);
+                                                    setNewRule({ ...newRule, days });
+                                                }}
+                                            />
+                                            <label htmlFor={`day-${i}`} className="text-sm cursor-pointer font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{day}</label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Start Time</Label>
+                                <Select
+                                    value={newRule.startTime}
+                                    onValueChange={(val) => setNewRule({ ...newRule, startTime: val })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select start time" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {timeOptions.map(opt => (
+                                            <SelectItem key={`start-${opt.value}`} value={opt.value}>
+                                                {opt.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>End Time</Label>
+                                <div className="flex gap-2">
+                                    <div className="flex-1">
+                                        <Select
+                                            value={newRule.endTime}
+                                            onValueChange={(val) => setNewRule({ ...newRule, endTime: val })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select end time" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {timeOptions.map(opt => (
+                                                    <SelectItem key={`end-${opt.value}`} value={opt.value}>
+                                                        {opt.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        onClick={addBlockedPeriod}
+                                        disabled={!newRule.startTime || !newRule.endTime || newRule.days.length === 0}
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* List of active rules */}
+                        <div className="space-y-2">
+                            {form.watch("blockedPeriods")?.map((rule, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-3 border rounded-md bg-card">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex gap-1">
+                                            {rule.days.sort().map(d => (
+                                                <Badge key={d} variant="outline" className="text-xs">
+                                                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d]}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                        <div className="text-sm font-medium">
+                                            {rule.startTime} - {rule.endTime}
+                                        </div>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                        onClick={() => {
+                                            const current = form.getValues("blockedPeriods") || [];
+                                            form.setValue("blockedPeriods", current.filter((_, i) => i !== idx));
+                                        }}
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                            {(!form.watch("blockedPeriods")?.length) && (
+                                <p className="text-sm text-muted-foreground text-center py-2">No blocked periods defined.</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
 
                 <div className="flex justify-end gap-4">
                     <Button type="button" variant="outline" onClick={() => router.back()}>

@@ -48,7 +48,7 @@ const bookingFormSchema = z.object({
   venueId: z.number({ message: "Venue is required" }),
   duration: z.string(),
   totalPrice: z.number().min(0),
-  type: z.enum(["standard", "academy"]),
+  type: z.enum(["standard", "academy", "clocked"]),
   hasOffer: z.boolean(),
   offerValue: z.number().min(0),
   isRecurring: z.boolean(),
@@ -214,6 +214,11 @@ export function AdminCreateBookingDialog({
                         <SelectItem value="1.5">1.5 Hours</SelectItem>
                         <SelectItem value="2">2 Hours</SelectItem>
                         <SelectItem value="3">3 Hours</SelectItem>
+                        <SelectItem value="4">4 Hours</SelectItem>
+                        <SelectItem value="5">5 Hours</SelectItem>
+                        <SelectItem value="6">6 Hours</SelectItem>
+                        <SelectItem value="8">8 Hours</SelectItem>
+                        <SelectItem value="12">12 Hours</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

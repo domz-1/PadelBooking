@@ -39,7 +39,7 @@ const Booking = sequelize.define('Booking', {
         allowNull: false
     },
     type: {
-        type: DataTypes.ENUM('standard', 'academy'),
+        type: DataTypes.ENUM('standard', 'academy', 'clocked'),
         defaultValue: 'standard'
     },
     participants: {

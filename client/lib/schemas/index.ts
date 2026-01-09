@@ -57,6 +57,11 @@ export const VenueSchema = z.object({
     amenities: z.array(z.string()).optional(),
     branchId: z.number().optional(),
     order: z.number().optional(),
+    blockedPeriods: z.array(z.object({
+        days: z.array(z.number()),
+        startTime: z.string(),
+        endTime: z.string()
+    })).optional(),
     Branch: BranchSchema.optional(),
 });
 
@@ -84,7 +89,7 @@ export const BookingSchema = z.object({
         }).optional()
     }).optional(),
     totalPrice: z.number().optional(),
-    type: z.string().optional(),
+    type: z.enum(['standard', 'academy', 'clocked']).or(z.string()).optional(),
     notes: z.string().optional(),
     hasOffer: z.boolean().optional(),
     offerValue: z.number().optional(),

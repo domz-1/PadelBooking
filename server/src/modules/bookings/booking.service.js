@@ -170,6 +170,29 @@ class BookingService {
     }
 
 
+    async _checkVenueBlocked(venueId, date, startTime, endTime) {
+        const venue = await Venue.findByPk(venueId);
+        if (!venue || !venue.blockedPeriods || !Array.isArray(venue.blockedPeriods)) return false;
+
+        // Ensure date is treated as UTC for day extraction to avoid timezone shifts
+        const dayOfWeek = new Date(date).getUTCDay();
+
+        const start = startTime.substring(0, 5);
+        const end = endTime.substring(0, 5) === '00:00' ? '24:00' : endTime.substring(0, 5);
+
+        for (const rule of venue.blockedPeriods) {
+            if (rule.days && Array.isArray(rule.days) && rule.days.includes(dayOfWeek)) {
+                const rStart = rule.startTime;
+                let rEnd = rule.endTime === '00:00' ? '24:00' : rule.endTime;
+
+                if (rStart < end && rEnd > start) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     async createBooking(bookingData, user) {
         if (bookingData.statusId === '') bookingData.statusId = null;
 
@@ -193,6 +216,18 @@ class BookingService {
 
             // 1. Pre-check availability for ALL dates
             for (const date of dates) {
+                // Check Venue Blocks
+                const isBlocked = await this._checkVenueBlocked(
+                    bookingData.venueId,
+                    date,
+                    bookingData.startTime,
+                    bookingData.endTime
+                );
+                if (isBlocked) {
+                    throw new Error(`Conflict on ${date}: Venue is closed during this time.`);
+                }
+
+                // Check Bookings
                 const existingBooking = await Booking.findOne({
                     where: {
                         venueId: bookingData.venueId,
@@ -227,6 +262,17 @@ class BookingService {
     }
 
     async _internalCreateSingleBooking(bookingData, user) {
+        // Check Venue Blocks
+        const isBlocked = await this._checkVenueBlocked(
+            bookingData.venueId,
+            bookingData.date,
+            bookingData.startTime,
+            bookingData.endTime
+        );
+        if (isBlocked) {
+            throw new Error('Venue is closed during this time');
+        }
+
         // Check availability (double check for safety or single booking case)
         const existingBooking = await Booking.findOne({
             where: {

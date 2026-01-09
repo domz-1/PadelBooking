@@ -19,6 +19,8 @@ import {
   ListOrdered,
   ClipboardList,
   Info,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -86,6 +88,39 @@ const BRANCH_COLORS = [
   "bg-gray-50 dark:bg-gray-800/80",
   "bg-stone-100 dark:bg-stone-800/80",
 ];
+
+const getBlockedPeriodAsBooking = (venue: Venue, date: string, hour: number): Booking | null => {
+  if (!venue.blockedPeriods?.length) return null;
+
+  const currentDay = new Date(date).getUTCDay();
+  const rules = venue.blockedPeriods.filter((p) => p.days.includes(currentDay));
+
+  for (const rule of rules) {
+    const startParts = rule.startTime.split(":").map(Number);
+    const endParts = rule.endTime.split(":").map(Number);
+    let endHour = endParts[0];
+    if (endHour === 0 && endParts[1] === 0) endHour = 24;
+
+    const slotStart = hour * 60;
+    const slotEnd = (hour + 1) * 60;
+    const ruleStart = startParts[0] * 60 + startParts[1];
+    const ruleEnd = endHour * 60 + endParts[1];
+
+    if (Math.max(slotStart, ruleStart) < Math.min(slotEnd, ruleEnd)) {
+      return {
+        id: -1 * (venue.id * 1000 + hour),
+        venueId: venue.id,
+        date: date,
+        startTime: rule.startTime,
+        endTime: rule.endTime,
+        type: "clocked",
+        status: "confirmed",
+        isVenueBlock: true,
+      } as unknown as Booking;
+    }
+  }
+  return null;
+};
 
 export default function BookingGrid({
   bookings,
@@ -302,14 +337,48 @@ export default function BookingGrid({
                   </div>
                 )}
                 {onDateChange && (
-                  <DatePicker
-                    date={date ? new Date(date) : undefined}
-                    setDate={(d) => {
-                      onDateChange(d);
-                      if (d) updateUrl(undefined, format(d, "yyyy-MM-dd"));
-                    }}
-                    className="w-[200px]"
-                  />
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      disabled={!isAdmin && date ? new Date(date) < new Date(new Date().setHours(0, 0, 0, 0)) || new Date(date).toDateString() === new Date().toDateString() : false}
+                      onClick={() => {
+                        if (date) {
+                          const prevDay = new Date(date);
+                          prevDay.setDate(prevDay.getDate() - 1);
+                          onDateChange(prevDay);
+                          updateUrl(undefined, format(prevDay, "yyyy-MM-dd"));
+                        }
+                      }}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <DatePicker
+                      date={date ? new Date(date) : undefined}
+                      setDate={(d) => {
+                        onDateChange(d);
+                        if (d) updateUrl(undefined, format(d, "yyyy-MM-dd"));
+                      }}
+                      className="w-[200px]"
+                      disabled={!isAdmin ? { before: new Date() } : undefined}
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => {
+                        if (date) {
+                          const nextDay = new Date(date);
+                          nextDay.setDate(nextDay.getDate() + 1);
+                          onDateChange(nextDay);
+                          updateUrl(undefined, format(nextDay, "yyyy-MM-dd"));
+                        }
+                      }}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
@@ -395,7 +464,7 @@ export default function BookingGrid({
                         bookings,
                         venue.id,
                         hour
-                      );
+                      ) || getBlockedPeriodAsBooking(venue, date, hour);
                       const isBooked = !!booking;
                       const isStart = isStartOfBooking(booking, hour);
                       const isOwn =
@@ -446,7 +515,8 @@ export default function BookingGrid({
                                   getBookingStatusStyle(booking, isOwn, isAdmin)
                                     .className,
                                   "cursor-pointer ring-offset-1",
-                                  isOwn && "ring-2 ring-primary"
+                                  isOwn && "ring-2 ring-primary",
+                                  ((booking as any).isVenueBlock || (booking.type === "clocked" && !isAdmin)) && "pointer-events-none"
                                 )}
                                 style={{
                                   ...getBookingStatusStyle(
@@ -464,6 +534,11 @@ export default function BookingGrid({
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  if ((booking as any).isVenueBlock) return;
+
+                                  if (booking.type === "clocked" && !isAdmin) {
+                                    return;
+                                  }
                                   if (!isAuthenticated) {
                                     router.push("/auth/login");
                                     return;
@@ -497,22 +572,30 @@ export default function BookingGrid({
                                     </Badge>
                                   </div>
                                 )}
-                                <div className="font-bold whitespace-normal text-wrap wrap-break-word flex items-center justify-between gap-1.5">
-                                  <div className="flex items-center gap-1">
-                                    {isOwn ? (
-                                      <User className="w-3.5 h-3.5" />
+                                <div className="font-bold whitespace-normal text-wrap wrap-break-word flex items-center justify-between gap-1.5 pointer-events-none">
+                                  <div className="flex items-center gap-1 pointer-events-none">
+                                    {booking.type === "clocked" ? (
+                                      <>
+
+                                      </>
                                     ) : (
-                                      <Shield className="w-3.5 h-3.5" />
-                                    )}
-                                    {(isOwn || isAdmin) && (
-                                      <span className="whitespace-normal text-wrap wrap-break-word text-start max-w-full">
-                                        {booking.User?.name || "Booked"}
-                                      </span>
+                                      <>
+                                        {isOwn ? (
+                                          <User className="w-3.5 h-3.5" />
+                                        ) : (
+                                          <Shield className="w-3.5 h-3.5" />
+                                        )}
+                                        {(isOwn || isAdmin) && (
+                                          <span className="whitespace-normal text-wrap wrap-break-word text-start max-w-full">
+                                            {booking.User?.name || "Booked"}
+                                          </span>
+                                        )}
+                                      </>
                                     )}
                                   </div>
                                 </div>
 
-                                {(isOwn || isAdmin) && (
+                                {(isOwn || isAdmin) && booking.type !== "clocked" && (
                                   <div className="flex justify-between items-center opacity-90 mt-auto">
                                     <span className="whitespace-normal text-wrap wrap-break-word text-[9px] uppercase tracking-wider font-bold">
                                       {booking.BookingStatus?.name ||

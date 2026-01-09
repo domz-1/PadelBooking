@@ -32,7 +32,7 @@ export const getBookingByVenueAndHour = (
 };
 
 export const isStartOfBooking = (
-    booking: Booking | undefined,
+    booking: Booking | undefined | null,
     hour: number
 ): boolean => {
     if (!booking) return false;
@@ -83,6 +83,13 @@ export const getBookingStatusStyle = (
     isOwn: boolean,
     isAdmin: boolean
 ): StatusStyle => {
+    if (booking.type === "clocked") {
+        return {
+            className:
+                "bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700 repeating-linear-gradient-stripe cursor-not-allowed",
+        };
+    }
+
     if (!isOwn && !isAdmin)
         return {
             className: "bg-primary/90 text-primary-foreground border-primary",

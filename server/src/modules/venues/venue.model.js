@@ -61,6 +61,10 @@ const Venue = sequelize.define('Venue', {
     order: {
         type: DataTypes.INTEGER,
         defaultValue: 0
+    },
+    blockedPeriods: {
+        type: DataTypes.JSONB, // Array of { startTime: 'HH:mm', endTime: 'HH:mm', days: number[] }
+        defaultValue: []
     }
 }, {
     timestamps: true

@@ -37,6 +37,7 @@ export function BookingTypeField({ form }: BookingTypeFieldProps) {
             <SelectContent>
               <SelectItem value="standard">Standard</SelectItem>
               <SelectItem value="academy">Academy</SelectItem>
+              <SelectItem value="clocked">Clocked (Blocked)</SelectItem>
             </SelectContent>
           </Select>
           <FormMessage />
