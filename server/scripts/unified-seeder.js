@@ -5,18 +5,18 @@ const { sequelize } = require("../src/config/database");
 const bcrypt = require("bcryptjs");
 
 // Models
-const User = require("../src/modules/users/user.model");
-const Branch = require("../src/modules/branches/branch.model");
-const Venue = require("../src/modules/venues/venue.model");
-const Booking = require("../src/modules/bookings/booking.model");
-const Sport = require("../src/modules/sports/sport.model");
-const Sponsor = require("../src/modules/sponsors/sponsor.model");
-const Product = require("../src/modules/store/product.model");
-const Coach = require("../src/modules/coaches/coach.model");
-const BookingStatus = require("../src/modules/settings/bookingStatus.model");
-const Category = require("../src/modules/store/category.model");
-const GlobalConfig = require("../src/modules/settings/globalConfig.model");
-const Package = require("../src/modules/coaches/package.model");
+const User = require("../src/api/modules/users/user.model");
+const Branch = require("../src/api/modules/branches/branch.model");
+const Venue = require("../src/api/modules/venues/venue.model");
+const Booking = require("../src/api/modules/bookings/booking.model");
+const Sport = require("../src/api/modules/sports/sport.model");
+const Sponsor = require("../src/api/modules/sponsors/sponsor.model");
+const Product = require("../src/api/modules/store/product.model");
+const Coach = require("../src/api/modules/coaches/coach.model");
+const BookingStatus = require("../src/api/modules/settings/bookingStatus.model");
+const Category = require("../src/api/modules/store/category.model");
+const GlobalConfig = require("../src/api/modules/settings/globalConfig.model");
+const Package = require("../src/api/modules/coaches/package.model");
 
 const cleanName = (name) => {
     // Remove emojis, special characters, and extra spaces for cleaner internal names
